@@ -18,6 +18,19 @@ function gerarImagemProduto(indice) {
   return `https://picsum.photos/seed/produto-${formatarIndice(indice)}/320/320`;
 }
 
+const enderecosClientes = [
+  { cidade: 'Sao Paulo', estado: 'SP', cep: '01001-000' },
+  { cidade: 'Rio de Janeiro', estado: 'RJ', cep: '20040-020' },
+  { cidade: 'Belo Horizonte', estado: 'MG', cep: '30130-110' },
+  { cidade: 'Curitiba', estado: 'PR', cep: '80010-000' },
+  { cidade: 'Porto Alegre', estado: 'RS', cep: '90010-150' },
+  { cidade: 'Salvador', estado: 'BA', cep: '40020-000' },
+  { cidade: 'Recife', estado: 'PE', cep: '50030-230' },
+  { cidade: 'Fortaleza', estado: 'CE', cep: '60060-080' },
+  { cidade: 'Goiania', estado: 'GO', cep: '74003-010' },
+  { cidade: 'Belem', estado: 'PA', cep: '66017-000' }
+];
+
 async function limparBanco() {
   await executar('PRAGMA foreign_keys = OFF');
 
@@ -127,6 +140,8 @@ async function popularCadastrosBase() {
 
 async function popularClientes() {
   for (let indice = 1; indice <= 10; indice += 1) {
+    const endereco = enderecosClientes[indice - 1];
+
     await executar(
       `
         INSERT INTO cliente (
@@ -166,9 +181,9 @@ async function popularClientes() {
         `${indice * 10}`,
         indice % 2 === 0 ? `Sala ${indice}` : 'Bloco A',
         `Bairro ${formatarIndice(indice)}`,
-        `Cidade ${formatarIndice(indice)}`,
-        indice % 2 === 0 ? 'SP' : 'MG',
-        `1300${indice}-00${indice}`,
+        endereco.cidade,
+        endereco.estado,
+        endereco.cep,
         `Observacao de teste para o cliente ${formatarIndice(indice)}.`,
         gerarImagemCliente(indice)
       ]

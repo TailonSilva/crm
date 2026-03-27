@@ -13,21 +13,25 @@ function formatarPreco(valor) {
 
 export function LinhaProduto({ produto }) {
   return (
-    <article className="linhaProduto" role="row">
-      <ImagemProduto produto={produto} />
-      <DetalhesProduto produto={produto} />
-      <span>{produto.nomeGrupo}</span>
-      <span>{produto.nomeMarca}</span>
-      <span>{produto.nomeUnidade}</span>
-      <span>{formatarPreco(produto.preco)}</span>
-      <span className={`etiquetaStatus ${produto.status ? 'ativo' : 'inativo'}`}>
-        {produto.status ? 'Ativo' : 'Inativo'}
-      </span>
-      <AcoesRegistro
-        rotuloConsulta="Consultar produto"
-        rotuloEdicao="Editar produto"
-        rotuloInativacao="Inativar produto"
-      />
-    </article>
+    <tr className="linhaProduto">
+      <td><ImagemProduto produto={produto} /></td>
+      <td><DetalhesProduto produto={produto} /></td>
+      <td>{produto.nomeGrupo}</td>
+      <td>{produto.nomeMarca}</td>
+      <td>{produto.nomeUnidade}</td>
+      <td>{formatarPreco(produto.preco)}</td>
+      <td>
+        <span className={`etiquetaStatus ${produto.status ? 'ativo' : 'inativo'}`}>
+          {produto.status ? 'Ativo' : 'Inativo'}
+        </span>
+      </td>
+      <td>
+        <AcoesRegistro
+          rotuloConsulta="Consultar produto"
+          rotuloEdicao="Editar produto"
+          rotuloInativacao="Inativar produto"
+        />
+      </td>
+    </tr>
   );
 }

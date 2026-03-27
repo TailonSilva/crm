@@ -24,6 +24,8 @@ Projeto base com:
 - Botoes de acoes em grades devem seguir um padrao proprio, usando somente icones e um componente dedicado para acoes de linha
 - Grades de listagem devem usar o componente reutilizavel `GradePadrao`, mantendo cabecalho fixo e rolagem apenas na lista de itens
 - Acoes de linha em grades devem usar o componente reutilizavel `AcoesRegistro`
+- Sempre que falarmos em grid de listagem no projeto, a implementacao deve usar estrutura semantica de tabela com `table`, `thead`, `tbody`, `tr`, `th` e `td`
+- Selos de codigo em listagens devem usar o componente reutilizavel `CodigoRegistro`, adotando como padrao visual o estilo atual da tela de clientes
 - Toda alteracao em estrutura de banco de dados deve atualizar esta documentacao no mesmo ajuste, sem excecao
 - Toda tabela deve possuir CRUD completo no backend, com rotas para listar, consultar por identificador, incluir, atualizar e excluir
 - Sempre que uma tabela for criada ou alterada, o CRUD correspondente deve ser criado ou ajustado no mesmo ajuste
@@ -184,6 +186,8 @@ Sugestao de uso:
 
 - Toda listagem principal deve usar o componente [gradePadrao.jsx](c:\Users\tailo\OneDrive\Documentos\GitHub\crm\client\src\componentes\comuns\gradePadrao.jsx)
 - Acoes padrao de linha devem usar [acoesRegistro.jsx](c:\Users\tailo\OneDrive\Documentos\GitHub\crm\client\src\componentes\comuns\acoesRegistro.jsx)
+- Codigos de registros devem usar [codigoRegistro.jsx](c:\Users\tailo\OneDrive\Documentos\GitHub\crm\client\src\componentes\comuns\codigoRegistro.jsx)
+- O padrao de grade deve ser construido com estrutura real de tabela, e nao com simulacao usando `div` ou `grid`
 - O cabecalho da grade deve permanecer fixo
 - Apenas os itens da grade devem ter rolagem vertical
 - A definicao das colunas continua na tela de dominio, como em [cabecalhoGradeClientes.jsx](c:\Users\tailo\OneDrive\Documentos\GitHub\crm\client\src\paginas\clientes\cabecalhoGradeClientes.jsx)
@@ -218,6 +222,7 @@ Sugestao de uso:
 
 - `npm run popular:banco`: limpa e popula o banco com 10 registros em cada tabela
 - Os campos `imagem` de `cliente` e `produto` usam links publicos validos para testes visuais na interface
+- Os clientes de teste usam cidades reais do Brasil, com `cidade`, `estado` e `cep` coerentes
 
 No modo desktop empacotado, o Electron inicia o backend local automaticamente e salva o SQLite em uma pasta de dados da aplicacao.
 

@@ -9,24 +9,36 @@ export function GradePadrao({
 }) {
   return (
     <section className="gradePadrao">
-      {cabecalho}
-
       <div className="corpoGradePadrao">
-        <div className="listaGradePadrao">
-          {carregando ? (
-            <p className="mensagemGradePadrao">{mensagemCarregando}</p>
-          ) : null}
+        <table className="tabelaGradePadrao">
+          <thead className="cabecaTabelaGradePadrao">
+            {cabecalho}
+          </thead>
 
-          {!carregando && mensagemErro ? (
-            <p className="mensagemGradePadrao mensagemGradePadraoErro">{mensagemErro}</p>
-          ) : null}
+          <tbody className="corpoTabelaGradePadrao">
+            {carregando ? (
+              <tr>
+                <td className="mensagemGradePadrao" colSpan={99}>{mensagemCarregando}</td>
+              </tr>
+            ) : null}
 
-          {!carregando && !mensagemErro && !temItens ? (
-            <p className="mensagemGradePadrao">{mensagemVazia}</p>
-          ) : null}
+            {!carregando && mensagemErro ? (
+              <tr>
+                <td className="mensagemGradePadrao mensagemGradePadraoErro" colSpan={99}>
+                  {mensagemErro}
+                </td>
+              </tr>
+            ) : null}
 
-          {!carregando && !mensagemErro && temItens ? children : null}
-        </div>
+            {!carregando && !mensagemErro && !temItens ? (
+              <tr>
+                <td className="mensagemGradePadrao" colSpan={99}>{mensagemVazia}</td>
+              </tr>
+            ) : null}
+
+            {!carregando && !mensagemErro && temItens ? children : null}
+          </tbody>
+        </table>
       </div>
     </section>
   );
