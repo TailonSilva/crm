@@ -60,7 +60,7 @@ export function PaginaAgenda({ usuarioLogado }) {
   const [agendamentoCopiado, definirAgendamentoCopiado] = useState(null);
   const [faixaSelecionada, definirFaixaSelecionada] = useState(null);
   const [arrastandoFaixa, definirArrastandoFaixa] = useState(null);
-  const [filtros, definirFiltros] = useState(filtrosIniciaisAgenda);
+  const [filtros, definirFiltros] = useState(() => criarFiltrosIniciaisAgenda(usuarioLogado));
 
   const inicioSemana = useMemo(() => obterInicioSemana(dataBase), [dataBase]);
   const diasSemana = useMemo(() => criarDiasSemana(inicioSemana), [inicioSemana]);
@@ -83,6 +83,19 @@ export function PaginaAgenda({ usuarioLogado }) {
   useEffect(() => {
     carregarDados();
   }, []);
+
+  useEffect(() => {
+    definirFiltros((estadoAtual) => {
+      if (estadoAtual.idUsuario.length > 0 || !usuarioLogado?.idUsuario) {
+        return estadoAtual;
+      }
+
+      return {
+        ...estadoAtual,
+        idUsuario: [String(usuarioLogado.idUsuario)]
+      };
+    });
+  }, [usuarioLogado]);
 
   useEffect(() => {
     if (!arrastandoFaixa) {
@@ -607,10 +620,17 @@ export function PaginaAgenda({ usuarioLogado }) {
           definirFiltros(novosFiltros);
           definirModalFiltrosAberto(false);
         }}
-        aoLimpar={() => definirFiltros(filtrosIniciaisAgenda)}
+        aoLimpar={() => definirFiltros(criarFiltrosIniciaisAgenda(usuarioLogado))}
       />
     </>
   );
+}
+
+function criarFiltrosIniciaisAgenda(usuarioLogado) {
+  return {
+    ...filtrosIniciaisAgenda,
+    idUsuario: usuarioLogado?.idUsuario ? [String(usuarioLogado.idUsuario)] : []
+  };
 }
 
 function obterInicioSemana(data) {
