@@ -24,6 +24,16 @@ export function atualizarAgendamento(idAgendamento, payload) {
   });
 }
 
+export function atualizarStatusAgendamentoUsuario(idAgendamento, payload) {
+  return requisitarApi(`/agendamentos/${idAgendamento}/status-usuario`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
 export function excluirAgendamento(idAgendamento) {
   return requisitarApi(`/agendamentos/${idAgendamento}`, {
     method: 'DELETE'

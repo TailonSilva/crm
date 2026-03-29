@@ -2,11 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { CorpoPagina } from '../../componentes/layout/corpoPagina';
-import { listarClientes, listarContatos, listarVendedores } from '../../servicos/clientes';
+import {
+  incluirAtendimento,
+  listarAtendimentos,
+  listarCanaisAtendimento,
+  listarOrigensAtendimento
+} from '../../servicos/atendimentos';
+import { listarClientes, listarContatos, listarRamosAtividade, listarVendedores } from '../../servicos/clientes';
 import { listarEmpresas } from '../../servicos/empresa';
 import { listarUsuarios } from '../../servicos/usuarios';
 import {
   atualizarAgendamento,
+  atualizarStatusAgendamentoUsuario,
   excluirAgendamento,
   incluirAgendamento,
   listarAgendamentos,
@@ -16,6 +23,7 @@ import {
   listarTiposAgenda,
   listarTiposRecurso
 } from '../../servicos/agenda';
+import { ModalAtendimento } from '../atendimentos/modalAtendimento';
 import { ModalAgendamento } from './modalAgendamento';
 
 const minutosInicioPadrao = 8 * 60;
@@ -52,21 +60,32 @@ export function PaginaAgenda({ usuarioLogado }) {
   const [contatos, definirContatos] = useState([]);
   const [usuarios, definirUsuarios] = useState([]);
   const [vendedores, definirVendedores] = useState([]);
+  const [ramosAtividade, definirRamosAtividade] = useState([]);
+  const [canaisAtendimento, definirCanaisAtendimento] = useState([]);
+  const [origensAtendimento, definirOrigensAtendimento] = useState([]);
   const [empresa, definirEmpresa] = useState(null);
   const [modalAberto, definirModalAberto] = useState(false);
   const [modalFiltrosAberto, definirModalFiltrosAberto] = useState(false);
+  const [modalAtendimentoAberto, definirModalAtendimentoAberto] = useState(false);
+  const [confirmacaoAtendimentoAberta, definirConfirmacaoAtendimentoAberta] = useState(false);
+  const [menuStatusAgenda, definirMenuStatusAgenda] = useState(null);
   const [dadosIniciaisModal, definirDadosIniciaisModal] = useState(null);
+  const [dadosIniciaisAtendimento, definirDadosIniciaisAtendimento] = useState(null);
+  const [agendamentoPendenteAtendimento, definirAgendamentoPendenteAtendimento] = useState(null);
   const [idAgendamentoSelecionado, definirIdAgendamentoSelecionado] = useState(null);
   const [agendamentoCopiado, definirAgendamentoCopiado] = useState(null);
   const [faixaSelecionada, definirFaixaSelecionada] = useState(null);
   const [arrastandoFaixa, definirArrastandoFaixa] = useState(null);
   const [filtros, definirFiltros] = useState(() => criarFiltrosIniciaisAgenda(usuarioLogado));
 
-  const inicioSemana = useMemo(() => obterInicioSemana(dataBase), [dataBase]);
-  const diasSemana = useMemo(() => criarDiasSemana(inicioSemana), [inicioSemana]);
   const agendamentosFiltrados = useMemo(
     () => filtrarAgendamentos(agendamentos, filtros),
     [agendamentos, filtros]
+  );
+  const inicioSemana = useMemo(() => obterInicioSemana(dataBase), [dataBase]);
+  const diasSemana = useMemo(
+    () => criarDiasSemana(inicioSemana, empresa, agendamentosFiltrados),
+    [inicioSemana, empresa, agendamentosFiltrados]
   );
   const faixaHorariosSemana = useMemo(
     () => calcularFaixaHorariosSemana(agendamentosFiltrados, diasSemana, empresa),
@@ -75,6 +94,12 @@ export function PaginaAgenda({ usuarioLogado }) {
   const horarios = useMemo(
     () => criarHorarios(faixaHorariosSemana.minutosInicio, faixaHorariosSemana.minutosFim),
     [faixaHorariosSemana]
+  );
+  const estiloGradeAgenda = useMemo(
+    () => ({
+      gridTemplateColumns: `52px repeat(${diasSemana.length}, minmax(0, 1fr))`
+    }),
+    [diasSemana.length]
   );
   const filtrosAtivos = Object.values(filtros).some((valor) => (
     Array.isArray(valor) ? valor.length > 0 : Boolean(valor)
@@ -114,8 +139,34 @@ export function PaginaAgenda({ usuarioLogado }) {
   }, [arrastandoFaixa]);
 
   useEffect(() => {
+    if (!menuStatusAgenda) {
+      return undefined;
+    }
+
+    function fecharMenuStatus() {
+      definirMenuStatusAgenda(null);
+    }
+
+    function tratarTeclaMenuStatus(evento) {
+      if (evento.key === 'Escape') {
+        definirMenuStatusAgenda(null);
+      }
+    }
+
+    window.addEventListener('mousedown', fecharMenuStatus);
+    window.addEventListener('contextmenu', fecharMenuStatus);
+    window.addEventListener('keydown', tratarTeclaMenuStatus);
+
+    return () => {
+      window.removeEventListener('mousedown', fecharMenuStatus);
+      window.removeEventListener('contextmenu', fecharMenuStatus);
+      window.removeEventListener('keydown', tratarTeclaMenuStatus);
+    };
+  }, [menuStatusAgenda]);
+
+  useEffect(() => {
     function tratarAtalhosAgenda(evento) {
-      if (modalAberto || modalFiltrosAberto || evento.defaultPrevented) {
+      if (modalAberto || modalFiltrosAberto || modalAtendimentoAberto || confirmacaoAtendimentoAberta || evento.defaultPrevented) {
         return;
       }
 
@@ -161,7 +212,9 @@ export function PaginaAgenda({ usuarioLogado }) {
     faixaSelecionada,
     idAgendamentoSelecionado,
     modalAberto,
-    modalFiltrosAberto
+    modalAtendimentoAberto,
+    modalFiltrosAberto,
+    confirmacaoAtendimentoAberta
   ]);
 
   async function carregarDados() {
@@ -172,9 +225,13 @@ export function PaginaAgenda({ usuarioLogado }) {
       tiposRecursoCarregados,
       tiposAgendaCarregados,
       statusVisitaCarregados,
+      atendimentosCarregados,
+      canaisAtendimentoCarregados,
+      origensAtendimentoCarregadas,
       clientesCarregados,
       contatosCarregados,
       vendedoresCarregados,
+      ramosCarregados,
       usuariosCarregados,
       empresasCarregadas
     ] = await Promise.all([
@@ -184,9 +241,13 @@ export function PaginaAgenda({ usuarioLogado }) {
       listarTiposRecurso(),
       listarTiposAgenda(),
       listarStatusVisita(),
+      listarAtendimentos(),
+      listarCanaisAtendimento(),
+      listarOrigensAtendimento(),
       listarClientes(),
       listarContatos(),
       listarVendedores(),
+      listarRamosAtividade(),
       listarUsuarios(),
       listarEmpresas()
     ]);
@@ -198,6 +259,9 @@ export function PaginaAgenda({ usuarioLogado }) {
     definirClientes(clientesCarregados.filter((cliente) => cliente.status));
     definirContatos(contatosCarregados.filter((contato) => contato.status));
     definirVendedores(vendedoresCarregados.filter((vendedor) => vendedor.status));
+    definirRamosAtividade(ramosCarregados);
+    definirCanaisAtendimento(canaisAtendimentoCarregados.filter((canal) => canal.status));
+    definirOrigensAtendimento(origensAtendimentoCarregadas.filter((origem) => origem.status));
     definirUsuarios(usuariosCarregados.filter((usuario) => usuario.ativo));
     definirRecursos(enriquecerRecursos(recursosCarregados, tiposRecursoCarregados));
     definirAgendamentos(distribuirAgendamentosPorConflito(enriquecerAgendamentos(
@@ -207,10 +271,12 @@ export function PaginaAgenda({ usuarioLogado }) {
       tiposRecursoCarregados,
       tiposAgendaCarregados,
       statusVisitaCarregados,
+      atendimentosCarregados,
       clientesCarregados,
       contatosCarregados,
       vendedoresCarregados,
-      usuariosCarregados
+      usuariosCarregados,
+      usuarioLogado
     )));
     definirIdAgendamentoSelecionado((estadoAtual) => {
       if (!estadoAtual) {
@@ -249,7 +315,7 @@ export function PaginaAgenda({ usuarioLogado }) {
       idsRecursos: dadosAgendamento.idsRecursos.map((idRecurso) => Number(idRecurso)),
       idUsuario: dadosAgendamento.idsUsuarios[0] ? Number(dadosAgendamento.idsUsuarios[0]) : null,
       idsUsuarios: dadosAgendamento.idsUsuarios.map((idUsuario) => Number(idUsuario)),
-      idCliente: Number(dadosAgendamento.idCliente),
+      idCliente: dadosAgendamento.idCliente ? Number(dadosAgendamento.idCliente) : null,
       idContato: dadosAgendamento.idContato ? Number(dadosAgendamento.idContato) : null,
       tipo: tipoAgendaSelecionado?.descricao || null,
       idTipoAgenda: Number(dadosAgendamento.idTipoAgenda),
@@ -299,13 +365,13 @@ export function PaginaAgenda({ usuarioLogado }) {
       assunto: agendamento.assunto || '',
       horaInicio: agendamento.horaInicio,
       horaFim: agendamento.horaFim,
-      idLocal: String(agendamento.idLocal),
+      idLocal: normalizarCampoSelectAgendamento(agendamento.idLocal),
       idsRecursos: agendamento.idsRecursos,
       idsUsuarios: agendamento.idsUsuarios,
-      idCliente: String(agendamento.idCliente),
-      idContato: String(agendamento.idContato || ''),
-      idTipoAgenda: String(agendamento.idTipoAgenda),
-      idStatusVisita: String(agendamento.idStatusVisita || '')
+      idCliente: normalizarCampoSelectAgendamento(agendamento.idCliente),
+      idContato: normalizarCampoSelectAgendamento(agendamento.idContato),
+      idTipoAgenda: normalizarCampoSelectAgendamento(agendamento.idTipoAgenda),
+      idStatusVisita: normalizarCampoSelectAgendamento(agendamento.idStatusVisita)
     });
     definirModalAberto(true);
   }
@@ -359,6 +425,116 @@ export function PaginaAgenda({ usuarioLogado }) {
     fecharModalAgendamento();
   }
 
+  async function atualizarStatusAgendamento(agendamento, idStatusVisita) {
+    if (!agendamento?.idAgendamento || !idStatusVisita || !usuarioLogado?.idUsuario) {
+      return;
+    }
+
+    if (String(agendamento.idStatusVisita) === String(idStatusVisita)) {
+      definirMenuStatusAgenda(null);
+      return;
+    }
+
+    await atualizarStatusAgendamentoUsuario(Number(agendamento.idAgendamento), {
+      idUsuario: Number(usuarioLogado.idUsuario),
+      idStatusVisita: Number(idStatusVisita)
+    });
+    definirMenuStatusAgenda(null);
+    await carregarDados();
+  }
+
+  function abrirMenuStatusAgenda(evento, agendamento) {
+    const idsUsuariosAgendamento = Array.isArray(agendamento?.idsUsuarios)
+      ? agendamento.idsUsuarios.map(String)
+      : [];
+
+    if (!usuarioLogado?.idUsuario || !idsUsuariosAgendamento.includes(String(usuarioLogado.idUsuario))) {
+      return;
+    }
+
+    evento.preventDefault();
+    evento.stopPropagation();
+    definirIdAgendamentoSelecionado(agendamento.idAgendamento);
+    definirMenuStatusAgenda({
+      agendamento,
+      posicaoX: evento.clientX,
+      posicaoY: evento.clientY
+    });
+  }
+
+  function tentarGerarAtendimentoPorAgendamento(agendamento) {
+    if (!deveOferecerGeracaoAtendimento(agendamento, usuarioLogado)) {
+      return;
+    }
+
+    definirAgendamentoPendenteAtendimento(agendamento);
+    definirConfirmacaoAtendimentoAberta(true);
+  }
+
+  function fecharConfirmacaoAtendimento() {
+    definirConfirmacaoAtendimentoAberta(false);
+    definirAgendamentoPendenteAtendimento(null);
+  }
+
+  function confirmarGeracaoAtendimento() {
+    if (!agendamentoPendenteAtendimento) {
+      return;
+    }
+
+    definirDadosIniciaisAtendimento({
+      idAgendamento: String(agendamentoPendenteAtendimento.idAgendamento),
+      idCliente: normalizarCampoSelectAgendamento(agendamentoPendenteAtendimento.idCliente),
+      idContato: normalizarCampoSelectAgendamento(agendamentoPendenteAtendimento.idContato),
+      idUsuario: normalizarCampoSelectAgendamento(usuarioLogado?.idUsuario),
+      nomeUsuario: usuarioLogado?.nome || '',
+      assunto: String(agendamentoPendenteAtendimento.assunto || `Atendimento - ${agendamentoPendenteAtendimento.nomeTipoAgenda || 'Agenda'}`).trim(),
+      descricao: criarDescricaoAtendimentoPorAgendamento(agendamentoPendenteAtendimento),
+      data: agendamentoPendenteAtendimento.data,
+      horaInicio: agendamentoPendenteAtendimento.horaInicio,
+      horaFim: agendamentoPendenteAtendimento.horaFim,
+      idCanalAtendimento: '',
+      idOrigemAtendimento: ''
+    });
+    definirConfirmacaoAtendimentoAberta(false);
+    definirModalAtendimentoAberto(true);
+  }
+
+  function fecharModalAtendimentoAgenda() {
+    definirModalAtendimentoAberto(false);
+    definirDadosIniciaisAtendimento(null);
+    definirAgendamentoPendenteAtendimento(null);
+  }
+
+  async function salvarAtendimentoAgenda(dadosAtendimento) {
+    const statusRealizado = statusVisita.find(
+      (status) => String(status.descricao || '').trim().toLowerCase() === 'realizado'
+    );
+
+    await incluirAtendimento({
+      idAgendamento: Number(dadosAtendimento.idAgendamento),
+      idCliente: Number(dadosAtendimento.idCliente),
+      idContato: dadosAtendimento.idContato ? Number(dadosAtendimento.idContato) : null,
+      idUsuario: Number(usuarioLogado.idUsuario),
+      assunto: String(dadosAtendimento.assunto || '').trim(),
+      descricao: String(dadosAtendimento.descricao || '').trim() || null,
+      data: dadosAtendimento.data,
+      horaInicio: dadosAtendimento.horaInicio,
+      horaFim: dadosAtendimento.horaFim,
+      idCanalAtendimento: dadosAtendimento.idCanalAtendimento ? Number(dadosAtendimento.idCanalAtendimento) : null,
+      idOrigemAtendimento: dadosAtendimento.idOrigemAtendimento ? Number(dadosAtendimento.idOrigemAtendimento) : null
+    });
+
+    if (statusRealizado && dadosAtendimento.idAgendamento) {
+      await atualizarStatusAgendamentoUsuario(Number(dadosAtendimento.idAgendamento), {
+        idUsuario: Number(usuarioLogado.idUsuario),
+        idStatusVisita: Number(statusRealizado.idStatusVisita)
+      });
+    }
+
+    await carregarDados();
+    fecharModalAtendimentoAgenda();
+  }
+
   function iniciarSelecaoFaixa(evento, data, horario) {
     evento.preventDefault();
 
@@ -395,7 +571,7 @@ export function PaginaAgenda({ usuarioLogado }) {
       <header className="cabecalhoPagina">
         <div>
           <h1>Agenda</h1>
-          <p>Visualizacao semanal de segunda a sexta, com grade de 15 em 15 minutos.</p>
+          <p>Visualizacao semanal com grade de 15 em 15 minutos.</p>
         </div>
 
         <div className="acoesCabecalhoPagina">
@@ -448,7 +624,7 @@ export function PaginaAgenda({ usuarioLogado }) {
       <CorpoPagina>
         <section className="painelAgenda">
           <div className="agendaSemanal">
-            <div className="cabecalhoAgendaGrade">
+            <div className="cabecalhoAgendaGrade" style={estiloGradeAgenda}>
               <div className="colunaHorarioAgenda cabecalhoHorarioAgenda" />
               {diasSemana.map((dia) => (
                 <div key={dia.iso} className="cabecalhoDiaAgenda">
@@ -460,76 +636,86 @@ export function PaginaAgenda({ usuarioLogado }) {
 
             <div className="corpoAgendaGrade">
               <div className="linhaAgenda linhaAgendaEspaco" aria-hidden="true">
-                <div className="colunaHorarioAgenda colunaHorarioAgendaEspaco" />
-                {diasSemana.map((dia) => (
-                  <div key={`espaco-${dia.iso}`} className="celulaAgenda celulaAgendaEspaco" />
-                ))}
+                <div className="linhaAgendaConteudo" style={estiloGradeAgenda}>
+                  <div className="colunaHorarioAgenda colunaHorarioAgendaEspaco" />
+                  {diasSemana.map((dia) => (
+                    <div key={`espaco-${dia.iso}`} className="celulaAgenda celulaAgendaEspaco" />
+                  ))}
+                </div>
               </div>
 
               {horarios.map((horario) => (
                 <div key={horario} className="linhaAgenda">
-                  <div className="colunaHorarioAgenda etiquetaHorarioAgenda">{horario}</div>
-                  {diasSemana.map((dia, indiceDia) => {
-                    const agendamentosCelula = agendamentosFiltrados.filter(
-                      (agendamento) => agendamento.data === dia.valor && agendamento.horaInicio === horario
-                    );
+                      <div className="linhaAgendaConteudo" style={estiloGradeAgenda}>
+                    <div className="colunaHorarioAgenda etiquetaHorarioAgenda">{horario}</div>
+                    {diasSemana.map((dia, indiceDia) => {
+                      const agendamentosCelula = agendamentosFiltrados.filter(
+                        (agendamento) => (
+                          agendamento.data === dia.valor &&
+                          obterHorarioLinhaAgendamento(agendamento.horaInicio) === horario
+                        )
+                      );
 
-                    return (
-                      <div
-                        key={`${dia.iso}-${horario}`}
-                        className={`celulaAgenda ${horarioNoIntervaloSemExpediente(horario, empresa) ? 'celulaAgendaSemExpediente' : ''} ${celulaEstaNaFaixaSelecionada(faixaSelecionada, dia.valor, horario) ? 'celulaAgendaSelecionada' : ''}`}
-                        onMouseDown={(evento) => iniciarSelecaoFaixa(evento, dia.valor, horario)}
-                        onMouseEnter={() => expandirSelecaoFaixa(dia.valor, horario)}
-                        onDoubleClick={() => abrirNovoAgendamento(dia.valor, horario)}
-                      >
-                        {agendamentosCelula.map((agendamento) => (
-                          <button
-                            key={agendamento.idAgendamento}
-                            type="button"
-                            className={`cartaoAgendamentoAgenda ${String(idAgendamentoSelecionado) === String(agendamento.idAgendamento) ? 'selecionado' : ''} ${indiceDia >= 3 ? 'tooltipEsquerda' : 'tooltipDireita'}`}
-                            style={{
-                              height: `${calcularAlturaAgendamento(agendamento.horaInicio, agendamento.horaFim)}px`,
-                              background: criarEstiloCartaoAgenda(agendamento.corTipoAgenda),
-                              color: criarCorTextoCartaoAgenda(agendamento.corTipoAgenda),
-                              boxShadow: criarSombraCartaoAgenda(agendamento.corTipoAgenda),
-                              '--corSelecaoAgenda': converterHexParaRgba(agendamento.corTipoAgenda, 0.42),
-                              '--corSelecaoAgendaSuave': converterHexParaRgba(agendamento.corTipoAgenda, 0.16),
-                              ...criarPosicionamentoCartaoAgenda(
-                                agendamento.indiceColunaAgenda,
-                                agendamento.totalColunasAgenda
-                              )
-                            }}
-                            onClick={(evento) => {
-                              evento.stopPropagation();
-                              definirIdAgendamentoSelecionado(agendamento.idAgendamento);
-                            }}
-                            onDoubleClick={(evento) => {
-                              evento.stopPropagation();
-                              definirIdAgendamentoSelecionado(agendamento.idAgendamento);
-                              abrirEdicaoAgendamento(agendamento);
-                            }}
-                          >
-                            <strong>{agendamento.assunto || 'Sem assunto'}</strong>
-                            <small>{agendamento.horaInicio} - {agendamento.horaFim}</small>
-                            <div className="rodapeCartaoAgendamentoAgenda">
-                              {agendamento.iconeStatusVisita ? (
-                                <span className="iconeStatusCartaoAgenda" aria-label={agendamento.nomeStatusVisita} title={agendamento.nomeStatusVisita}>
-                                  {agendamento.iconeStatusVisita}
-                                </span>
-                              ) : null}
-                            </div>
-                            <span className="tooltipAgendamentoAgenda" role="tooltip">
-                              {criarLinhasTooltipAgendamento(agendamento).map((linha, indiceLinha) => (
-                                indiceLinha === 0
-                                  ? <strong key={`${agendamento.idAgendamento}-tooltip-${indiceLinha}`}>{linha}</strong>
-                                  : <span key={`${agendamento.idAgendamento}-tooltip-${indiceLinha}`}>{linha}</span>
-                              ))}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    );
-                  })}
+                      return (
+                        <div
+                          key={`${dia.iso}-${horario}`}
+                          className={`celulaAgenda ${horarioNoIntervaloSemExpediente(horario, empresa) ? 'celulaAgendaSemExpediente' : ''} ${celulaEstaNaFaixaSelecionada(faixaSelecionada, dia.valor, horario) ? 'celulaAgendaSelecionada' : ''}`}
+                          onMouseDown={(evento) => iniciarSelecaoFaixa(evento, dia.valor, horario)}
+                          onMouseEnter={() => expandirSelecaoFaixa(dia.valor, horario)}
+                          onDoubleClick={() => abrirNovoAgendamento(dia.valor, horario)}
+                        >
+                          {agendamentosCelula.map((agendamento) => (
+                            <button
+                              key={agendamento.idAgendamento}
+                              type="button"
+                              className={`cartaoAgendamentoAgenda ${calcularQuantidadeCelulasAgendamento(agendamento.horaInicio, agendamento.horaFim) === 1 ? 'compacto' : ''} ${String(idAgendamentoSelecionado) === String(agendamento.idAgendamento) ? 'selecionado' : ''} ${indiceDia >= diasSemana.length - 2 ? 'tooltipEsquerda' : 'tooltipDireita'}`}
+                              style={{
+                                height: `${calcularAlturaAgendamento(agendamento.horaInicio, agendamento.horaFim)}px`,
+                                top: `${calcularDeslocamentoVerticalAgendamento(agendamento.horaInicio)}px`,
+                                background: criarEstiloCartaoAgenda(agendamento.corTipoAgenda),
+                                color: criarCorTextoCartaoAgenda(agendamento.corTipoAgenda),
+                                boxShadow: criarSombraCartaoAgenda(agendamento.corTipoAgenda),
+                                '--corSelecaoAgenda': converterHexParaRgba(agendamento.corTipoAgenda, 0.42),
+                                '--corSelecaoAgendaSuave': converterHexParaRgba(agendamento.corTipoAgenda, 0.16),
+                                ...criarPosicionamentoCartaoAgenda(
+                                  agendamento.indiceColunaAgenda,
+                                  agendamento.totalColunasAgenda
+                                )
+                              }}
+                                onClick={(evento) => {
+                                  evento.stopPropagation();
+                                  definirIdAgendamentoSelecionado(agendamento.idAgendamento);
+                                  void tentarGerarAtendimentoPorAgendamento(agendamento);
+                                }}
+                              onDoubleClick={(evento) => {
+                                evento.stopPropagation();
+                                definirIdAgendamentoSelecionado(agendamento.idAgendamento);
+                                abrirEdicaoAgendamento(agendamento);
+                              }}
+                              onContextMenu={(evento) => abrirMenuStatusAgenda(evento, agendamento)}
+                            >
+                              <strong>{agendamento.assunto || 'Sem assunto'}</strong>
+                              <small>{agendamento.horaInicio} - {agendamento.horaFim}</small>
+                              <div className="rodapeCartaoAgendamentoAgenda">
+                                {agendamento.iconeStatusVisita ? (
+                                  <span className="iconeStatusCartaoAgenda" aria-label={agendamento.nomeStatusVisita} title={agendamento.nomeStatusVisita}>
+                                    {agendamento.iconeStatusVisita}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <span className="tooltipAgendamentoAgenda" role="tooltip">
+                                {criarLinhasTooltipAgendamento(agendamento).map((linha, indiceLinha) => (
+                                  indiceLinha === 0
+                                    ? <strong key={`${agendamento.idAgendamento}-tooltip-${indiceLinha}`}>{linha}</strong>
+                                    : <span key={`${agendamento.idAgendamento}-tooltip-${indiceLinha}`}>{linha}</span>
+                                ))}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               ))}
             </div>
@@ -553,6 +739,94 @@ export function PaginaAgenda({ usuarioLogado }) {
         aoSalvar={salvarAgendamento}
         aoExcluir={excluirRegistroAgendamento}
       />
+
+      <ModalAtendimento
+        aberto={modalAtendimentoAberto}
+        atendimento={dadosIniciaisAtendimento}
+        clientes={clientes}
+        contatos={contatos}
+        usuarioLogado={usuarioLogado}
+        vendedores={vendedores}
+        ramosAtividade={ramosAtividade}
+        canaisAtendimento={canaisAtendimento}
+        origensAtendimento={origensAtendimento}
+        modo="novo"
+        permitirExcluir={false}
+        aoIncluirCliente={undefined}
+        aoFechar={fecharModalAtendimentoAgenda}
+        aoSalvar={salvarAtendimentoAgenda}
+        aoExcluir={undefined}
+      />
+
+      {confirmacaoAtendimentoAberta ? (
+        <div className="camadaConfirmacaoTela" role="presentation" onMouseDown={fecharConfirmacaoAtendimento}>
+          <div
+            className="modalConfirmacaoAgenda"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="tituloConfirmacaoAtendimentoAgenda"
+            onMouseDown={(evento) => evento.stopPropagation()}
+          >
+            <div className="cabecalhoConfirmacaoModal">
+              <h4 id="tituloConfirmacaoAtendimentoAgenda">Gerar atendimento</h4>
+            </div>
+
+            <div className="corpoConfirmacaoModal">
+              <p>Essa agenda ja terminou. Deseja abrir um atendimento com os dados dela?</p>
+            </div>
+
+            <div className="acoesConfirmacaoModal">
+              <Botao variante="secundario" type="button" onClick={fecharConfirmacaoAtendimento}>
+                Nao
+              </Botao>
+              <Botao variante="primario" type="button" onClick={confirmarGeracaoAtendimento}>
+                Sim
+              </Botao>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {menuStatusAgenda ? (
+        <div
+          className="menuContextoAgenda"
+          role="menu"
+          aria-label="Alterar status da agenda"
+          style={criarPosicaoMenuStatusAgenda(menuStatusAgenda.posicaoX, menuStatusAgenda.posicaoY)}
+          onMouseDown={(evento) => evento.stopPropagation()}
+        >
+          <div className="cabecalhoMenuContextoAgenda">
+            <strong>Status da agenda</strong>
+            <span>{menuStatusAgenda.agendamento.assunto || 'Sem assunto'}</span>
+          </div>
+
+          <div className="listaMenuContextoAgenda">
+            {statusVisita.map((status) => {
+              const estaSelecionado = String(status.idStatusVisita) === String(menuStatusAgenda.agendamento.idStatusVisita);
+
+              return (
+                <button
+                  key={status.idStatusVisita}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={estaSelecionado}
+                  className={`itemMenuContextoAgenda ${estaSelecionado ? 'ativo' : ''}`}
+                  onMouseDown={(evento) => evento.stopPropagation()}
+                  onClick={() => atualizarStatusAgendamento(menuStatusAgenda.agendamento, status.idStatusVisita)}
+                >
+                  <span className="conteudoItemMenuContextoAgenda">
+                    <span className="iconeItemMenuContextoAgenda">{status.icone || '•'}</span>
+                    <span className="descricaoItemMenuContextoAgenda">{status.descricao}</span>
+                  </span>
+                  {estaSelecionado ? (
+                    <span className="seloStatusAtualAgenda">Atual</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
       <ModalFiltros
         aberto={modalFiltrosAberto}
         titulo="Filtros da agenda"
@@ -633,6 +907,14 @@ function criarFiltrosIniciaisAgenda(usuarioLogado) {
   };
 }
 
+function normalizarCampoSelectAgendamento(valor) {
+  if (valor === null || valor === undefined || valor === '' || Number(valor) <= 0) {
+    return '';
+  }
+
+  return String(valor);
+}
+
 function obterInicioSemana(data) {
   const dataNormalizada = new Date(data);
   dataNormalizada.setHours(0, 0, 0, 0);
@@ -644,14 +926,28 @@ function obterInicioSemana(data) {
   return dataNormalizada;
 }
 
-function criarDiasSemana(inicioSemana) {
-  const rotulos = ['Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta'];
+function criarDiasSemana(inicioSemana, empresa, agendamentos) {
+  const configuracaoExpediente = obterConfiguracaoExpediente(empresa);
+  const indicesDias = [0, 1, 2, 3, 4];
+  const datasComAgendamento = new Set((agendamentos || []).map((agendamento) => agendamento.data));
+  const sabado = adicionarDias(inicioSemana, 5);
+  const domingo = adicionarDias(inicioSemana, 6);
+  const possuiSabadoNaSemana = configuracaoExpediente.trabalhaSabado || datasComAgendamento.has(formatarDataIso(sabado));
+  const possuiDomingoNaSemana = datasComAgendamento.has(formatarDataIso(domingo));
 
-  return rotulos.map((rotulo, indice) => {
+  if (possuiSabadoNaSemana) {
+    indicesDias.push(5);
+  }
+
+  if (possuiDomingoNaSemana) {
+    indicesDias.push(6);
+  }
+
+  return indicesDias.map((indice) => {
     const data = adicionarDias(inicioSemana, indice);
 
     return {
-      rotulo,
+      rotulo: obterRotuloDiaSemana(data),
       data: data.toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit'
@@ -708,6 +1004,11 @@ function adicionarDias(data, dias) {
   return novaData;
 }
 
+function obterRotuloDiaSemana(data) {
+  const rotulos = ['Domingo', 'Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado'];
+  return rotulos[data.getDay()];
+}
+
 function formatarPeriodoSemana(diasSemana) {
   const primeiroDia = diasSemana[0];
   const ultimoDia = diasSemana[diasSemana.length - 1];
@@ -732,13 +1033,36 @@ function somarMinutosHorario(horario, minutosSomados) {
 
 function calcularAlturaAgendamento(horaInicio, horaFim) {
   const duracaoMinutos = converterHorarioParaMinutos(horaFim) - converterHorarioParaMinutos(horaInicio);
-  const quantidadeIntervalos = Math.max(1, Math.ceil(duracaoMinutos / intervaloMinutos));
-  return (quantidadeIntervalos * alturaLinhaAgenda) - espacoVerticalCelulaAgenda;
+  const alturaProporcional = (Math.max(intervaloMinutos, duracaoMinutos) / intervaloMinutos) * alturaLinhaAgenda;
+  return Math.max(alturaLinhaAgenda - espacoVerticalCelulaAgenda, alturaProporcional - espacoVerticalCelulaAgenda);
+}
+
+function calcularDuracaoAgendamento(horaInicio, horaFim) {
+  return converterHorarioParaMinutos(horaFim) - converterHorarioParaMinutos(horaInicio);
+}
+
+function calcularQuantidadeCelulasAgendamento(horaInicio, horaFim) {
+  const duracaoMinutos = Math.max(intervaloMinutos, calcularDuracaoAgendamento(horaInicio, horaFim));
+  return Math.max(1, Math.ceil(duracaoMinutos / intervaloMinutos));
 }
 
 function converterHorarioParaMinutos(horario) {
   const [horas, minutos] = String(horario || '00:00').split(':').map(Number);
   return (horas * 60) + minutos;
+}
+
+function obterHorarioLinhaAgendamento(horario) {
+  const minutos = converterHorarioParaMinutos(horario);
+  return converterMinutosParaHorario(arredondarMinutosParaBaixo(minutos));
+}
+
+function calcularDeslocamentoVerticalAgendamento(horario) {
+  const minutos = converterHorarioParaMinutos(horario);
+  const minutosLinha = arredondarMinutosParaBaixo(minutos);
+  const diferencaMinutos = minutos - minutosLinha;
+  const deslocamento = (diferencaMinutos / intervaloMinutos) * alturaLinhaAgenda;
+
+  return 2 + deslocamento;
 }
 
 function arredondarMinutosParaBaixo(totalMinutos) {
@@ -788,10 +1112,12 @@ function enriquecerAgendamentos(
   tiposRecurso,
   tiposAgenda,
   statusVisita,
+  atendimentos,
   clientes,
   contatos,
   vendedores,
-  usuarios
+  usuarios,
+  usuarioLogado
 ) {
   const locaisPorId = new Map(locais.map((local) => [local.idLocal, local.descricao]));
   const tiposPorId = new Map(tiposRecurso.map((tipo) => [tipo.idTipoRecurso, tipo.descricao]));
@@ -819,29 +1145,57 @@ function enriquecerAgendamentos(
   const statusVisitaPorId = new Map(
     statusVisita.map((status) => [status.idStatusVisita, status])
   );
+  const atendimentosPorAgendamento = new Map();
+  const idUsuarioLogado = Number(usuarioLogado?.idUsuario);
 
-  return agendamentos.map((agendamento) => ({
-    ...agendamento,
-    nomeLocal: locaisPorId.get(agendamento.idLocal) || 'Nao informado',
-    nomeRecurso: recursosPorId.get(agendamento.idRecurso) || 'Nao informado',
-    nomeCliente: clientesPorId.get(agendamento.idCliente) || 'Nao informado',
-    idVendedor: clientes.find((cliente) => String(cliente.idCliente) === String(agendamento.idCliente))?.idVendedor || null,
-    nomeVendedor: vendedoresPorId.get(
-      clientes.find((cliente) => String(cliente.idCliente) === String(agendamento.idCliente))?.idVendedor
-    ) || '',
-    nomeContato: contatosPorId.get(agendamento.idContato) || '',
-    nomeUsuario: usuariosPorId.get(agendamento.idUsuario) || 'Nao informado',
-    nomesUsuarios: (Array.isArray(agendamento.idsUsuarios) ? agendamento.idsUsuarios : [])
-      .map((idUsuario) => usuariosPorId.get(idUsuario))
-      .filter(Boolean),
-    nomesRecursos: (Array.isArray(agendamento.idsRecursos) ? agendamento.idsRecursos : [])
-      .map((idRecurso) => recursosPorId.get(idRecurso))
-      .filter(Boolean),
-    nomeTipoAgenda: tiposAgendaPorId.get(agendamento.idTipoAgenda)?.descricao || agendamento.tipo || 'Nao informado',
-    corTipoAgenda: tiposAgendaPorId.get(agendamento.idTipoAgenda)?.cor || '#D9EAF7',
-    nomeStatusVisita: statusVisitaPorId.get(agendamento.idStatusVisita)?.descricao || 'Nao informado',
-    iconeStatusVisita: statusVisitaPorId.get(agendamento.idStatusVisita)?.icone || ''
-  }));
+  (atendimentos || [])
+    .filter((atendimento) => atendimento.idAgendamento)
+    .forEach((atendimento) => {
+      const chaveAgendamento = Number(atendimento.idAgendamento);
+      const listaAtual = atendimentosPorAgendamento.get(chaveAgendamento) || [];
+      listaAtual.push(atendimento);
+      atendimentosPorAgendamento.set(chaveAgendamento, listaAtual);
+    });
+
+  return agendamentos.map((agendamento) => {
+    const atendimentosVinculados = atendimentosPorAgendamento.get(Number(agendamento.idAgendamento)) || [];
+    const statusUsuarioAtual = (Array.isArray(agendamento.statusUsuarios) ? agendamento.statusUsuarios : [])
+      .find((statusUsuario) => String(statusUsuario.idUsuario) === String(idUsuarioLogado));
+    const idStatusEfetivo = statusUsuarioAtual?.idStatusVisita || agendamento.idStatusVisita;
+    const atendimentosUsuarioAtual = atendimentosVinculados.filter(
+      (atendimento) => String(atendimento.idUsuario) === String(idUsuarioLogado)
+    );
+
+    return {
+      ...agendamento,
+      idsAtendimentosVinculados: atendimentosVinculados
+        .map((atendimento) => atendimento.idAtendimento),
+      idsAtendimentosVinculadosUsuarioAtual: atendimentosUsuarioAtual
+        .map((atendimento) => atendimento.idAtendimento),
+      idAtendimentoVinculado: atendimentosVinculados[0]?.idAtendimento || null,
+      idAtendimentoVinculadoUsuarioAtual: atendimentosUsuarioAtual[0]?.idAtendimento || null,
+      nomeLocal: locaisPorId.get(agendamento.idLocal) || 'Nao informado',
+      nomeRecurso: recursosPorId.get(agendamento.idRecurso) || 'Nao informado',
+      nomeCliente: clientesPorId.get(agendamento.idCliente) || 'Nao informado',
+      idVendedor: clientes.find((cliente) => String(cliente.idCliente) === String(agendamento.idCliente))?.idVendedor || null,
+      nomeVendedor: vendedoresPorId.get(
+        clientes.find((cliente) => String(cliente.idCliente) === String(agendamento.idCliente))?.idVendedor
+      ) || '',
+      nomeContato: contatosPorId.get(agendamento.idContato) || '',
+      nomeUsuario: usuariosPorId.get(agendamento.idUsuario) || 'Nao informado',
+      nomesUsuarios: (Array.isArray(agendamento.idsUsuarios) ? agendamento.idsUsuarios : [])
+        .map((idUsuario) => usuariosPorId.get(idUsuario))
+        .filter(Boolean),
+      nomesRecursos: (Array.isArray(agendamento.idsRecursos) ? agendamento.idsRecursos : [])
+        .map((idRecurso) => recursosPorId.get(idRecurso))
+        .filter(Boolean),
+      nomeTipoAgenda: tiposAgendaPorId.get(agendamento.idTipoAgenda)?.descricao || agendamento.tipo || 'Nao informado',
+      corTipoAgenda: tiposAgendaPorId.get(agendamento.idTipoAgenda)?.cor || '#D9EAF7',
+      idStatusVisita: idStatusEfetivo,
+      nomeStatusVisita: statusVisitaPorId.get(idStatusEfetivo)?.descricao || 'Nao informado',
+      iconeStatusVisita: statusVisitaPorId.get(idStatusEfetivo)?.icone || ''
+    };
+  });
 }
 
 function criarEstiloCartaoAgenda(cor) {
@@ -1007,6 +1361,14 @@ function formatarDataTooltip(dataIso) {
 function criarLinhasTooltipAgendamento(agendamento) {
   const linhas = [agendamento.assunto || 'Sem assunto'];
 
+  if (Array.isArray(agendamento.idsAtendimentosVinculados) && agendamento.idsAtendimentosVinculados.length > 0) {
+    const codigosAtendimento = agendamento.idsAtendimentosVinculados
+      .map((idAtendimento) => `#${String(idAtendimento).padStart(4, '0')}`)
+      .join(', ');
+
+    linhas.push(`Atendimentos: ${codigosAtendimento}`);
+  }
+
   if (agendamento.data) {
     linhas.push(`Data: ${formatarDataTooltip(agendamento.data)}`);
   }
@@ -1060,6 +1422,19 @@ function criarFaixaPorHorarios(data, primeiroHorario, segundoHorario) {
     data,
     horaInicio: converterMinutosParaHorario(minutosInicio),
     horaFim: converterMinutosParaHorario(minutosFim)
+  };
+}
+
+function criarPosicaoMenuStatusAgenda(posicaoX, posicaoY) {
+  const larguraMenu = 280;
+  const alturaMaximaMenu = 360;
+  const margemTela = 16;
+  const larguraJanela = typeof window !== 'undefined' ? window.innerWidth : 1280;
+  const alturaJanela = typeof window !== 'undefined' ? window.innerHeight : 720;
+
+  return {
+    left: `${Math.min(posicaoX, larguraJanela - larguraMenu - margemTela)}px`,
+    top: `${Math.min(posicaoY, alturaJanela - alturaMaximaMenu - margemTela)}px`
   };
 }
 
@@ -1125,4 +1500,56 @@ function filtrarAgendamentos(agendamentos, filtros) {
 
     return true;
   });
+}
+
+function deveOferecerGeracaoAtendimento(agendamento, usuarioLogado) {
+  if (!agendamento?.idCliente || !usuarioLogado?.idUsuario) {
+    return false;
+  }
+
+  if (agendamento.idAtendimentoVinculadoUsuarioAtual) {
+    return false;
+  }
+
+  const idsUsuarios = Array.isArray(agendamento.idsUsuarios)
+    ? agendamento.idsUsuarios.map((idUsuario) => String(idUsuario))
+    : [];
+
+  if (!idsUsuarios.includes(String(usuarioLogado.idUsuario))) {
+    return false;
+  }
+
+  const dataHoraFimAgendamento = new Date(`${agendamento.data}T${agendamento.horaFim}:00`);
+
+  return dataHoraFimAgendamento.getTime() < Date.now();
+}
+
+function criarDescricaoAtendimentoPorAgendamento(agendamento) {
+  const linhas = [
+    'Atendimento gerado automaticamente a partir da agenda.',
+    `Data da agenda: ${formatarDataTooltip(agendamento.data)}`,
+    `Horario: ${agendamento.horaInicio} - ${agendamento.horaFim}`
+  ];
+
+  if (agendamento.nomeTipoAgenda && agendamento.nomeTipoAgenda !== 'Nao informado') {
+    linhas.push(`Tipo de agenda: ${agendamento.nomeTipoAgenda}`);
+  }
+
+  if (agendamento.nomeLocal && agendamento.nomeLocal !== 'Nao informado') {
+    linhas.push(`Local: ${agendamento.nomeLocal}`);
+  }
+
+  if (agendamento.nomeContato) {
+    linhas.push(`Contato: ${agendamento.nomeContato}`);
+  }
+
+  if (Array.isArray(agendamento.nomesUsuarios) && agendamento.nomesUsuarios.length > 0) {
+    linhas.push(`Participantes: ${agendamento.nomesUsuarios.join(', ')}`);
+  }
+
+  if (Array.isArray(agendamento.nomesRecursos) && agendamento.nomesRecursos.length > 0) {
+    linhas.push(`Recursos: ${agendamento.nomesRecursos.join(', ')}`);
+  }
+
+  return linhas.join('\n');
 }

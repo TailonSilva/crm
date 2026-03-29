@@ -106,6 +106,20 @@ const entidades = [
     camposPermitidos: ['descricao', 'icone', 'status']
   },
   {
+    nome: 'canalAtendimento',
+    rota: '/api/canaisAtendimento',
+    chavePrimaria: 'idCanalAtendimento',
+    camposObrigatorios: ['descricao'],
+    camposPermitidos: ['descricao', 'status']
+  },
+  {
+    nome: 'origemAtendimento',
+    rota: '/api/origensAtendimento',
+    chavePrimaria: 'idOrigemAtendimento',
+    camposObrigatorios: ['descricao'],
+    camposPermitidos: ['descricao', 'status']
+  },
+  {
     nome: 'metodoPagamento',
     rota: '/api/metodosPagamento',
     chavePrimaria: 'idMetodoPagamento',
@@ -261,6 +275,32 @@ const entidades = [
       'preco',
       'imagem',
       'status'
+    ]
+  },
+    {
+      nome: 'atendimento',
+      rota: '/api/atendimentos',
+      chavePrimaria: 'idAtendimento',
+    camposObrigatorios: [
+      'idCliente',
+      'idUsuario',
+      'assunto',
+      'data',
+      'horaInicio',
+      'horaFim'
+      ],
+      camposPermitidos: [
+        'idAgendamento',
+        'idCliente',
+        'idContato',
+        'idUsuario',
+        'assunto',
+      'descricao',
+      'data',
+      'horaInicio',
+      'horaFim',
+      'idCanalAtendimento',
+      'idOrigemAtendimento'
     ]
   }
 ];

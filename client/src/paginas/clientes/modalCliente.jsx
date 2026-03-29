@@ -2,9 +2,15 @@ import { useEffect, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
 import { BotaoAcaoGrade } from '../../componentes/comuns/botaoAcaoGrade';
 import { CampoImagemPadrao } from '../../componentes/comuns/campoImagemPadrao';
-import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { atualizarContato, buscarCep, buscarCnpj } from '../../servicos/clientes';
+import {
+  listarAtendimentos,
+  listarCanaisAtendimento,
+  listarOrigensAtendimento
+} from '../../servicos/atendimentos';
+import { listarUsuarios } from '../../servicos/usuarios';
 import { normalizarTelefone } from '../../utilitarios/normalizarTelefone';
+import { ModalAtendimento } from '../atendimentos/modalAtendimento';
 
 const abasModalCliente = [
   { id: 'dadosGerais', label: 'Dados gerais' },
@@ -70,7 +76,16 @@ export function ModalCliente({
   const [mensagemErro, definirMensagemErro] = useState('');
   const [buscandoCep, definirBuscandoCep] = useState(false);
   const [buscandoCnpj, definirBuscandoCnpj] = useState(false);
+  const [atendimentosCliente, definirAtendimentosCliente] = useState([]);
+  const [canaisAtendimento, definirCanaisAtendimento] = useState([]);
+  const [origensAtendimento, definirOrigensAtendimento] = useState([]);
+  const [carregandoAtendimentos, definirCarregandoAtendimentos] = useState(false);
+  const [mensagemErroAtendimentos, definirMensagemErroAtendimentos] = useState('');
+  const [atendimentoSelecionado, definirAtendimentoSelecionado] = useState(null);
+  const [modalAtendimentoAberto, definirModalAtendimentoAberto] = useState(false);
+  const [confirmandoSaida, definirConfirmandoSaida] = useState(false);
   const somenteLeitura = modo === 'consulta';
+  const modoInclusao = !cliente;
   const vendedorBloqueado = Boolean(idVendedorBloqueado);
   const tipoPessoaFisica = formulario.tipo === 'Pessoa fisica';
   const rotuloDocumento = tipoPessoaFisica ? 'CPF' : 'CNPJ';
@@ -90,7 +105,73 @@ export function ModalCliente({
     definirSalvando(false);
     definirBuscandoCep(false);
     definirBuscandoCnpj(false);
+    definirAtendimentosCliente([]);
+    definirCanaisAtendimento([]);
+    definirOrigensAtendimento([]);
+    definirCarregandoAtendimentos(false);
+    definirMensagemErroAtendimentos('');
+    definirAtendimentoSelecionado(null);
+    definirModalAtendimentoAberto(false);
+    definirConfirmandoSaida(false);
   }, [aberto, cliente, contatos, idVendedorBloqueado]);
+
+  useEffect(() => {
+    if (!aberto || !cliente?.idCliente) {
+      return;
+    }
+
+    let cancelado = false;
+
+    async function carregarAtendimentosCliente() {
+      definirCarregandoAtendimentos(true);
+      definirMensagemErroAtendimentos('');
+
+      try {
+        const [
+          atendimentosCarregados,
+          usuariosCarregados,
+          canaisCarregados,
+          origensCarregadas
+        ] = await Promise.all([
+          listarAtendimentos(),
+          listarUsuarios(),
+          listarCanaisAtendimento(),
+          listarOrigensAtendimento()
+        ]);
+
+        if (cancelado) {
+          return;
+        }
+
+        definirCanaisAtendimento(canaisCarregados);
+        definirOrigensAtendimento(origensCarregadas);
+        definirAtendimentosCliente(
+          enriquecerAtendimentosCliente(
+            atendimentosCarregados,
+            cliente.idCliente,
+            contatos,
+            usuariosCarregados,
+            canaisCarregados,
+            origensCarregadas
+          )
+        );
+      } catch (erro) {
+        if (!cancelado) {
+          definirMensagemErroAtendimentos('Nao foi possivel carregar os atendimentos deste cliente.');
+        }
+      } finally {
+        if (!cancelado) {
+          definirCarregandoAtendimentos(false);
+        }
+      }
+    }
+
+    carregarAtendimentosCliente();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [aberto, cliente?.idCliente, contatos]);
 
   useEffect(() => {
     if (!aberto) {
@@ -105,7 +186,7 @@ export function ModalCliente({
       }
 
       if (evento.key === 'Escape' && !salvando) {
-        aoFechar();
+        tentarFecharModal();
       }
     }
 
@@ -331,6 +412,16 @@ export function ModalCliente({
     definirMensagemErro('');
   }
 
+  function consultarAtendimento(atendimento) {
+    definirAtendimentoSelecionado(atendimento);
+    definirModalAtendimentoAberto(true);
+  }
+
+  function fecharModalAtendimento() {
+    definirAtendimentoSelecionado(null);
+    definirModalAtendimentoAberto(false);
+  }
+
   return (
     <div className="camadaModal" role="presentation" onMouseDown={fecharAoClicarNoFundo}>
       <form
@@ -347,7 +438,7 @@ export function ModalCliente({
           </h2>
 
           <div className="acoesCabecalhoModalCliente">
-            <Botao variante="secundario" type="button" onClick={aoFechar} disabled={salvando}>
+            <Botao variante="secundario" type="button" onClick={tentarFecharModal} disabled={salvando}>
               {somenteLeitura ? 'Fechar' : 'Cancelar'}
             </Botao>
             {!somenteLeitura ? (
@@ -373,7 +464,7 @@ export function ModalCliente({
           ))}
         </div>
 
-        <div className="corpoModalCliente">
+        <div className={`corpoModalCliente ${abaAtiva === 'atendimento' ? 'corpoModalClienteSemRolagem' : ''}`.trim()}>
           {abaAtiva === 'dadosGerais' ? (
             <section className="painelDadosGeraisCliente">
               <CampoImagemPadrao
@@ -532,8 +623,77 @@ export function ModalCliente({
           ) : null}
 
           {abaAtiva === 'atendimento' ? (
-            <section className="painelVazioModalCliente">
-              <p>Conteudo em construcao.</p>
+            <section className="painelContatosModalCliente painelAtendimentosCliente">
+              <div className="cabecalhoGradeContatosModal">
+                <div>
+                  <h3>Ultimos atendimentos</h3>
+                  <p className="subtituloGradeAtendimentoCliente">Exibindo os 30 registros mais recentes deste cliente.</p>
+                </div>
+              </div>
+
+              <div className="gradeContatosModal gradeAtendimentosCliente">
+                <table className="tabelaContatosModal tabelaAtendimentosCliente">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Assunto</th>
+                      <th>Canal</th>
+                      <th>Usuario</th>
+                      <th className="cabecalhoAcoesContato">Acoes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {carregandoAtendimentos ? (
+                      <tr>
+                        <td colSpan={5} className="mensagemTabelaContatosModal">
+                          Carregando atendimentos...
+                        </td>
+                      </tr>
+                    ) : mensagemErroAtendimentos ? (
+                      <tr>
+                        <td colSpan={5} className="mensagemTabelaContatosModal">
+                          {mensagemErroAtendimentos}
+                        </td>
+                      </tr>
+                    ) : !cliente?.idCliente ? (
+                      <tr>
+                        <td colSpan={5} className="mensagemTabelaContatosModal">
+                          Os atendimentos ficarao disponiveis apos salvar o cliente.
+                        </td>
+                      </tr>
+                    ) : atendimentosCliente.length > 0 ? (
+                      atendimentosCliente.map((atendimento) => (
+                        <tr key={atendimento.idAtendimento}>
+                          <td>{formatarDataAtendimento(atendimento.data)}</td>
+                          <td>
+                            <div className="celulaContatoModal">
+                              <strong>{atendimento.assunto}</strong>
+                              <span>{atendimento.nomeContato || atendimento.descricao || 'Sem detalhes adicionais'}</span>
+                            </div>
+                          </td>
+                          <td>{atendimento.nomeCanalAtendimento}</td>
+                          <td>{atendimento.nomeUsuario}</td>
+                          <td>
+                            <div className="acoesContatoModal">
+                              <BotaoAcaoGrade
+                                icone="consultar"
+                                titulo="Consultar atendimento"
+                                onClick={() => consultarAtendimento(atendimento)}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="mensagemTabelaContatosModal">
+                          Nenhum atendimento encontrado para este cliente.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </section>
           ) : null}
 
@@ -587,14 +747,78 @@ export function ModalCliente({
             </section>
           </div>
         ) : null}
+
+        <ModalAtendimento
+          aberto={modalAtendimentoAberto}
+          atendimento={atendimentoSelecionado}
+          clientes={cliente ? [cliente] : []}
+          contatos={contatos}
+          usuarioLogado={null}
+          canaisAtendimento={canaisAtendimento}
+          origensAtendimento={origensAtendimento}
+          modo="consulta"
+          aoFechar={fecharModalAtendimento}
+          aoSalvar={async () => {}}
+        />
+
+        {confirmandoSaida ? (
+          <div className="camadaConfirmacaoModal" role="presentation" onMouseDown={fecharConfirmacaoSaida}>
+            <div
+              className="modalConfirmacaoAgenda"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="tituloConfirmacaoSaidaCliente"
+              onMouseDown={(evento) => evento.stopPropagation()}
+            >
+              <div className="cabecalhoConfirmacaoModal">
+                <h4 id="tituloConfirmacaoSaidaCliente">Cancelar cadastro</h4>
+              </div>
+
+              <div className="corpoConfirmacaoModal">
+                <p>Se fechar agora, todas as informacoes preenchidas serao perdidas.</p>
+              </div>
+
+              <div className="acoesConfirmacaoModal">
+                <Botao variante="secundario" type="button" onClick={fecharConfirmacaoSaida} disabled={salvando}>
+                  Nao
+                </Botao>
+                <Botao variante="perigo" type="button" onClick={confirmarSaida} disabled={salvando}>
+                  Sim
+                </Botao>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </form>
     </div>
   );
 
   function fecharAoClicarNoFundo(evento) {
     if (evento.target === evento.currentTarget && !salvando) {
-      aoFechar();
+      tentarFecharModal();
     }
+  }
+
+  function tentarFecharModal() {
+    if (!somenteLeitura && modoInclusao) {
+      definirConfirmandoSaida(true);
+      return;
+    }
+
+    aoFechar();
+  }
+
+  function fecharConfirmacaoSaida() {
+    if (salvando) {
+      return;
+    }
+
+    definirConfirmandoSaida(false);
+  }
+
+  function confirmarSaida() {
+    definirConfirmandoSaida(false);
+    aoFechar();
   }
 
   function fecharModalContato() {
@@ -781,4 +1005,53 @@ function montarLinkWhatsapp(telefone) {
   const telefoneComPais = digitos.startsWith('55') ? digitos : `55${digitos}`;
 
   return `https://wa.me/${telefoneComPais}`;
+}
+
+function enriquecerAtendimentosCliente(
+  atendimentos,
+  idCliente,
+  contatos,
+  usuarios,
+  canaisAtendimento,
+  origensAtendimento
+) {
+  const contatosPorId = new Map(
+    (contatos || []).map((contato) => [contato.idContato, contato.nome])
+  );
+  const usuariosPorId = new Map(
+    (usuarios || []).map((usuario) => [usuario.idUsuario, usuario.nome])
+  );
+  const canaisPorId = new Map(
+    (canaisAtendimento || []).map((canal) => [canal.idCanalAtendimento, canal.descricao])
+  );
+  const origensPorId = new Map(
+    (origensAtendimento || []).map((origem) => [origem.idOrigemAtendimento, origem.descricao])
+  );
+
+  return (atendimentos || [])
+    .filter((atendimento) => String(atendimento.idCliente) === String(idCliente))
+    .sort(ordenarAtendimentosMaisRecentes)
+    .slice(0, 30)
+    .map((atendimento) => ({
+      ...atendimento,
+      nomeContato: contatosPorId.get(atendimento.idContato) || '',
+      nomeUsuario: usuariosPorId.get(atendimento.idUsuario) || 'Nao informado',
+      nomeCanalAtendimento: canaisPorId.get(atendimento.idCanalAtendimento) || 'Nao informado',
+      nomeOrigemAtendimento: origensPorId.get(atendimento.idOrigemAtendimento) || 'Nao informado'
+    }));
+}
+
+function ordenarAtendimentosMaisRecentes(atendimentoA, atendimentoB) {
+  const dataHoraA = `${atendimentoA.data || ''}T${atendimentoA.horaInicio || '00:00'}`;
+  const dataHoraB = `${atendimentoB.data || ''}T${atendimentoB.horaInicio || '00:00'}`;
+
+  return new Date(dataHoraB).getTime() - new Date(dataHoraA).getTime();
+}
+
+function formatarDataAtendimento(data) {
+  if (!data) {
+    return 'Nao informada';
+  }
+
+  return new Intl.DateTimeFormat('pt-BR').format(new Date(`${data}T00:00:00`));
 }

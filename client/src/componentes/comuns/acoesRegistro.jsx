@@ -4,6 +4,7 @@ export function AcoesRegistro({
   rotuloConsulta = 'Consultar registro',
   rotuloEdicao = 'Editar registro',
   rotuloInativacao = 'Inativar registro',
+  iconeInativacao = 'inativar',
   exibirConsulta = true,
   exibirEdicao = true,
   exibirInativacao = true,
@@ -20,7 +21,7 @@ export function AcoesRegistro({
         <BotaoAcaoGrade icone="editar" titulo={rotuloEdicao} onClick={aoEditar} />
       ) : null}
       {exibirInativacao ? (
-        <BotaoAcaoGrade icone="inativar" titulo={rotuloInativacao} onClick={aoInativar} />
+        <BotaoAcaoGrade icone={iconeInativacao} titulo={rotuloInativacao} onClick={aoInativar} />
       ) : null}
     </div>
   );

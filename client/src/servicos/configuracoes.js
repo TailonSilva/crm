@@ -359,3 +359,51 @@ export function atualizarStatusVisita(idStatusVisita, payload) {
     body: JSON.stringify(payload)
   });
 }
+
+export function listarCanaisAtendimentoConfiguracao() {
+  return requisitarApi('/canaisAtendimento');
+}
+
+export function incluirCanalAtendimento(payload) {
+  return requisitarApi('/canaisAtendimento', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function atualizarCanalAtendimento(idCanalAtendimento, payload) {
+  return requisitarApi(`/canaisAtendimento/${idCanalAtendimento}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function listarOrigensAtendimentoConfiguracao() {
+  return requisitarApi('/origensAtendimento');
+}
+
+export function incluirOrigemAtendimento(payload) {
+  return requisitarApi('/origensAtendimento', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function atualizarOrigemAtendimento(idOrigemAtendimento, payload) {
+  return requisitarApi(`/origensAtendimento/${idOrigemAtendimento}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}

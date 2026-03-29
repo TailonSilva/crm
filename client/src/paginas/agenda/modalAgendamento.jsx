@@ -427,6 +427,11 @@ function criarFormularioInicial(dadosIniciais, usuarioLogado) {
   return {
     ...estadoInicialFormulario,
     ...dadosIniciais,
+    idTipoAgenda: normalizarValorFormularioAgendamento(dadosIniciais?.idTipoAgenda),
+    idCliente: normalizarValorFormularioAgendamento(dadosIniciais?.idCliente),
+    idContato: normalizarValorFormularioAgendamento(dadosIniciais?.idContato),
+    idLocal: normalizarValorFormularioAgendamento(dadosIniciais?.idLocal),
+    idStatusVisita: normalizarValorFormularioAgendamento(dadosIniciais?.idStatusVisita),
     idsRecursos: Array.isArray(dadosIniciais?.idsRecursos)
       ? dadosIniciais.idsRecursos.map((idRecurso) => String(idRecurso))
       : [],
@@ -437,4 +442,12 @@ function criarFormularioInicial(dadosIniciais, usuarioLogado) {
         : [],
     idUsuario: String(dadosIniciais?.idUsuario || usuarioLogado?.idUsuario || '')
   };
+}
+
+function normalizarValorFormularioAgendamento(valor) {
+  if (valor === null || valor === undefined || valor === '' || Number(valor) <= 0) {
+    return '';
+  }
+
+  return String(valor);
 }

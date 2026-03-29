@@ -131,6 +131,23 @@ banco.serialize(() => {
   `);
 
   banco.run(`
+    CREATE TABLE IF NOT EXISTS agendamentoStatusUsuario (
+      idAgendamentoStatusUsuario INTEGER PRIMARY KEY AUTOINCREMENT,
+      idAgendamento INTEGER NOT NULL,
+      idUsuario INTEGER NOT NULL,
+      idStatusVisita INTEGER NOT NULL,
+      FOREIGN KEY (idAgendamento) REFERENCES agendamento (idAgendamento) ON DELETE CASCADE,
+      FOREIGN KEY (idUsuario) REFERENCES usuario (idUsuario),
+      FOREIGN KEY (idStatusVisita) REFERENCES statusVisita (idStatusVisita)
+    )
+  `);
+
+  banco.run(`
+    CREATE UNIQUE INDEX IF NOT EXISTS indiceAgendamentoStatusUsuarioUnico
+    ON agendamentoStatusUsuario (idAgendamento, idUsuario)
+  `);
+
+  banco.run(`
     CREATE TABLE IF NOT EXISTS tipoAgenda (
       idTipoAgenda INTEGER PRIMARY KEY AUTOINCREMENT,
       descricao VARCHAR(100) NOT NULL,
@@ -415,6 +432,22 @@ banco.serialize(() => {
   `);
 
   banco.run(`
+    CREATE TABLE IF NOT EXISTS canalAtendimento (
+      idCanalAtendimento INTEGER PRIMARY KEY AUTOINCREMENT,
+      descricao VARCHAR(100) NOT NULL,
+      status BOOLEAN NOT NULL DEFAULT 1
+    )
+  `);
+
+  banco.run(`
+    CREATE TABLE IF NOT EXISTS origemAtendimento (
+      idOrigemAtendimento INTEGER PRIMARY KEY AUTOINCREMENT,
+      descricao VARCHAR(100) NOT NULL,
+      status BOOLEAN NOT NULL DEFAULT 1
+    )
+  `);
+
+  banco.run(`
     ALTER TABLE statusVisita ADD COLUMN icone VARCHAR(10)
   `, (erro) => {
     if (erro && !String(erro.message || '').includes('duplicate column name')) {
@@ -638,6 +671,160 @@ banco.serialize(() => {
   `);
 
   banco.run(`
+    CREATE TABLE IF NOT EXISTS atendimento (
+      idAtendimento INTEGER PRIMARY KEY AUTOINCREMENT,
+      idAgendamento INTEGER,
+      idCliente INTEGER NOT NULL,
+      idContato INTEGER,
+      idUsuario INTEGER NOT NULL,
+      assunto VARCHAR(150) NOT NULL,
+      descricao TEXT,
+      data DATETIME NOT NULL,
+      horaInicio VARCHAR(5) NOT NULL,
+      horaFim VARCHAR(5) NOT NULL,
+      idCanalAtendimento INTEGER,
+      idOrigemAtendimento INTEGER,
+      status BOOLEAN NOT NULL DEFAULT 1,
+      dataCriacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (idAgendamento) REFERENCES agendamento (idAgendamento),
+      FOREIGN KEY (idCliente) REFERENCES cliente (idCliente),
+      FOREIGN KEY (idContato) REFERENCES contato (idContato),
+      FOREIGN KEY (idUsuario) REFERENCES usuario (idUsuario),
+      FOREIGN KEY (idCanalAtendimento) REFERENCES canalAtendimento (idCanalAtendimento),
+      FOREIGN KEY (idOrigemAtendimento) REFERENCES origemAtendimento (idOrigemAtendimento)
+    )
+  `);
+
+  banco.all(
+    'PRAGMA table_info(atendimento)',
+    (erro, colunasAtendimento) => {
+      if (erro || !Array.isArray(colunasAtendimento) || colunasAtendimento.length === 0) {
+        if (erro) {
+          console.error('Nao foi possivel consultar a estrutura da tabela atendimento.', erro);
+        }
+        return;
+      }
+
+      const possuiIdUsuario = colunasAtendimento.some((coluna) => coluna.name === 'idUsuario');
+      const possuiIdVendedor = colunasAtendimento.some((coluna) => coluna.name === 'idVendedor');
+
+      if (possuiIdUsuario && !possuiIdVendedor) {
+        return;
+      }
+
+      const expressaoIdUsuario = possuiIdUsuario
+        ? `COALESCE(
+            atendimento.idUsuario,
+            (
+              SELECT usuario.idUsuario
+              FROM usuario
+              WHERE usuario.idVendedor = atendimento.idVendedor
+              ORDER BY usuario.idUsuario
+              LIMIT 1
+            ),
+            1
+          )`
+        : `COALESCE(
+            (
+              SELECT usuario.idUsuario
+              FROM usuario
+              WHERE usuario.idVendedor = atendimento.idVendedor
+              ORDER BY usuario.idUsuario
+              LIMIT 1
+            ),
+            1
+          )`;
+
+      banco.serialize(() => {
+        banco.run('PRAGMA foreign_keys = OFF');
+        banco.run('DROP TABLE IF EXISTS atendimento_temp');
+        banco.run(`
+          CREATE TABLE atendimento_temp (
+            idAtendimento INTEGER PRIMARY KEY AUTOINCREMENT,
+            idAgendamento INTEGER,
+            idCliente INTEGER NOT NULL,
+            idContato INTEGER,
+            idUsuario INTEGER NOT NULL,
+            assunto VARCHAR(150) NOT NULL,
+            descricao TEXT,
+            data DATETIME NOT NULL,
+            horaInicio VARCHAR(5) NOT NULL,
+            horaFim VARCHAR(5) NOT NULL,
+            idCanalAtendimento INTEGER,
+            idOrigemAtendimento INTEGER,
+            status BOOLEAN NOT NULL DEFAULT 1,
+            dataCriacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (idAgendamento) REFERENCES agendamento (idAgendamento),
+            FOREIGN KEY (idCliente) REFERENCES cliente (idCliente),
+            FOREIGN KEY (idContato) REFERENCES contato (idContato),
+            FOREIGN KEY (idUsuario) REFERENCES usuario (idUsuario),
+            FOREIGN KEY (idCanalAtendimento) REFERENCES canalAtendimento (idCanalAtendimento),
+            FOREIGN KEY (idOrigemAtendimento) REFERENCES origemAtendimento (idOrigemAtendimento)
+          )
+        `);
+        banco.run(`
+          INSERT INTO atendimento_temp (
+            idAtendimento,
+            idAgendamento,
+            idCliente,
+            idContato,
+            idUsuario,
+            assunto,
+            descricao,
+            data,
+            horaInicio,
+            horaFim,
+            idCanalAtendimento,
+            idOrigemAtendimento,
+            status,
+            dataCriacao
+          )
+          SELECT
+            atendimento.idAtendimento,
+            NULL,
+            atendimento.idCliente,
+            atendimento.idContato,
+            ${expressaoIdUsuario},
+            atendimento.assunto,
+            atendimento.descricao,
+            atendimento.data,
+            atendimento.horaInicio,
+            atendimento.horaFim,
+            atendimento.idCanalAtendimento,
+            atendimento.idOrigemAtendimento,
+            atendimento.status,
+            atendimento.dataCriacao
+          FROM atendimento
+        `);
+        banco.run('DROP TABLE atendimento');
+        banco.run('ALTER TABLE atendimento_temp RENAME TO atendimento');
+        banco.run('PRAGMA foreign_keys = ON');
+      });
+    }
+  );
+
+  banco.run(`
+    ALTER TABLE atendimento ADD COLUMN idAgendamento INTEGER
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna idAgendamento do atendimento.', erro);
+    }
+  });
+
+  banco.run(`
+    INSERT OR IGNORE INTO agendamentoStatusUsuario (idAgendamento, idUsuario, idStatusVisita)
+    SELECT
+      agendamentoUsuario.idAgendamento,
+      agendamentoUsuario.idUsuario,
+      COALESCE(agendamento.idStatusVisita, 1)
+    FROM agendamentoUsuario
+    INNER JOIN agendamento
+      ON agendamento.idAgendamento = agendamentoUsuario.idAgendamento
+    WHERE agendamentoUsuario.idUsuario IS NOT NULL
+      AND COALESCE(agendamento.idStatusVisita, 0) > 0
+  `);
+
+  banco.run(`
     CREATE TABLE IF NOT EXISTS produto (
       idProduto INTEGER PRIMARY KEY AUTOINCREMENT,
       referencia VARCHAR(100) NOT NULL,
@@ -772,6 +959,38 @@ banco.serialize(() => {
         banco.run(
           'INSERT INTO statusVisita (descricao, icone, status) VALUES (?, ?, ?)',
           [status.descricao, status.icone, 1]
+        );
+      });
+    }
+  );
+
+  banco.get(
+    'SELECT COUNT(*) AS total FROM canalAtendimento',
+    (_erroConsulta, resultado) => {
+      if ((resultado?.total || 0) > 0) {
+        return;
+      }
+
+      ['Telefone', 'WhatsApp', 'E-mail', 'Presencial'].forEach((descricao) => {
+        banco.run(
+          'INSERT INTO canalAtendimento (descricao, status) VALUES (?, ?)',
+          [descricao, 1]
+        );
+      });
+    }
+  );
+
+  banco.get(
+    'SELECT COUNT(*) AS total FROM origemAtendimento',
+    (_erroConsulta, resultado) => {
+      if ((resultado?.total || 0) > 0) {
+        return;
+      }
+
+      ['Cliente', 'Empresa'].forEach((descricao) => {
+        banco.run(
+          'INSERT INTO origemAtendimento (descricao, status) VALUES (?, ?)',
+          [descricao, 1]
         );
       });
     }

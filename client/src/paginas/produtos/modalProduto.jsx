@@ -39,7 +39,9 @@ export function ModalProduto({
   const [abaAtiva, definirAbaAtiva] = useState(abasModalProduto[0].id);
   const [salvando, definirSalvando] = useState(false);
   const [mensagemErro, definirMensagemErro] = useState('');
+  const [confirmandoSaida, definirConfirmandoSaida] = useState(false);
   const somenteLeitura = modo === 'consulta';
+  const modoInclusao = !produto;
 
   useEffect(() => {
     if (!aberto) {
@@ -50,6 +52,7 @@ export function ModalProduto({
     definirAbaAtiva(abasModalProduto[0].id);
     definirSalvando(false);
     definirMensagemErro('');
+    definirConfirmandoSaida(false);
   }, [aberto, produto]);
 
   useEffect(() => {
@@ -59,7 +62,7 @@ export function ModalProduto({
 
     function tratarTecla(evento) {
       if (evento.key === 'Escape' && !salvando) {
-        aoFechar();
+        tentarFecharModal();
       }
     }
 
@@ -138,8 +141,30 @@ export function ModalProduto({
 
   function fecharAoClicarNoFundo(evento) {
     if (evento.target === evento.currentTarget && !salvando) {
-      aoFechar();
+      tentarFecharModal();
     }
+  }
+
+  function tentarFecharModal() {
+    if (!somenteLeitura && modoInclusao) {
+      definirConfirmandoSaida(true);
+      return;
+    }
+
+    aoFechar();
+  }
+
+  function fecharConfirmacaoSaida() {
+    if (salvando) {
+      return;
+    }
+
+    definirConfirmandoSaida(false);
+  }
+
+  function confirmarSaida() {
+    definirConfirmandoSaida(false);
+    aoFechar();
   }
 
   return (
@@ -158,7 +183,7 @@ export function ModalProduto({
           </h2>
 
           <div className="acoesCabecalhoModalCliente">
-            <Botao variante="secundario" type="button" onClick={aoFechar} disabled={salvando}>
+            <Botao variante="secundario" type="button" onClick={tentarFecharModal} disabled={salvando}>
               {somenteLeitura ? 'Fechar' : 'Cancelar'}
             </Botao>
             {!somenteLeitura ? (
@@ -286,6 +311,35 @@ export function ModalProduto({
         </div>
 
         {mensagemErro ? <p className="mensagemErroFormulario">{mensagemErro}</p> : null}
+
+        {confirmandoSaida ? (
+          <div className="camadaConfirmacaoModal" role="presentation" onMouseDown={fecharConfirmacaoSaida}>
+            <div
+              className="modalConfirmacaoAgenda"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="tituloConfirmacaoSaidaProduto"
+              onMouseDown={(evento) => evento.stopPropagation()}
+            >
+              <div className="cabecalhoConfirmacaoModal">
+                <h4 id="tituloConfirmacaoSaidaProduto">Cancelar cadastro</h4>
+              </div>
+
+              <div className="corpoConfirmacaoModal">
+                <p>Se fechar agora, todas as informacoes preenchidas serao perdidas.</p>
+              </div>
+
+              <div className="acoesConfirmacaoModal">
+                <Botao variante="secundario" type="button" onClick={fecharConfirmacaoSaida} disabled={salvando}>
+                  Nao
+                </Botao>
+                <Botao variante="perigo" type="button" onClick={confirmarSaida} disabled={salvando}>
+                  Sim
+                </Botao>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </form>
     </div>
   );

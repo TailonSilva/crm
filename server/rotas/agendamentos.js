@@ -17,7 +17,12 @@ rotaAgendamentos.get('/', async (_requisicao, resposta) => {
           SELECT GROUP_CONCAT(agendamentoUsuario.idUsuario)
           FROM agendamentoUsuario
           WHERE agendamentoUsuario.idAgendamento = agendamento.idAgendamento
-        ) AS idsUsuarios
+        ) AS idsUsuarios,
+        (
+          SELECT GROUP_CONCAT(agendamentoStatusUsuario.idUsuario || ':' || agendamentoStatusUsuario.idStatusVisita, '|')
+          FROM agendamentoStatusUsuario
+          WHERE agendamentoStatusUsuario.idAgendamento = agendamento.idAgendamento
+        ) AS statusUsuarios
       FROM agendamento
       ORDER BY agendamento.idAgendamento DESC
     `);
@@ -42,7 +47,12 @@ rotaAgendamentos.get('/:id', async (requisicao, resposta) => {
           SELECT GROUP_CONCAT(agendamentoUsuario.idUsuario)
           FROM agendamentoUsuario
           WHERE agendamentoUsuario.idAgendamento = agendamento.idAgendamento
-        ) AS idsUsuarios
+        ) AS idsUsuarios,
+        (
+          SELECT GROUP_CONCAT(agendamentoStatusUsuario.idUsuario || ':' || agendamentoStatusUsuario.idStatusVisita, '|')
+          FROM agendamentoStatusUsuario
+          WHERE agendamentoStatusUsuario.idAgendamento = agendamento.idAgendamento
+        ) AS statusUsuarios
       FROM agendamento
       WHERE agendamento.idAgendamento = ?
     `, [requisicao.params.id]);
@@ -106,6 +116,7 @@ rotaAgendamentos.post('/', async (requisicao, resposta) => {
 
     await salvarRecursosAgendamento(resultado.id, payload.idsRecursos);
     await salvarUsuariosAgendamento(resultado.id, payload.idsUsuarios);
+    await sincronizarStatusUsuariosAgendamento(resultado.id, payload.idsUsuarios, payload.idStatusVisita);
 
     const registro = await consultarUm(`
       SELECT
@@ -119,7 +130,12 @@ rotaAgendamentos.post('/', async (requisicao, resposta) => {
           SELECT GROUP_CONCAT(agendamentoUsuario.idUsuario)
           FROM agendamentoUsuario
           WHERE agendamentoUsuario.idAgendamento = agendamento.idAgendamento
-        ) AS idsUsuarios
+        ) AS idsUsuarios,
+        (
+          SELECT GROUP_CONCAT(agendamentoStatusUsuario.idUsuario || ':' || agendamentoStatusUsuario.idStatusVisita, '|')
+          FROM agendamentoStatusUsuario
+          WHERE agendamentoStatusUsuario.idAgendamento = agendamento.idAgendamento
+        ) AS statusUsuarios
       FROM agendamento
       WHERE agendamento.idAgendamento = ?
     `, [resultado.id]);
@@ -200,6 +216,7 @@ rotaAgendamentos.put('/:id', async (requisicao, resposta) => {
     );
     await salvarRecursosAgendamento(Number(requisicao.params.id), payload.idsRecursos);
     await salvarUsuariosAgendamento(Number(requisicao.params.id), payload.idsUsuarios);
+    await sincronizarStatusUsuariosAgendamento(Number(requisicao.params.id), payload.idsUsuarios, payload.idStatusVisita);
 
     const registro = await consultarUm(`
       SELECT
@@ -213,7 +230,12 @@ rotaAgendamentos.put('/:id', async (requisicao, resposta) => {
           SELECT GROUP_CONCAT(agendamentoUsuario.idUsuario)
           FROM agendamentoUsuario
           WHERE agendamentoUsuario.idAgendamento = agendamento.idAgendamento
-        ) AS idsUsuarios
+        ) AS idsUsuarios,
+        (
+          SELECT GROUP_CONCAT(agendamentoStatusUsuario.idUsuario || ':' || agendamentoStatusUsuario.idStatusVisita, '|')
+          FROM agendamentoStatusUsuario
+          WHERE agendamentoStatusUsuario.idAgendamento = agendamento.idAgendamento
+        ) AS statusUsuarios
       FROM agendamento
       WHERE agendamento.idAgendamento = ?
     `, [Number(requisicao.params.id)]);
@@ -245,6 +267,10 @@ rotaAgendamentos.delete('/:id', async (requisicao, resposta) => {
       [Number(requisicao.params.id)]
     );
     await executar(
+      'DELETE FROM agendamentoStatusUsuario WHERE idAgendamento = ?',
+      [Number(requisicao.params.id)]
+    );
+    await executar(
       'DELETE FROM agendamento WHERE idAgendamento = ?',
       [Number(requisicao.params.id)]
     );
@@ -252,6 +278,73 @@ rotaAgendamentos.delete('/:id', async (requisicao, resposta) => {
     resposta.status(204).send();
   } catch (_erro) {
     resposta.status(500).json({ mensagem: 'Ocorreu um erro ao processar a requisicao.' });
+  }
+});
+
+rotaAgendamentos.put('/:id/status-usuario', async (requisicao, resposta) => {
+  try {
+    const idAgendamento = Number(requisicao.params.id);
+    const idUsuario = Number(requisicao.body?.idUsuario);
+    const idStatusVisita = Number(requisicao.body?.idStatusVisita);
+
+    if (!idAgendamento || !idUsuario || !idStatusVisita) {
+      resposta.status(400).json({ mensagem: 'Dados obrigatorios nao informados.' });
+      return;
+    }
+
+    const agendamento = await consultarUm(
+      'SELECT * FROM agendamento WHERE idAgendamento = ?',
+      [idAgendamento]
+    );
+
+    if (!agendamento) {
+      resposta.status(404).json({ mensagem: 'Registro nao encontrado.' });
+      return;
+    }
+
+    const participante = await consultarUm(
+      'SELECT * FROM agendamentoUsuario WHERE idAgendamento = ? AND idUsuario = ?',
+      [idAgendamento, idUsuario]
+    );
+
+    if (!participante) {
+      resposta.status(400).json({ mensagem: 'O usuario informado nao participa desta agenda.' });
+      return;
+    }
+
+    await executar(
+      `INSERT INTO agendamentoStatusUsuario (idAgendamento, idUsuario, idStatusVisita)
+       VALUES (?, ?, ?)
+       ON CONFLICT(idAgendamento, idUsuario)
+       DO UPDATE SET idStatusVisita = excluded.idStatusVisita`,
+      [idAgendamento, idUsuario, idStatusVisita]
+    );
+
+    const registro = await consultarUm(`
+      SELECT
+        agendamento.*,
+        (
+          SELECT GROUP_CONCAT(agendamentoRecurso.idRecurso)
+          FROM agendamentoRecurso
+          WHERE agendamentoRecurso.idAgendamento = agendamento.idAgendamento
+        ) AS idsRecursos,
+        (
+          SELECT GROUP_CONCAT(agendamentoUsuario.idUsuario)
+          FROM agendamentoUsuario
+          WHERE agendamentoUsuario.idAgendamento = agendamento.idAgendamento
+        ) AS idsUsuarios,
+        (
+          SELECT GROUP_CONCAT(agendamentoStatusUsuario.idUsuario || ':' || agendamentoStatusUsuario.idStatusVisita, '|')
+          FROM agendamentoStatusUsuario
+          WHERE agendamentoStatusUsuario.idAgendamento = agendamento.idAgendamento
+        ) AS statusUsuarios
+      FROM agendamento
+      WHERE agendamento.idAgendamento = ?
+    `, [idAgendamento]);
+
+    resposta.json(normalizarAgendamentoRetornado(registro));
+  } catch (_erro) {
+    resposta.status(500).json({ mensagem: 'Nao foi possivel atualizar o status da agenda.' });
   }
 });
 
@@ -269,6 +362,35 @@ async function salvarUsuariosAgendamento(idAgendamento, idsUsuarios) {
     await executar(
       'INSERT INTO agendamentoUsuario (idAgendamento, idUsuario) VALUES (?, ?)',
       [idAgendamento, idUsuario]
+    );
+  }
+}
+
+async function sincronizarStatusUsuariosAgendamento(idAgendamento, idsUsuarios, idStatusVisitaPadrao) {
+  const idsUsuariosAtuais = Array.isArray(idsUsuarios) ? idsUsuarios : [];
+  const registrosExistentes = await consultarTodos(
+    'SELECT * FROM agendamentoStatusUsuario WHERE idAgendamento = ?',
+    [idAgendamento]
+  );
+  const idsExistentes = new Set(registrosExistentes.map((registro) => Number(registro.idUsuario)));
+
+  for (const registro of registrosExistentes) {
+    if (!idsUsuariosAtuais.includes(Number(registro.idUsuario))) {
+      await executar(
+        'DELETE FROM agendamentoStatusUsuario WHERE idAgendamento = ? AND idUsuario = ?',
+        [idAgendamento, Number(registro.idUsuario)]
+      );
+    }
+  }
+
+  for (const idUsuario of idsUsuariosAtuais) {
+    if (idsExistentes.has(Number(idUsuario))) {
+      continue;
+    }
+
+    await executar(
+      'INSERT INTO agendamentoStatusUsuario (idAgendamento, idUsuario, idStatusVisita) VALUES (?, ?, ?)',
+      [idAgendamento, Number(idUsuario), Number(idStatusVisitaPadrao)]
     );
   }
 }
@@ -387,8 +509,28 @@ function normalizarAgendamentoRetornado(registro) {
   return {
     ...registro,
     idsRecursos,
-    idsUsuarios
+    idsUsuarios,
+    statusUsuarios: normalizarStatusUsuarios(registro.statusUsuarios)
   };
+}
+
+function normalizarStatusUsuarios(statusUsuarios) {
+  if (!statusUsuarios) {
+    return [];
+  }
+
+  return String(statusUsuarios)
+    .split('|')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const [idUsuario, idStatusVisita] = item.split(':');
+      return {
+        idUsuario: Number(idUsuario),
+        idStatusVisita: Number(idStatusVisita)
+      };
+    })
+    .filter((item) => Number.isInteger(item.idUsuario) && item.idUsuario > 0 && Number.isInteger(item.idStatusVisita) && item.idStatusVisita > 0);
 }
 
 module.exports = {

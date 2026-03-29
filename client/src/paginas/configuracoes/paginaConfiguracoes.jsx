@@ -5,10 +5,12 @@ import {
   atualizarEtapaPedido,
   atualizarEtapaOrcamento,
   atualizarGrupoProduto,
+  atualizarCanalAtendimento,
   atualizarLocalAgenda,
   atualizarMarca,
   atualizarMetodoPagamento,
   atualizarMotivoPerda,
+  atualizarOrigemAtendimento,
   atualizarPrazoPagamento,
   atualizarRecurso,
   atualizarRamoAtividade,
@@ -20,10 +22,12 @@ import {
   incluirEtapaPedido,
   incluirEtapaOrcamento,
   incluirGrupoProduto,
+  incluirCanalAtendimento,
   incluirLocalAgenda,
   incluirMarca,
   incluirMetodoPagamento,
   incluirMotivoPerda,
+  incluirOrigemAtendimento,
   incluirPrazoPagamento,
   incluirRecurso,
   incluirRamoAtividade,
@@ -35,10 +39,12 @@ import {
   listarEtapasPedidoConfiguracao,
   listarEtapasOrcamentoConfiguracao,
   listarGruposProdutoConfiguracao,
+  listarCanaisAtendimentoConfiguracao,
   listarLocaisAgendaConfiguracao,
   listarMarcasConfiguracao,
   listarMetodosPagamentoConfiguracao,
   listarMotivosPerdaConfiguracao,
+  listarOrigensAtendimentoConfiguracao,
   listarPrazosPagamentoConfiguracao,
   listarRecursosConfiguracao,
   listarRamosAtividadeConfiguracao,
@@ -118,6 +124,16 @@ const atalhosConfiguracao = [
     icone: 'orcamento'
   },
   {
+    id: 'canaisAtendimento',
+    titulo: 'Canais de atendimento',
+    icone: 'mensagem'
+  },
+  {
+    id: 'origensAtendimento',
+    titulo: 'Origens de atendimento',
+    icone: 'empresa'
+  },
+  {
     id: 'statusVisita',
     titulo: 'Status da visita',
     icone: 'cadastro'
@@ -168,6 +184,8 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
   const [tiposRecurso, definirTiposRecurso] = useState([]);
   const [recursos, definirRecursos] = useState([]);
   const [tiposAgenda, definirTiposAgenda] = useState([]);
+  const [canaisAtendimento, definirCanaisAtendimento] = useState([]);
+  const [origensAtendimento, definirOrigensAtendimento] = useState([]);
   const [statusVisita, definirStatusVisita] = useState([]);
   const [motivosPerda, definirMotivosPerda] = useState([]);
   const [etapasPedido, definirEtapasPedido] = useState([]);
@@ -234,6 +252,8 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
       listarTiposRecursoConfiguracao(),
       listarRecursosConfiguracao(),
       listarTiposAgendaConfiguracao(),
+      listarCanaisAtendimentoConfiguracao(),
+      listarOrigensAtendimentoConfiguracao(),
       listarStatusVisitaConfiguracao(),
       listarMotivosPerdaConfiguracao(),
       listarEtapasPedidoConfiguracao(),
@@ -251,10 +271,12 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     definirTiposRecurso(obterResultadoLista(resultados[8]));
     definirRecursos(obterResultadoLista(resultados[9]));
     definirTiposAgenda(obterResultadoLista(resultados[10]));
-    definirStatusVisita(obterResultadoLista(resultados[11]));
-    definirMotivosPerda(obterResultadoLista(resultados[12]));
-    definirEtapasPedido(obterResultadoLista(resultados[13]));
-    definirEtapasOrcamento(obterResultadoLista(resultados[14]));
+    definirCanaisAtendimento(obterResultadoLista(resultados[11]));
+    definirOrigensAtendimento(obterResultadoLista(resultados[12]));
+    definirStatusVisita(obterResultadoLista(resultados[13]));
+    definirMotivosPerda(obterResultadoLista(resultados[14]));
+    definirEtapasPedido(obterResultadoLista(resultados[15]));
+    definirEtapasOrcamento(obterResultadoLista(resultados[16]));
   }
 
   async function salvarUsuario(dadosUsuario) {
@@ -474,6 +496,36 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     await carregarCadastrosConfiguracao();
   }
 
+  async function salvarCanalAtendimento(dadosCanalAtendimento) {
+    const payload = {
+      descricao: dadosCanalAtendimento.descricao.trim(),
+      status: dadosCanalAtendimento.status ? 1 : 0
+    };
+
+    if (dadosCanalAtendimento.idCanalAtendimento) {
+      await atualizarCanalAtendimento(dadosCanalAtendimento.idCanalAtendimento, payload);
+    } else {
+      await incluirCanalAtendimento(payload);
+    }
+
+    await carregarCadastrosConfiguracao();
+  }
+
+  async function salvarOrigemAtendimento(dadosOrigemAtendimento) {
+    const payload = {
+      descricao: dadosOrigemAtendimento.descricao.trim(),
+      status: dadosOrigemAtendimento.status ? 1 : 0
+    };
+
+    if (dadosOrigemAtendimento.idOrigemAtendimento) {
+      await atualizarOrigemAtendimento(dadosOrigemAtendimento.idOrigemAtendimento, payload);
+    } else {
+      await incluirOrigemAtendimento(payload);
+    }
+
+    await carregarCadastrosConfiguracao();
+  }
+
   async function salvarEtapaPedido(dadosEtapa) {
     const payload = {
       abreviacao: dadosEtapa.abreviacao.trim(),
@@ -573,6 +625,16 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     await carregarCadastrosConfiguracao();
   }
 
+  async function inativarCanalAtendimento(registro) {
+    await atualizarCanalAtendimento(registro.idCanalAtendimento, { status: 0 });
+    await carregarCadastrosConfiguracao();
+  }
+
+  async function inativarOrigemAtendimento(registro) {
+    await atualizarOrigemAtendimento(registro.idOrigemAtendimento, { status: 0 });
+    await carregarCadastrosConfiguracao();
+  }
+
   async function inativarEtapaPedido(registro) {
     await atualizarEtapaPedido(registro.idEtapa, { status: 0 });
     await carregarCadastrosConfiguracao();
@@ -610,6 +672,8 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
       'prazosPagamento',
       'recursos',
       'ramosAtividade',
+      'canaisAtendimento',
+      'origensAtendimento',
       'statusVisita',
       'tiposAgenda',
       'tiposRecurso',
@@ -899,6 +963,42 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         aoFechar={fecharCadastroConfiguracao}
         aoSalvar={salvarTipoAgenda}
         aoInativar={inativarTipoAgenda}
+      />
+      <ModalCadastroConfiguracao
+        aberto={cadastroConfiguracaoAberto === 'canaisAtendimento'}
+        titulo="Canais de atendimento"
+        rotuloIncluir="Incluir canal"
+        registros={canaisAtendimento}
+        chavePrimaria="idCanalAtendimento"
+        somenteConsulta={usuarioSomenteConsulta}
+        colunas={[
+          { key: 'descricao', label: 'Descricao' }
+        ]}
+        camposFormulario={[
+          { name: 'descricao', label: 'Descricao', required: true },
+          { name: 'status', label: 'Registro ativo', type: 'checkbox', defaultValue: true }
+        ]}
+        aoFechar={fecharCadastroConfiguracao}
+        aoSalvar={salvarCanalAtendimento}
+        aoInativar={inativarCanalAtendimento}
+      />
+      <ModalCadastroConfiguracao
+        aberto={cadastroConfiguracaoAberto === 'origensAtendimento'}
+        titulo="Origens de atendimento"
+        rotuloIncluir="Incluir origem"
+        registros={origensAtendimento}
+        chavePrimaria="idOrigemAtendimento"
+        somenteConsulta={usuarioSomenteConsulta}
+        colunas={[
+          { key: 'descricao', label: 'Descricao' }
+        ]}
+        camposFormulario={[
+          { name: 'descricao', label: 'Descricao', required: true },
+          { name: 'status', label: 'Registro ativo', type: 'checkbox', defaultValue: true }
+        ]}
+        aoFechar={fecharCadastroConfiguracao}
+        aoSalvar={salvarOrigemAtendimento}
+        aoInativar={inativarOrigemAtendimento}
       />
       <ModalCadastroConfiguracao
         aberto={cadastroConfiguracaoAberto === 'statusVisita'}

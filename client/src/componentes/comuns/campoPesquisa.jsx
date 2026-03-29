@@ -1,15 +1,17 @@
+import { forwardRef } from 'react';
 import { Icone } from './icone';
 
-export function CampoPesquisa({
+export const CampoPesquisa = forwardRef(function CampoPesquisa({
   valor,
   aoAlterar,
   placeholder = 'Pesquisar...',
   ariaLabel = 'Pesquisar'
-}) {
+}, ref) {
   return (
     <label className="campoPesquisa">
       <Icone nome="pesquisa" className="iconeCampoPesquisa" />
       <input
+        ref={ref}
         className="entradaCampoPesquisa"
         type="search"
         value={valor}
@@ -19,4 +21,4 @@ export function CampoPesquisa({
       />
     </label>
   );
-}
+});

@@ -464,6 +464,92 @@ body {
   color: var(--corTextoSuave);
 }
 
+.pilhaPopupAvisos {
+  position: fixed;
+  top: 22px;
+  right: 22px;
+  z-index: 60;
+  display: grid;
+  gap: 12px;
+  width: min(360px, calc(100vw - 32px));
+}
+
+.cartaoPopupAviso {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(23, 145, 226, 0.16);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(91, 189, 245, 0.16), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 249, 253, 0.98) 100%);
+  box-shadow: 0 20px 36px rgba(20, 52, 77, 0.16);
+  backdrop-filter: blur(10px);
+}
+
+.cabecalhoPopupAviso {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tituloPopupAviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.seloPopupAviso {
+  display: grid;
+  place-items: center;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 10px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(23, 145, 226, 0.16), rgba(13, 120, 200, 0.24));
+  color: var(--corPrimariaForte);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.tituloPopupAviso strong,
+.tituloPopupAviso small {
+  display: block;
+}
+
+.tituloPopupAviso strong {
+  color: var(--corTexto);
+  line-height: 1.25;
+}
+
+.tituloPopupAviso small {
+  margin-top: 3px;
+  color: var(--corTextoSuave);
+  font-size: 0.78rem;
+}
+
+.conteudoPopupAviso {
+  display: grid;
+  gap: 4px;
+}
+
+.conteudoPopupAviso p,
+.conteudoPopupAviso span {
+  margin: 0;
+}
+
+.conteudoPopupAviso p {
+  color: var(--corTexto);
+  font-weight: 600;
+}
+
+.conteudoPopupAviso span {
+  color: var(--corTextoSuave);
+  font-size: 0.84rem;
+}
+
 .campoBusca {
   width: 220px;
   height: 30px;
@@ -511,7 +597,7 @@ body {
   border-radius: 24px;
   background: linear-gradient(180deg, rgba(249, 252, 254, 0.98) 0%, #ffffff 100%);
   box-shadow: 0 18px 34px rgba(32, 76, 109, 0.08);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .cabecalhoAgendaSemana {
@@ -535,15 +621,14 @@ body {
 }
 
 .agendaSemanal {
-  overflow: auto;
+  overflow: visible;
   user-select: none;
   -webkit-user-select: none;
 }
 
 .cabecalhoAgendaGrade,
-.linhaAgenda {
+.linhaAgendaConteudo {
   display: grid;
-  grid-template-columns: 52px repeat(5, minmax(180px, 1fr));
 }
 
 .cabecalhoAgendaGrade {
@@ -571,16 +656,23 @@ body {
 .cabecalhoDiaAgenda {
   display: grid;
   gap: 2px;
+  min-width: 0;
 }
 
 .cabecalhoDiaAgenda strong {
   font-size: 0.92rem;
   color: var(--corTexto);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cabecalhoDiaAgenda span {
   font-size: 0.8rem;
   color: var(--corTextoSuave);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .colunaHorarioAgenda {
@@ -610,6 +702,14 @@ body {
 .linhaAgendaEspaco .celulaAgendaEspaco {
   min-height: 11px;
   background: transparent;
+}
+
+.linhaAgenda {
+  width: 100%;
+}
+
+.linhaAgendaConteudo {
+  width: 100%;
 }
 
 .linhaAgendaEspaco .colunaHorarioAgendaEspaco {
@@ -658,7 +758,7 @@ body {
 
 .cartaoAgendamentoAgenda {
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 2px;
   width: calc(100% - 8px);
   padding: 3px 6px;
@@ -696,13 +796,43 @@ body {
   word-break: break-word;
   overflow-wrap: anywhere;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  max-width: calc(100% - 16px);
 }
 
 .cartaoAgendamentoAgenda small {
   font-size: 0.64rem;
   white-space: nowrap;
+  max-width: calc(100% - 16px);
+}
+
+.cartaoAgendamentoAgenda.compacto {
+  grid-template-rows: 1fr;
+  gap: 0;
+  padding: 3px 6px 4px;
+}
+
+.cartaoAgendamentoAgenda.compacto strong {
+  display: block;
+  width: calc(100% - 16px);
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  -webkit-line-clamp: unset;
+  line-height: 1.15;
+}
+
+.cartaoAgendamentoAgenda.compacto small {
+  display: none;
+}
+
+.cartaoAgendamentoAgenda.compacto .rodapeCartaoAgendamentoAgenda {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  width: auto;
+  padding-bottom: 0;
 }
 
 .rodapeCartaoAgendamentoAgenda {
@@ -712,7 +842,8 @@ body {
   justify-content: flex-end;
   gap: 8px;
   align-self: end;
-  padding-bottom: 6px;
+  min-height: 14px;
+  padding-bottom: 2px;
 }
 
 .iconeStatusCartaoAgenda {
@@ -786,6 +917,106 @@ body {
     0 0 0 4px var(--corSelecaoAgenda, rgba(23, 145, 226, 0.42)),
     0 8px 18px var(--corSelecaoAgendaSuave, rgba(17, 43, 68, 0.18)) !important;
   filter: brightness(1.08);
+}
+
+.menuContextoAgenda {
+  position: fixed;
+  z-index: 70;
+  width: min(280px, calc(100vw - 32px));
+  border: 1px solid rgba(23, 145, 226, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 36px rgba(15, 35, 55, 0.18);
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+}
+
+.cabecalhoMenuContextoAgenda {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid rgba(23, 145, 226, 0.1);
+  background: linear-gradient(180deg, rgba(239, 248, 255, 0.98) 0%, rgba(255, 255, 255, 0.98) 100%);
+}
+
+.cabecalhoMenuContextoAgenda strong {
+  font-size: 0.95rem;
+  color: #3e5061;
+}
+
+.cabecalhoMenuContextoAgenda span {
+  font-size: 0.76rem;
+  color: #7a8b9c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.listaMenuContextoAgenda {
+  display: grid;
+  padding: 8px;
+}
+
+.itemMenuContextoAgenda {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.itemMenuContextoAgenda:hover {
+  background: rgba(23, 145, 226, 0.08);
+}
+
+.itemMenuContextoAgenda.ativo {
+  background: rgba(23, 145, 226, 0.12);
+}
+
+.conteudoItemMenuContextoAgenda {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.iconeItemMenuContextoAgenda {
+  flex: 0 0 auto;
+  width: 24px;
+  text-align: center;
+  font-size: 0.92rem;
+  line-height: 1;
+}
+
+.descricaoItemMenuContextoAgenda {
+  min-width: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #3e5061;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seloStatusAtualAgenda {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(23, 145, 226, 0.14);
+  color: #1474c4;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .gradePainelClientes {
@@ -914,13 +1145,16 @@ body {
 
 .cabecalhoGradeClientes,
 .cabecalhoGradeProdutos,
+.cabecalhoGradeAtendimentos,
 .linhaCliente,
-.linhaProduto {
+.linhaProduto,
+.linhaAtendimento {
   display: table-row;
 }
 
 .cabecalhoGradeClientes th,
-.cabecalhoGradeProdutos th {
+.cabecalhoGradeProdutos th,
+.cabecalhoGradeAtendimentos th {
   border-bottom: 1px solid var(--corBorda);
   background: linear-gradient(180deg, #f8fbfe 0%, #edf4f8 100%);
   color: var(--corTextoSuave);
@@ -931,7 +1165,8 @@ body {
 }
 
 .linhaCliente td,
-.linhaProduto td {
+.linhaProduto td,
+.linhaAtendimento td {
   border-bottom: 1px solid rgba(200, 213, 223, 0.6);
 }
 
@@ -1007,6 +1242,46 @@ body {
 .cabecalhoGradeProdutos th:nth-child(7),
 .linhaProduto td:nth-child(7) {
   width: 7%;
+}
+
+.cabecalhoGradeAtendimentos th:nth-child(1),
+.linhaAtendimento td:nth-child(1) {
+  width: 10%;
+}
+
+.cabecalhoGradeAtendimentos th:nth-child(2),
+.linhaAtendimento td:nth-child(2) {
+  width: 18%;
+}
+
+.cabecalhoGradeAtendimentos th:nth-child(3),
+.linhaAtendimento td:nth-child(3) {
+  width: 27%;
+}
+
+.cabecalhoGradeAtendimentos th:nth-child(4),
+.linhaAtendimento td:nth-child(4) {
+  width: 23%;
+}
+
+.cabecalhoGradeAtendimentos th:nth-child(5),
+.linhaAtendimento td:nth-child(5) {
+  width: 10%;
+}
+
+.cabecalhoGradeAtendimentos th:nth-child(6),
+.linhaAtendimento td:nth-child(6) {
+  width: 10%;
+}
+
+.cabecalhoGradeAtendimentos th:nth-child(7),
+.linhaAtendimento td:nth-child(7) {
+  width: 14%;
+}
+
+.cabecalhoGradeAtendimentos th:nth-child(8),
+.linhaAtendimento td:nth-child(8) {
+  width: 124px;
 }
 
 .corpoGradePadrao {
@@ -1177,7 +1452,8 @@ body {
 }
 
 .linhaCliente td,
-.linhaProduto td {
+.linhaProduto td,
+.linhaAtendimento td {
   color: var(--corTextoSuave);
   font-size: 0.84rem;
 }
@@ -1214,7 +1490,7 @@ body {
 .camadaModal {
   position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1266,6 +1542,12 @@ body {
   overflow-y: auto;
 }
 
+.corpoModalClienteSemRolagem {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .abasModalCliente {
   display: flex;
   gap: 10px;
@@ -1274,11 +1556,16 @@ body {
 }
 
 .abaModalCliente {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 0;
   border: 1px solid rgba(23, 145, 226, 0.12);
   border-radius: 999px;
   background: rgba(23, 145, 226, 0.06);
   color: var(--corPrimariaForte);
-  padding: 10px 16px;
+  padding: 10px 14px;
   font: inherit;
   font-weight: 700;
   white-space: nowrap;
@@ -1904,6 +2191,139 @@ body {
   width: min(784px, 100%);
 }
 
+.modalAtendimento {
+  width: min(1220px, 100%);
+}
+
+.layoutModalAtendimento {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.colunaPrincipalModalAtendimento,
+.colunaObservacaoModalAtendimento {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.colunaObservacaoModalAtendimento {
+  height: 100%;
+}
+
+.colunaObservacaoModalAtendimento .campoFormulario {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+}
+
+.linhaHorariosAtendimento {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.linhaClienteContatoAtendimento {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+  gap: 16px;
+}
+
+.linhaUsuarioCanalOrigemAtendimento {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.entradaObservacaoModalAtendimento {
+  min-height: 0;
+  height: 100%;
+  align-self: stretch;
+}
+
+.modalBuscaClienteAtendimento {
+  width: min(1140px, 100%);
+  height: min(720px, calc(100vh - 56px));
+}
+
+.campoSelectComAcao {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.campoSelectComAcao.temAcao {
+  align-items: center;
+}
+
+.campoSelectComAcao .entradaFormulario {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.campoFormularioClienteAtendimento {
+  grid-column: auto;
+}
+
+.corpoModalBuscaClienteAtendimento {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 16px;
+  height: 100%;
+  min-height: 0;
+}
+
+.gradeBuscaClienteAtendimento {
+  min-height: 0;
+  overflow: auto;
+}
+
+.tabelaBuscaClienteAtendimento th:nth-child(1),
+.tabelaBuscaClienteAtendimento td:nth-child(1) {
+  width: 88px;
+}
+
+.tabelaBuscaClienteAtendimento th:nth-child(2),
+.tabelaBuscaClienteAtendimento td:nth-child(2) {
+  width: 28%;
+}
+
+.tabelaBuscaClienteAtendimento th:nth-child(3),
+.tabelaBuscaClienteAtendimento td:nth-child(3) {
+  width: 24%;
+}
+
+.tabelaBuscaClienteAtendimento th:nth-child(4),
+.tabelaBuscaClienteAtendimento td:nth-child(4) {
+  width: 18%;
+}
+
+.tabelaBuscaClienteAtendimento th:nth-child(5),
+.tabelaBuscaClienteAtendimento td:nth-child(5) {
+  width: 72px;
+}
+
+.tabelaBuscaClienteAtendimento th:nth-child(6),
+.tabelaBuscaClienteAtendimento td:nth-child(6) {
+  width: 18%;
+}
+
+.tabelaBuscaClienteAtendimento tbody tr {
+  cursor: pointer;
+  transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.tabelaBuscaClienteAtendimento tbody tr:hover {
+  background: rgba(23, 145, 226, 0.06);
+}
+
+.tabelaBuscaClienteAtendimento tbody tr.linhaBuscaClienteAtiva {
+  background: rgba(23, 145, 226, 0.1);
+  box-shadow: inset 3px 0 0 var(--corPrimaria);
+}
+
 .modalFiltros {
   width: min(430px, calc(100vw - 32px));
 }
@@ -1937,6 +2357,53 @@ body {
   color: var(--corTextoSuave);
 }
 
+.painelAtendimentosCliente {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  gap: 14px;
+}
+
+.subtituloGradeAtendimentoCliente {
+  margin: 4px 0 0;
+  color: var(--corTextoSuave);
+  font-size: 0.84rem;
+}
+
+.gradeAtendimentosCliente {
+  min-height: 0;
+  max-height: 420px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.tabelaAtendimentosCliente th:nth-child(1),
+.tabelaAtendimentosCliente td:nth-child(1) {
+  width: 112px;
+}
+
+.tabelaAtendimentosCliente th:nth-child(2),
+.tabelaAtendimentosCliente td:nth-child(2) {
+  width: auto;
+}
+
+.tabelaAtendimentosCliente th:nth-child(3),
+.tabelaAtendimentosCliente td:nth-child(3) {
+  width: 140px;
+}
+
+.tabelaAtendimentosCliente th:nth-child(4),
+.tabelaAtendimentosCliente td:nth-child(4) {
+  width: 160px;
+}
+
+.tabelaAtendimentosCliente th:nth-child(5),
+.tabelaAtendimentosCliente td:nth-child(5) {
+  width: 112px;
+}
+
 .campoCheckboxFormulario {
   display: flex;
   align-items: center;
@@ -1963,6 +2430,17 @@ body {
   position: absolute;
   inset: 0;
   z-index: 4;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(20, 34, 46, 0.24);
+  backdrop-filter: blur(3px);
+}
+
+.camadaConfirmacaoTela {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
   display: grid;
   place-items: center;
   padding: 24px;
@@ -2070,6 +2548,13 @@ body {
     display: none;
   }
 
+  .cabecalhoGradeAtendimentos th:nth-child(5),
+  .cabecalhoGradeAtendimentos th:nth-child(6),
+  .linhaAtendimento td:nth-child(5),
+  .linhaAtendimento td:nth-child(6) {
+    display: none;
+  }
+
 }
 
 @media (max-width: 1120px) {
@@ -2088,6 +2573,13 @@ body {
   .linhaProduto td:nth-child(4),
   .linhaProduto td:nth-child(5),
   .linhaProduto td:nth-child(8) {
+    display: none;
+  }
+
+  .cabecalhoGradeAtendimentos th:nth-child(2),
+  .cabecalhoGradeAtendimentos th:nth-child(6),
+  .linhaAtendimento td:nth-child(2),
+  .linhaAtendimento td:nth-child(6) {
     display: none;
   }
 
@@ -2115,6 +2607,19 @@ body {
   .linhaProduto td:nth-child(6),
   .linhaProduto td:nth-child(7),
   .linhaProduto td:nth-child(8) {
+    display: none;
+  }
+
+  .cabecalhoGradeAtendimentos th:nth-child(1),
+  .cabecalhoGradeAtendimentos th:nth-child(4),
+  .cabecalhoGradeAtendimentos th:nth-child(5),
+  .cabecalhoGradeAtendimentos th:nth-child(6),
+  .cabecalhoGradeAtendimentos th:nth-child(7),
+  .linhaAtendimento td:nth-child(1),
+  .linhaAtendimento td:nth-child(4),
+  .linhaAtendimento td:nth-child(5),
+  .linhaAtendimento td:nth-child(6),
+  .linhaAtendimento td:nth-child(7) {
     display: none;
   }
 
@@ -2265,6 +2770,10 @@ body {
 
   .painelDadosGeraisCliente,
   .gradeCamposModalCliente,
+  .layoutModalAtendimento,
+  .linhaClienteContatoAtendimento,
+  .linhaUsuarioCanalOrigemAtendimento,
+  .linhaHorariosAtendimento,
   .campoComAcao {
     grid-template-columns: 1fr;
   }
