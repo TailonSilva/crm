@@ -6,6 +6,7 @@ const path = require('node:path');
 const isDev = !app.isPackaged;
 const urlFrontendDev = 'http://localhost:5174';
 const intervaloVerificacaoAtualizacaoMs = 60 * 60 * 1000;
+const nomeDiretorioPersistencia = 'Connecta CRM';
 let apiServer;
 let mainWindow;
 let autoUpdater;
@@ -34,12 +35,63 @@ function verificarServidorAtivo(url) {
   });
 }
 
+function obterDiretorioDadosPersistente() {
+  return path.join(app.getPath('appData'), nomeDiretorioPersistencia, 'data');
+}
+
+function obterDiretoriosDadosLegados() {
+  const base = app.getPath('appData');
+
+  return [
+    path.join(base, app.getName(), 'data'),
+    path.join(base, 'connecta-crm', 'data'),
+    path.join(base, 'Connecta CRM', 'data'),
+    path.join(base, 'CRM Desktop', 'data'),
+    path.join(base, 'crm-desktop', 'data'),
+    path.join(base, 'crm', 'data')
+  ];
+}
+
+function migrarBancoSeNecessario(diretorioDestino) {
+  const caminhoBancoDestino = path.join(diretorioDestino, 'crm.sqlite');
+
+  if (fs.existsSync(caminhoBancoDestino)) {
+    return;
+  }
+
+  for (const diretorioLegado of obterDiretoriosDadosLegados()) {
+    const caminhoLegadoNormalizado = path.resolve(diretorioLegado);
+    const caminhoDestinoNormalizado = path.resolve(diretorioDestino);
+
+    if (caminhoLegadoNormalizado === caminhoDestinoNormalizado) {
+      continue;
+    }
+
+    const caminhoBancoLegado = path.join(caminhoLegadoNormalizado, 'crm.sqlite');
+
+    if (!fs.existsSync(caminhoBancoLegado)) {
+      continue;
+    }
+
+    fs.cpSync(caminhoLegadoNormalizado, caminhoDestinoNormalizado, {
+      recursive: true,
+      force: false
+    });
+
+    console.log(`Banco migrado automaticamente de ${caminhoLegadoNormalizado} para ${caminhoDestinoNormalizado}.`);
+    return;
+  }
+}
+
 function startBundledBackend() {
   if (apiServer) {
     return;
   }
 
-  process.env.CRM_DATA_DIR = path.join(app.getPath('userData'), 'data');
+  const diretorioDadosPersistente = obterDiretorioDadosPersistente();
+  fs.mkdirSync(diretorioDadosPersistente, { recursive: true });
+  migrarBancoSeNecessario(diretorioDadosPersistente);
+  process.env.CRM_DATA_DIR = diretorioDadosPersistente;
 
   const serverApp = require(path.join(__dirname, '..', 'server', 'app.js'));
   apiServer = serverApp.listen(3001, () => {
