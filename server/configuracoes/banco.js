@@ -2,6 +2,15 @@ const path = require('node:path');
 const fs = require('node:fs');
 const sqlite3 = require('sqlite3').verbose();
 
+const ID_ETAPA_ORCAMENTO_FECHAMENTO = 1;
+const ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO = 2;
+const ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO = 3;
+const ID_STATUS_VISITA_AGENDADO = 1;
+const ID_STATUS_VISITA_CONFIRMADO = 2;
+const ID_STATUS_VISITA_REALIZADO = 3;
+const ID_STATUS_VISITA_CANCELADO = 4;
+const ID_STATUS_VISITA_NAO_COMPARECEU = 5;
+
 const diretorioDados = process.env.CRM_DATA_DIR
   ? path.resolve(process.env.CRM_DATA_DIR)
   : path.resolve(__dirname, '..', '..', 'data');
@@ -51,6 +60,30 @@ banco.serialize(() => {
   `);
 
   banco.run(`
+    CREATE TABLE IF NOT EXISTS tamanho (
+      idTamanho INTEGER PRIMARY KEY AUTOINCREMENT,
+      descricao VARCHAR(80) NOT NULL,
+      status BOOLEAN NOT NULL DEFAULT 1
+    )
+  `);
+
+  banco.run(`
+    CREATE TABLE IF NOT EXISTS grupoProdutoTamanho (
+      idGrupoProdutoTamanho INTEGER PRIMARY KEY AUTOINCREMENT,
+      idGrupo INTEGER NOT NULL,
+      idTamanho INTEGER NOT NULL,
+      ordem INTEGER NOT NULL DEFAULT 0,
+      FOREIGN KEY (idGrupo) REFERENCES grupoProduto (idGrupo) ON DELETE CASCADE,
+      FOREIGN KEY (idTamanho) REFERENCES tamanho (idTamanho)
+    )
+  `);
+
+  banco.run(`
+    CREATE UNIQUE INDEX IF NOT EXISTS indiceGrupoProdutoTamanhoUnico
+    ON grupoProdutoTamanho (idGrupo, idTamanho)
+  `);
+
+  banco.run(`
     CREATE TABLE IF NOT EXISTS marca (
       idMarca INTEGER PRIMARY KEY AUTOINCREMENT,
       descricao VARCHAR(150) NOT NULL,
@@ -85,7 +118,6 @@ banco.serialize(() => {
   banco.run(`
     CREATE TABLE IF NOT EXISTS recurso (
       idRecurso INTEGER PRIMARY KEY AUTOINCREMENT,
-      sigla VARCHAR(20) NOT NULL,
       descricao VARCHAR(150) NOT NULL,
       idTipoRecurso INTEGER NOT NULL,
       status BOOLEAN NOT NULL DEFAULT 1,
@@ -164,6 +196,7 @@ banco.serialize(() => {
       obrigarCliente BOOLEAN NOT NULL DEFAULT 0,
       obrigarLocal BOOLEAN NOT NULL DEFAULT 0,
       obrigarRecurso BOOLEAN NOT NULL DEFAULT 0,
+      ordem INTEGER NOT NULL DEFAULT 0,
       status BOOLEAN NOT NULL DEFAULT 1
     )
   `);
@@ -197,6 +230,24 @@ banco.serialize(() => {
   `, (erro) => {
     if (erro && !String(erro.message || '').includes('duplicate column name')) {
       console.error('Nao foi possivel garantir a coluna obrigarRecurso do tipo de agenda.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE tipoAgenda ADD COLUMN ordem INTEGER NOT NULL DEFAULT 0
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna ordem do tipo de agenda.', erro);
+    }
+  });
+
+  banco.run(`
+    UPDATE tipoAgenda
+    SET ordem = idTipoAgenda
+    WHERE ordem IS NULL OR ordem <= 0
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('no such column')) {
+      console.error('Nao foi possivel atualizar a ordem dos tipos de agenda.', erro);
     }
   });
 
@@ -436,6 +487,7 @@ banco.serialize(() => {
       idStatusVisita INTEGER PRIMARY KEY AUTOINCREMENT,
       descricao VARCHAR(100) NOT NULL,
       icone VARCHAR(10),
+      ordem INTEGER NOT NULL DEFAULT 0,
       status BOOLEAN NOT NULL DEFAULT 1
     )
   `);
@@ -465,6 +517,24 @@ banco.serialize(() => {
   });
 
   banco.run(`
+    ALTER TABLE statusVisita ADD COLUMN ordem INTEGER NOT NULL DEFAULT 0
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna ordem do status da visita.', erro);
+    }
+  });
+
+  banco.run(`
+    UPDATE statusVisita
+    SET ordem = idStatusVisita
+    WHERE ordem IS NULL OR ordem <= 0
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('no such column')) {
+      console.error('Nao foi possivel atualizar a ordem dos status da agenda.', erro);
+    }
+  });
+
+  banco.run(`
     ALTER TABLE motivoEncerramento RENAME TO motivoPerda
   `, (erro) => {
     if (
@@ -487,9 +557,9 @@ banco.serialize(() => {
   banco.run(`
     CREATE TABLE IF NOT EXISTS etapaPedido (
       idEtapa INTEGER PRIMARY KEY AUTOINCREMENT,
-      abreviacao VARCHAR(20) NOT NULL,
       descricao VARCHAR(150) NOT NULL,
       cor VARCHAR(20) NOT NULL DEFAULT '#0B74D1',
+      ordem INTEGER NOT NULL DEFAULT 0,
       status BOOLEAN NOT NULL DEFAULT 1
     )
   `);
@@ -503,12 +573,31 @@ banco.serialize(() => {
   });
 
   banco.run(`
+    ALTER TABLE etapaPedido ADD COLUMN ordem INTEGER NOT NULL DEFAULT 0
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna ordem da etapa de pedido.', erro);
+    }
+  });
+
+  banco.run(`
+    UPDATE etapaPedido
+    SET ordem = idEtapa
+    WHERE ordem IS NULL OR ordem <= 0
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('no such column')) {
+      console.error('Nao foi possivel atualizar a ordem das etapas de pedido.', erro);
+    }
+  });
+
+  banco.run(`
     CREATE TABLE IF NOT EXISTS etapaOrcamento (
       idEtapaOrcamento INTEGER PRIMARY KEY AUTOINCREMENT,
-      abreviacao VARCHAR(20) NOT NULL,
       descricao VARCHAR(150) NOT NULL,
       cor VARCHAR(20) NOT NULL DEFAULT '#0B74D1',
       obrigarMotivoPerda BOOLEAN NOT NULL DEFAULT 0,
+      consideraFunilVendas BOOLEAN NOT NULL DEFAULT 1,
+      ordem INTEGER NOT NULL DEFAULT 0,
       status BOOLEAN NOT NULL DEFAULT 1
     )
   `);
@@ -518,6 +607,42 @@ banco.serialize(() => {
   `, (erro) => {
     if (erro && !String(erro.message || '').includes('duplicate column name')) {
       console.error('Nao foi possivel garantir a coluna obrigarMotivoPerda da etapa de orcamento.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE etapaOrcamento ADD COLUMN ordem INTEGER NOT NULL DEFAULT 0
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna ordem da etapa de orcamento.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE etapaOrcamento ADD COLUMN consideraFunilVendas BOOLEAN NOT NULL DEFAULT 1
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna consideraFunilVendas da etapa de orcamento.', erro);
+    }
+  });
+
+  banco.run(`
+    UPDATE etapaOrcamento
+    SET consideraFunilVendas = 1
+    WHERE consideraFunilVendas IS NULL
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('no such column')) {
+      console.error('Nao foi possivel atualizar o campo consideraFunilVendas das etapas de orcamento.', erro);
+    }
+  });
+
+  banco.run(`
+    UPDATE etapaOrcamento
+    SET ordem = idEtapaOrcamento
+    WHERE ordem IS NULL OR ordem <= 0
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('no such column')) {
+      console.error('Nao foi possivel atualizar a ordem das etapas de orcamento.', erro);
     }
   });
 
@@ -1317,25 +1442,25 @@ banco.serialize(() => {
       }
 
       const etapasPadrao = [
-        { abreviacao: 'LEA', descricao: 'Lead recebido', cor: '#D9EAF7' },
-        { abreviacao: 'CON', descricao: 'Contato inicial', cor: '#CFE5FF' },
-        { abreviacao: 'QUA', descricao: 'Qualificacao', cor: '#BFE3D0' },
-        { abreviacao: 'APR', descricao: 'Apresentacao da proposta', cor: '#FFE2A8' },
-        { abreviacao: 'NEG', descricao: 'Negociacao', cor: '#FFC98F' },
-        { abreviacao: 'FEC', descricao: 'Fechamento', cor: '#A7E1B8' }
+        { descricao: 'Lead recebido', cor: '#D9EAF7', ordem: 1 },
+        { descricao: 'Contato inicial', cor: '#CFE5FF', ordem: 2 },
+        { descricao: 'Qualificacao', cor: '#BFE3D0', ordem: 3 },
+        { descricao: 'Apresentacao da proposta', cor: '#FFE2A8', ordem: 4 },
+        { descricao: 'Negociacao', cor: '#FFC98F', ordem: 5 },
+        { descricao: 'Fechado', cor: '#A7E1B8', ordem: 6 }
       ];
 
       etapasPadrao.forEach((etapa) => {
         banco.run(
           `
             INSERT INTO etapaOrcamento (
-              abreviacao,
               descricao,
               cor,
+              ordem,
               status
             ) VALUES (?, ?, ?, ?)
           `,
-          [etapa.abreviacao, etapa.descricao, etapa.cor, 1]
+          [etapa.descricao, etapa.cor, etapa.ordem, 1]
         );
       });
     }
@@ -1350,13 +1475,13 @@ banco.serialize(() => {
 
       banco.run(
         `INSERT INTO etapaOrcamento (
-          abreviacao,
           descricao,
           cor,
           obrigarMotivoPerda,
+          ordem,
           status
         ) VALUES (?, ?, ?, ?, ?)`,
-        ['PEX', 'Pedido excluido', '#E5E7EB', 0, 1]
+        ['Pedido excluido', '#E5E7EB', 0, 7, 1]
       );
     }
   );
@@ -1401,23 +1526,21 @@ banco.serialize(() => {
       }
 
       const recursosPadrao = [
-        { sigla: 'SL1', descricao: 'Sala de reuniao 1', idTipoRecurso: 1 },
-        { sigla: 'CAR', descricao: 'Carro da empresa', idTipoRecurso: 2 },
-        { sigla: 'NOT', descricao: 'Notebook comercial', idTipoRecurso: 3 }
+        { descricao: 'Sala de reuniao 1', idTipoRecurso: 1 },
+        { descricao: 'Carro da empresa', idTipoRecurso: 2 },
+        { descricao: 'Notebook comercial', idTipoRecurso: 3 }
       ];
 
       recursosPadrao.forEach((recursoPadrao) => {
         banco.run(
           `
             INSERT INTO recurso (
-              sigla,
               descricao,
               idTipoRecurso,
               status
-            ) VALUES (?, ?, ?, ?)
+            ) VALUES (?, ?, ?)
           `,
           [
-            recursoPadrao.sigla,
             recursoPadrao.descricao,
             recursoPadrao.idTipoRecurso,
             1
@@ -1435,17 +1558,17 @@ banco.serialize(() => {
       }
 
       const statusPadrao = [
-        { descricao: 'Agendado', icone: '📅' },
-        { descricao: 'Confirmado', icone: '✅' },
-        { descricao: 'Realizado', icone: '🤝' },
-        { descricao: 'Cancelado', icone: '❌' },
-        { descricao: 'Nao compareceu', icone: '⚠️' }
+        { idStatusVisita: ID_STATUS_VISITA_AGENDADO, descricao: 'Agendado', icone: '📅', ordem: 1 },
+        { idStatusVisita: ID_STATUS_VISITA_CONFIRMADO, descricao: 'Confirmado', icone: '✅', ordem: 2 },
+        { idStatusVisita: ID_STATUS_VISITA_REALIZADO, descricao: 'Realizado', icone: '🤝', ordem: 3 },
+        { idStatusVisita: ID_STATUS_VISITA_CANCELADO, descricao: 'Cancelado', icone: '❌', ordem: 4 },
+        { idStatusVisita: ID_STATUS_VISITA_NAO_COMPARECEU, descricao: 'Nao compareceu', icone: '⚠️', ordem: 5 }
       ];
 
       statusPadrao.forEach((status) => {
         banco.run(
-          'INSERT INTO statusVisita (descricao, icone, status) VALUES (?, ?, ?)',
-          [status.descricao, status.icone, 1]
+          'INSERT INTO statusVisita (idStatusVisita, descricao, icone, ordem, status) VALUES (?, ?, ?, ?, ?)',
+          [status.idStatusVisita, status.descricao, status.icone, status.ordem, 1]
         );
       });
     }
@@ -1491,16 +1614,16 @@ banco.serialize(() => {
       }
 
       const tiposAgendaPadrao = [
-        { descricao: 'Visita', cor: '#BFE3D0' },
-        { descricao: 'Reuniao', cor: '#CFE5FF' },
-        { descricao: 'Ligacao', cor: '#FFE2A8' },
-        { descricao: 'Apresentacao', cor: '#D9EAF7' }
+        { descricao: 'Visita', cor: '#BFE3D0', ordem: 1 },
+        { descricao: 'Reuniao', cor: '#CFE5FF', ordem: 2 },
+        { descricao: 'Ligacao', cor: '#FFE2A8', ordem: 3 },
+        { descricao: 'Apresentacao', cor: '#D9EAF7', ordem: 4 }
       ];
 
       tiposAgendaPadrao.forEach((tipoAgenda) => {
         banco.run(
-          'INSERT INTO tipoAgenda (descricao, cor, status) VALUES (?, ?, ?)',
-          [tipoAgenda.descricao, tipoAgenda.cor, 1]
+          'INSERT INTO tipoAgenda (descricao, cor, ordem, status) VALUES (?, ?, ?, ?)',
+          [tipoAgenda.descricao, tipoAgenda.cor, tipoAgenda.ordem, 1]
         );
       });
     }
@@ -1513,9 +1636,10 @@ banco.serialize(() => {
 
 async function garantirRegistrosObrigatorios() {
   await garantirConfiguracaoAtualizacaoSistemaPadrao();
+  await removerColunaAbreviacaoDasEtapas();
+  await removerColunaSiglaDosRecursos();
   await garantirUsuarioAdministradorPadrao();
   await garantirEtapasOrcamentoObrigatorias();
-  await garantirEtapasPedidoObrigatorias();
   await garantirStatusAgendaObrigatorios();
   await garantirLocaisAgendaObrigatorios();
   await garantirTiposRecursoObrigatorios();
@@ -1598,109 +1722,167 @@ async function garantirUsuarioAdministradorPadrao() {
 
 async function garantirEtapasOrcamentoObrigatorias() {
   const etapasObrigatorias = [
-    { abreviacao: 'LEA', descricao: 'Lead recebido', cor: '#D9EAF7', obrigarMotivoPerda: 0, status: 1 },
-    { abreviacao: 'CON', descricao: 'Contato inicial', cor: '#CFE5FF', obrigarMotivoPerda: 0, status: 1 },
-    { abreviacao: 'QUA', descricao: 'Qualificacao', cor: '#BFE3D0', obrigarMotivoPerda: 0, status: 1 },
-    { abreviacao: 'APR', descricao: 'Apresentacao da proposta', cor: '#FFE2A8', obrigarMotivoPerda: 0, status: 1 },
-    { abreviacao: 'NEG', descricao: 'Negociacao', cor: '#FFC98F', obrigarMotivoPerda: 0, status: 1 },
-    { abreviacao: 'FEC', descricao: 'Fechamento', cor: '#A7E1B8', obrigarMotivoPerda: 0, status: 1 },
-    { abreviacao: 'FSP', descricao: 'Fechado sem pedido', cor: '#FDE68A', obrigarMotivoPerda: 0, status: 1 },
-    { abreviacao: 'PEX', descricao: 'Pedido excluido', cor: '#E5E7EB', obrigarMotivoPerda: 0, status: 1 }
+    { idEtapaOrcamento: ID_ETAPA_ORCAMENTO_FECHAMENTO, descricao: 'Fechado', cor: '#A7E1B8', obrigarMotivoPerda: 0, consideraFunilVendas: 1, ordem: 1, status: 1 },
+    { idEtapaOrcamento: ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO, descricao: 'Fechado sem pedido', cor: '#FDE68A', obrigarMotivoPerda: 0, consideraFunilVendas: 1, ordem: 2, status: 1 },
+    { idEtapaOrcamento: ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO, descricao: 'Pedido excluido', cor: '#E5E7EB', obrigarMotivoPerda: 0, consideraFunilVendas: 0, ordem: 3, status: 1 }
   ];
 
   for (const etapa of etapasObrigatorias) {
     const existente = await consultarUm(
-      'SELECT idEtapaOrcamento FROM etapaOrcamento WHERE LOWER(TRIM(descricao)) = LOWER(TRIM(?))',
-      [etapa.descricao]
+      'SELECT idEtapaOrcamento FROM etapaOrcamento WHERE idEtapaOrcamento = ?',
+      [etapa.idEtapaOrcamento]
     );
 
     if (!existente) {
       await executar(
-        'INSERT INTO etapaOrcamento (abreviacao, descricao, cor, obrigarMotivoPerda, status) VALUES (?, ?, ?, ?, ?)',
-        [etapa.abreviacao, etapa.descricao, etapa.cor, etapa.obrigarMotivoPerda, etapa.status]
+        'INSERT INTO etapaOrcamento (idEtapaOrcamento, descricao, cor, obrigarMotivoPerda, consideraFunilVendas, ordem, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [etapa.idEtapaOrcamento, etapa.descricao, etapa.cor, etapa.obrigarMotivoPerda, etapa.consideraFunilVendas, etapa.ordem, etapa.status]
       );
       continue;
     }
 
     await executar(
-      'UPDATE etapaOrcamento SET abreviacao = ?, cor = ?, status = ?, obrigarMotivoPerda = COALESCE(obrigarMotivoPerda, ?) WHERE idEtapaOrcamento = ?',
-      [etapa.abreviacao, etapa.cor, etapa.status, etapa.obrigarMotivoPerda, existente.idEtapaOrcamento]
+      'UPDATE etapaOrcamento SET descricao = ?, cor = ?, status = ?, obrigarMotivoPerda = COALESCE(obrigarMotivoPerda, ?), consideraFunilVendas = COALESCE(consideraFunilVendas, ?), ordem = COALESCE(ordem, ?) WHERE idEtapaOrcamento = ?',
+      [etapa.descricao, etapa.cor, etapa.status, etapa.obrigarMotivoPerda, etapa.consideraFunilVendas, etapa.ordem, etapa.idEtapaOrcamento]
     );
   }
 
-  const etapaFechamento = await consultarUm(
-    'SELECT idEtapaOrcamento FROM etapaOrcamento WHERE LOWER(TRIM(descricao)) = LOWER(TRIM(?))',
-    ['Fechamento']
+  await executar(
+    'UPDATE orcamento SET idEtapaOrcamento = ? WHERE idPedidoVinculado IS NULL AND idEtapaOrcamento = ?',
+    [ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO, ID_ETAPA_ORCAMENTO_FECHAMENTO]
   );
-  const etapaFechadoSemPedido = await consultarUm(
-    'SELECT idEtapaOrcamento FROM etapaOrcamento WHERE LOWER(TRIM(descricao)) = LOWER(TRIM(?))',
-    ['Fechado sem pedido']
-  );
-
-  if (etapaFechamento?.idEtapaOrcamento && etapaFechadoSemPedido?.idEtapaOrcamento) {
-    await executar(
-      'UPDATE orcamento SET idEtapaOrcamento = ? WHERE idPedidoVinculado IS NULL AND idEtapaOrcamento = ?',
-      [etapaFechadoSemPedido.idEtapaOrcamento, etapaFechamento.idEtapaOrcamento]
-    );
-  }
 }
 
-async function garantirEtapasPedidoObrigatorias() {
-  const etapasObrigatorias = [
-    { abreviacao: 'ANA', descricao: 'Analise', cor: '#D9EAF7', status: 1 },
-    { abreviacao: 'PRO', descricao: 'Producao', cor: '#CFE5FF', status: 1 },
-    { abreviacao: 'SEP', descricao: 'Separacao', cor: '#FFE2A8', status: 1 },
-    { abreviacao: 'FAT', descricao: 'Faturamento', cor: '#FFC98F', status: 1 },
-    { abreviacao: 'ENT', descricao: 'Entregue', cor: '#BFE3D0', status: 1 }
-  ];
+async function removerColunaAbreviacaoDasEtapas() {
+  await migrarTabelaSemAbreviacao(
+    'etapaPedido',
+    'idEtapa',
+    [
+      'idEtapa INTEGER PRIMARY KEY AUTOINCREMENT',
+      'descricao VARCHAR(150) NOT NULL',
+      "cor VARCHAR(20) NOT NULL DEFAULT '#0B74D1'",
+      'ordem INTEGER NOT NULL DEFAULT 0',
+      'status BOOLEAN NOT NULL DEFAULT 1'
+    ],
+    ['idEtapa', 'descricao', 'cor', 'ordem', 'status'],
+    'idEtapa, descricao, COALESCE(cor, "#0B74D1") AS cor, COALESCE(ordem, idEtapa) AS ordem, COALESCE(status, 1) AS status'
+  );
 
-  for (const etapa of etapasObrigatorias) {
-    const existente = await consultarUm(
-      'SELECT idEtapa AS idEtapaPedido FROM etapaPedido WHERE LOWER(TRIM(descricao)) = LOWER(TRIM(?))',
-      [etapa.descricao]
-    );
+  await migrarTabelaSemAbreviacao(
+    'etapaOrcamento',
+    'idEtapaOrcamento',
+    [
+      'idEtapaOrcamento INTEGER PRIMARY KEY AUTOINCREMENT',
+      'descricao VARCHAR(150) NOT NULL',
+      "cor VARCHAR(20) NOT NULL DEFAULT '#0B74D1'",
+      'obrigarMotivoPerda BOOLEAN NOT NULL DEFAULT 0',
+      'consideraFunilVendas BOOLEAN NOT NULL DEFAULT 1',
+      'ordem INTEGER NOT NULL DEFAULT 0',
+      'status BOOLEAN NOT NULL DEFAULT 1'
+    ],
+    ['idEtapaOrcamento', 'descricao', 'cor', 'obrigarMotivoPerda', 'consideraFunilVendas', 'ordem', 'status'],
+    'idEtapaOrcamento, descricao, COALESCE(cor, "#0B74D1") AS cor, COALESCE(obrigarMotivoPerda, 0) AS obrigarMotivoPerda, COALESCE(consideraFunilVendas, 1) AS consideraFunilVendas, COALESCE(ordem, idEtapaOrcamento) AS ordem, COALESCE(status, 1) AS status'
+  );
+}
 
-    if (!existente) {
-      await executar(
-        'INSERT INTO etapaPedido (abreviacao, descricao, cor, status) VALUES (?, ?, ?, ?)',
-        [etapa.abreviacao, etapa.descricao, etapa.cor, etapa.status]
-      );
-      continue;
-    }
+async function migrarTabelaSemAbreviacao(nomeTabela, chavePrimaria, declaracoesColunas, colunasDestino, selecaoColunas) {
+  const colunas = await consultarTodos(`PRAGMA table_info(${nomeTabela})`);
+  const possuiAbreviacao = colunas.some((coluna) => coluna.name === 'abreviacao');
 
+  if (!possuiAbreviacao) {
+    return;
+  }
+
+  const nomeTabelaNova = `${nomeTabela}_semAbreviacao`;
+
+  await executar('PRAGMA foreign_keys = OFF');
+
+  try {
+    await executar('BEGIN TRANSACTION');
+    await executar(`CREATE TABLE ${nomeTabelaNova} (${declaracoesColunas.join(', ')})`);
     await executar(
-      'UPDATE etapaPedido SET abreviacao = ?, cor = ?, status = ? WHERE idEtapa = ?',
-      [etapa.abreviacao, etapa.cor, etapa.status, existente.idEtapaPedido]
+      `INSERT INTO ${nomeTabelaNova} (${colunasDestino.join(', ')}) SELECT ${selecaoColunas} FROM ${nomeTabela}`
     );
+    await executar(`DROP TABLE ${nomeTabela}`);
+    await executar(`ALTER TABLE ${nomeTabelaNova} RENAME TO ${nomeTabela}`);
+    await executar('COMMIT');
+  } catch (erro) {
+    await executar('ROLLBACK');
+    throw erro;
+  } finally {
+    await executar('PRAGMA foreign_keys = ON');
+  }
+
+  await executar(
+    `UPDATE ${nomeTabela} SET ordem = ${chavePrimaria} WHERE ordem IS NULL OR ordem <= 0`
+  );
+}
+
+async function removerColunaSiglaDosRecursos() {
+  const colunas = await consultarTodos('PRAGMA table_info(recurso)');
+  const possuiSigla = colunas.some((coluna) => coluna.name === 'sigla');
+
+  if (!possuiSigla) {
+    return;
+  }
+
+  const nomeTabelaNova = 'recurso_semSigla';
+
+  await executar('PRAGMA foreign_keys = OFF');
+
+  try {
+    await executar('BEGIN TRANSACTION');
+    await executar(`
+      CREATE TABLE ${nomeTabelaNova} (
+        idRecurso INTEGER PRIMARY KEY AUTOINCREMENT,
+        descricao VARCHAR(150) NOT NULL,
+        idTipoRecurso INTEGER NOT NULL,
+        status BOOLEAN NOT NULL DEFAULT 1,
+        FOREIGN KEY (idTipoRecurso) REFERENCES tipoRecurso (idTipoRecurso)
+      )
+    `);
+    await executar(`
+      INSERT INTO ${nomeTabelaNova} (idRecurso, descricao, idTipoRecurso, status)
+      SELECT idRecurso, descricao, idTipoRecurso, COALESCE(status, 1)
+      FROM recurso
+    `);
+    await executar('DROP TABLE recurso');
+    await executar(`ALTER TABLE ${nomeTabelaNova} RENAME TO recurso`);
+    await executar('COMMIT');
+  } catch (erro) {
+    await executar('ROLLBACK');
+    throw erro;
+  } finally {
+    await executar('PRAGMA foreign_keys = ON');
   }
 }
 
 async function garantirStatusAgendaObrigatorios() {
   const statusObrigatorios = [
-    { descricao: 'Agendado', icone: '📅', status: 1 },
-    { descricao: 'Confirmado', icone: '✅', status: 1 },
-    { descricao: 'Realizado', icone: '🤝', status: 1 },
-    { descricao: 'Cancelado', icone: '❌', status: 1 },
-    { descricao: 'Nao compareceu', icone: '⚠️', status: 1 }
+    { idStatusVisita: ID_STATUS_VISITA_AGENDADO, descricao: 'Agendado', icone: '📅', ordem: 1, status: 1 },
+    { idStatusVisita: ID_STATUS_VISITA_CONFIRMADO, descricao: 'Confirmado', icone: '✅', ordem: 2, status: 1 },
+    { idStatusVisita: ID_STATUS_VISITA_REALIZADO, descricao: 'Realizado', icone: '🤝', ordem: 3, status: 1 },
+    { idStatusVisita: ID_STATUS_VISITA_CANCELADO, descricao: 'Cancelado', icone: '❌', ordem: 4, status: 1 },
+    { idStatusVisita: ID_STATUS_VISITA_NAO_COMPARECEU, descricao: 'Nao compareceu', icone: '⚠️', ordem: 5, status: 1 }
   ];
 
   for (const statusVisita of statusObrigatorios) {
     const existente = await consultarUm(
-      'SELECT idStatusVisita FROM statusVisita WHERE LOWER(TRIM(descricao)) = LOWER(TRIM(?))',
-      [statusVisita.descricao]
+      'SELECT idStatusVisita FROM statusVisita WHERE idStatusVisita = ?',
+      [statusVisita.idStatusVisita]
     );
 
     if (!existente) {
       await executar(
-        'INSERT INTO statusVisita (descricao, icone, status) VALUES (?, ?, ?)',
-        [statusVisita.descricao, statusVisita.icone, statusVisita.status]
+        'INSERT INTO statusVisita (idStatusVisita, descricao, icone, ordem, status) VALUES (?, ?, ?, ?, ?)',
+        [statusVisita.idStatusVisita, statusVisita.descricao, statusVisita.icone, statusVisita.ordem, statusVisita.status]
       );
       continue;
     }
 
     await executar(
-      'UPDATE statusVisita SET icone = ?, status = ? WHERE idStatusVisita = ?',
-      [statusVisita.icone, statusVisita.status, existente.idStatusVisita]
+      'UPDATE statusVisita SET descricao = ?, icone = ?, ordem = COALESCE(ordem, ?), status = ? WHERE idStatusVisita = ?',
+      [statusVisita.descricao, statusVisita.icone, statusVisita.ordem, statusVisita.status, statusVisita.idStatusVisita]
     );
   }
 }
@@ -1762,21 +1944,21 @@ async function garantirRecursosObrigatorios() {
   );
 
   const recursos = [
-    { sigla: 'SL1', descricao: 'Sala de reuniao 1', idTipoRecurso: tipoSala?.idTipoRecurso },
-    { sigla: 'CAR', descricao: 'Carro da empresa', idTipoRecurso: tipoVeiculo?.idTipoRecurso },
-    { sigla: 'NOT', descricao: 'Notebook comercial', idTipoRecurso: tipoEquipamento?.idTipoRecurso }
+    { descricao: 'Sala de reuniao 1', idTipoRecurso: tipoSala?.idTipoRecurso },
+    { descricao: 'Carro da empresa', idTipoRecurso: tipoVeiculo?.idTipoRecurso },
+    { descricao: 'Notebook comercial', idTipoRecurso: tipoEquipamento?.idTipoRecurso }
   ].filter((recurso) => recurso.idTipoRecurso);
 
   for (const recurso of recursos) {
     const existente = await consultarUm(
-      'SELECT idRecurso FROM recurso WHERE UPPER(TRIM(sigla)) = UPPER(TRIM(?))',
-      [recurso.sigla]
+      'SELECT idRecurso FROM recurso WHERE LOWER(TRIM(descricao)) = LOWER(TRIM(?)) AND idTipoRecurso = ?',
+      [recurso.descricao, recurso.idTipoRecurso]
     );
 
     if (!existente) {
       await executar(
-        'INSERT INTO recurso (sigla, descricao, idTipoRecurso, status) VALUES (?, ?, ?, ?)',
-        [recurso.sigla, recurso.descricao, recurso.idTipoRecurso, 1]
+        'INSERT INTO recurso (descricao, idTipoRecurso, status) VALUES (?, ?, ?)',
+        [recurso.descricao, recurso.idTipoRecurso, 1]
       );
       continue;
     }
@@ -1790,10 +1972,10 @@ async function garantirRecursosObrigatorios() {
 
 async function garantirTiposAgendaObrigatorios() {
   const tipos = [
-    { descricao: 'Visita', cor: '#BFE3D0', status: 1 },
-    { descricao: 'Reuniao', cor: '#CFE5FF', status: 1 },
-    { descricao: 'Ligacao', cor: '#FFE2A8', status: 1 },
-    { descricao: 'Apresentacao', cor: '#D9EAF7', status: 1 }
+    { descricao: 'Visita', cor: '#BFE3D0', ordem: 1, status: 1 },
+    { descricao: 'Reuniao', cor: '#CFE5FF', ordem: 2, status: 1 },
+    { descricao: 'Ligacao', cor: '#FFE2A8', ordem: 3, status: 1 },
+    { descricao: 'Apresentacao', cor: '#D9EAF7', ordem: 4, status: 1 }
   ];
 
   for (const tipo of tipos) {
@@ -1804,15 +1986,15 @@ async function garantirTiposAgendaObrigatorios() {
 
     if (!existente) {
       await executar(
-        'INSERT INTO tipoAgenda (descricao, cor, status) VALUES (?, ?, ?)',
-        [tipo.descricao, tipo.cor, tipo.status]
+        'INSERT INTO tipoAgenda (descricao, cor, ordem, status) VALUES (?, ?, ?, ?)',
+        [tipo.descricao, tipo.cor, tipo.ordem, tipo.status]
       );
       continue;
     }
 
     await executar(
-      'UPDATE tipoAgenda SET cor = ?, status = ? WHERE idTipoAgenda = ?',
-      [tipo.cor, tipo.status, existente.idTipoAgenda]
+      'UPDATE tipoAgenda SET cor = ?, ordem = COALESCE(ordem, ?), status = ? WHERE idTipoAgenda = ?',
+      [tipo.cor, tipo.ordem, tipo.status, existente.idTipoAgenda]
     );
   }
 }

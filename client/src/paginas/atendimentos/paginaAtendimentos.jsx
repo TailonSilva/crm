@@ -61,6 +61,10 @@ function criarFiltrosLimposAtendimentos() {
   };
 }
 
+const ID_ETAPA_ORCAMENTO_FECHAMENTO = 1;
+const ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO = 2;
+const ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO = 3;
+
 export function PaginaAtendimentos({ usuarioLogado }) {
   const [pesquisa, definirPesquisa] = useState('');
   const [filtros, definirFiltros] = useState(() => criarFiltrosIniciaisAtendimentos(usuarioLogado));
@@ -802,8 +806,13 @@ function enriquecerOrcamentosAtendimento(orcamentos, clientes, contatos, usuario
 }
 
 function orcamentoEstaAberto(orcamento) {
-  const descricao = String(orcamento.nomeEtapaOrcamento || '').trim().toLowerCase();
-  return !['encerrado', 'fechado', 'fechamento', 'fechado sem pedido', 'pedido excluido'].includes(descricao);
+  const idEtapa = Number(orcamento?.idEtapaOrcamento);
+
+  return ![
+    ID_ETAPA_ORCAMENTO_FECHAMENTO,
+    ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO,
+    ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO
+  ].includes(idEtapa);
 }
 
 function etapaAcabouDeFechar(idEtapaAnterior, idEtapaAtual, etapasOrcamento) {
@@ -814,17 +823,11 @@ function etapaAcabouDeFechar(idEtapaAnterior, idEtapaAtual, etapasOrcamento) {
 }
 
 function etapaOrcamentoEhFechamento(etapa) {
-  const descricao = String(etapa?.descricao || '').trim().toLowerCase();
-  const abreviacao = String(etapa?.abreviacao || '').trim().toLowerCase();
-  return ['fechado', 'fechamento'].includes(descricao) || abreviacao === 'fec';
+  return Number(etapa?.idEtapaOrcamento) === ID_ETAPA_ORCAMENTO_FECHAMENTO;
 }
 
 function obterEtapaFechadoSemPedido(etapasOrcamento) {
-  return etapasOrcamento.find((etapa) => {
-    const descricao = String(etapa?.descricao || '').trim().toLowerCase();
-    const abreviacao = String(etapa?.abreviacao || '').trim().toLowerCase();
-    return descricao === 'fechado sem pedido' || abreviacao === 'fsp';
-  }) || null;
+  return etapasOrcamento.find((etapa) => Number(etapa?.idEtapaOrcamento) === ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO) || null;
 }
 
 function normalizarPayloadOrcamento(dadosOrcamento, usuarioLogado) {

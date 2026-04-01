@@ -56,11 +56,14 @@ import {
   listarRecursosConfiguracao,
   listarRamosAtividadeConfiguracao,
   listarStatusVisitaConfiguracao,
+  listarTamanhosConfiguracao,
   listarTiposAgendaConfiguracao,
   listarTiposRecursoConfiguracao,
   listarUnidadesMedidaConfiguracao,
   listarVendedoresConfiguracao,
-  salvarConfiguracaoAtualizacaoSistema
+  salvarConfiguracaoAtualizacaoSistema,
+  atualizarTamanho,
+  incluirTamanho
 } from '../../servicos/configuracoes';
 import { atualizarEmpresa, incluirEmpresa, listarEmpresas } from '../../servicos/empresa';
 import { atualizarUsuario, incluirUsuario, listarUsuarios } from '../../servicos/usuarios';
@@ -250,6 +253,18 @@ const secoesConfiguracao = [
       ].includes(id))
   }
 ];
+const IDS_STATUS_VISITA_CRITICOS = new Set([1, 2, 3, 4, 5]);
+const IDS_ETAPAS_ORCAMENTO_OBRIGATORIAS = new Set([1, 2, 3]);
+
+function statusVisitaEhCritico(registro) {
+  const idStatusVisita = Number(registro?.idStatusVisita);
+  return Number.isFinite(idStatusVisita) && IDS_STATUS_VISITA_CRITICOS.has(idStatusVisita);
+}
+
+function etapaOrcamentoEhObrigatoria(registro) {
+  const idEtapaOrcamento = Number(registro?.idEtapaOrcamento);
+  return Number.isFinite(idEtapaOrcamento) && IDS_ETAPAS_ORCAMENTO_OBRIGATORIAS.has(idEtapaOrcamento);
+}
 
 export function PaginaConfiguracoes({ usuarioLogado }) {
   const [empresa, definirEmpresa] = useState(null);
@@ -273,6 +288,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
   const [etapasOrcamento, definirEtapasOrcamento] = useState([]);
   const [camposOrcamento, definirCamposOrcamento] = useState([]);
   const [camposPedido, definirCamposPedido] = useState([]);
+  const [tamanhos, definirTamanhos] = useState([]);
   const [configuracaoAtualizacaoSistema, definirConfiguracaoAtualizacaoSistema] = useState(null);
   const [modalEmpresaAberto, definirModalEmpresaAberto] = useState(false);
   const [modalUsuariosAberto, definirModalUsuariosAberto] = useState(false);
@@ -355,7 +371,8 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         listarEtapasPedidoConfiguracao(),
         listarEtapasOrcamentoConfiguracao(),
         listarCamposOrcamentoConfiguracao(),
-        listarCamposPedidoConfiguracao()
+        listarCamposPedidoConfiguracao(),
+        listarTamanhosConfiguracao()
       ]);
 
     definirGruposProduto(obterResultadoLista(resultados[0]));
@@ -368,15 +385,16 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     definirLocaisAgenda(obterResultadoLista(resultados[7]));
     definirTiposRecurso(obterResultadoLista(resultados[8]));
     definirRecursos(obterResultadoLista(resultados[9]));
-    definirTiposAgenda(obterResultadoLista(resultados[10]));
+    definirTiposAgenda(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[10]), 'idTipoAgenda'));
     definirCanaisAtendimento(obterResultadoLista(resultados[11]));
     definirOrigensAtendimento(obterResultadoLista(resultados[12]));
-    definirStatusVisita(obterResultadoLista(resultados[13]));
+    definirStatusVisita(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[13]), 'idStatusVisita'));
     definirMotivosPerda(obterResultadoLista(resultados[14]));
-    definirEtapasPedido(obterResultadoLista(resultados[15]));
-    definirEtapasOrcamento(obterResultadoLista(resultados[16]));
+    definirEtapasPedido(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[15]), 'idEtapa'));
+    definirEtapasOrcamento(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[16]), 'idEtapaOrcamento'));
     definirCamposOrcamento(obterResultadoLista(resultados[17]));
     definirCamposPedido(obterResultadoLista(resultados[18]));
+    definirTamanhos(obterResultadoLista(resultados[19]));
   }
 
   async function salvarUsuario(dadosUsuario) {
@@ -412,12 +430,35 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
       status: dadosGrupo.status ? 1 : 0
     };
 
+    let grupoSalvo = null;
+
     if (dadosGrupo.idGrupo) {
-      await atualizarGrupoProduto(dadosGrupo.idGrupo, payload);
+      grupoSalvo = await atualizarGrupoProduto(dadosGrupo.idGrupo, payload);
     } else {
-      await incluirGrupoProduto(payload);
+      grupoSalvo = await incluirGrupoProduto(payload);
     }
 
+    await carregarCadastrosConfiguracao();
+    return grupoSalvo;
+  }
+
+  async function salvarTamanho(dadosTamanho) {
+    const payload = {
+      descricao: dadosTamanho.descricao.trim(),
+      status: dadosTamanho.status ? 1 : 0
+    };
+
+    if (dadosTamanho.idTamanho) {
+      await atualizarTamanho(dadosTamanho.idTamanho, payload);
+    } else {
+      await incluirTamanho(payload);
+    }
+
+    await carregarCadastrosConfiguracao();
+  }
+
+  async function inativarTamanho(registro) {
+    await atualizarTamanho(registro.idTamanho, { status: 0 });
     await carregarCadastrosConfiguracao();
   }
 
@@ -557,7 +598,6 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
 
   async function salvarRecurso(dadosRecurso) {
     const payload = {
-      sigla: dadosRecurso.sigla.trim(),
       descricao: dadosRecurso.descricao.trim(),
       idTipoRecurso: Number(dadosRecurso.idTipoRecurso),
       status: dadosRecurso.status ? 1 : 0
@@ -576,6 +616,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     const payload = {
       descricao: dadosTipoAgenda.descricao.trim(),
       cor: dadosTipoAgenda.cor.trim(),
+      ordem: normalizarOrdemCadastro(dadosTipoAgenda.ordem),
       obrigarCliente: dadosTipoAgenda.obrigarCliente ? 1 : 0,
       obrigarLocal: dadosTipoAgenda.obrigarLocal ? 1 : 0,
       obrigarRecurso: dadosTipoAgenda.obrigarRecurso ? 1 : 0,
@@ -595,6 +636,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     const payload = {
       descricao: dadosStatusVisita.descricao.trim(),
       icone: limparTextoOpcional(dadosStatusVisita.icone),
+      ordem: normalizarOrdemCadastro(dadosStatusVisita.ordem),
       status: dadosStatusVisita.status ? 1 : 0
     };
 
@@ -639,9 +681,9 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
 
   async function salvarEtapaPedido(dadosEtapa) {
     const payload = {
-      abreviacao: dadosEtapa.abreviacao.trim(),
       descricao: dadosEtapa.descricao.trim(),
       cor: dadosEtapa.cor.trim(),
+      ordem: normalizarOrdemCadastro(dadosEtapa.ordem),
       status: dadosEtapa.status ? 1 : 0
     };
 
@@ -656,10 +698,11 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
 
   async function salvarEtapaOrcamento(dadosEtapa) {
     const payload = {
-      abreviacao: dadosEtapa.abreviacao.trim(),
       descricao: dadosEtapa.descricao.trim(),
       cor: dadosEtapa.cor.trim(),
+      ordem: normalizarOrdemCadastro(dadosEtapa.ordem),
       obrigarMotivoPerda: dadosEtapa.obrigarMotivoPerda ? 1 : 0,
+      consideraFunilVendas: dadosEtapa.consideraFunilVendas ? 1 : 0,
       status: dadosEtapa.status ? 1 : 0
     };
 
@@ -675,7 +718,6 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
   async function salvarCampoOrcamento(dadosCampo) {
     const payload = {
       titulo: dadosCampo.titulo.trim(),
-      descricao: dadosCampo.titulo.trim(),
       descricaoPadrao: limparTextoOpcional(dadosCampo.descricaoPadrao),
       status: dadosCampo.status ? 1 : 0
     };
@@ -847,7 +889,8 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
       'tiposAgenda',
       'tiposRecurso',
       'vendedores',
-      'unidadesMedida'
+      'unidadesMedida',
+      'tamanhos'
     ].includes(atalho.id)) {
       definirCadastroConfiguracaoAberto(atalho.id);
     }
@@ -962,6 +1005,24 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
           aoSalvar={salvarGrupoProduto}
           aoInativar={inativarGrupoProduto}
         />
+      <ModalCadastroConfiguracao
+        aberto={cadastroConfiguracaoAberto === 'tamanhos'}
+        titulo="Tamanhos"
+        rotuloIncluir="Incluir tamanho"
+        registros={tamanhos}
+        chavePrimaria="idTamanho"
+        somenteConsulta={usuarioSomenteConsulta}
+        colunas={[
+          { key: 'descricao', label: 'Tamanho' }
+        ]}
+        camposFormulario={[
+          { name: 'descricao', label: 'Tamanho', required: true },
+          { name: 'status', label: 'Registro ativo', type: 'checkbox', defaultValue: true }
+        ]}
+        aoFechar={fecharCadastroConfiguracao}
+        aoSalvar={salvarTamanho}
+        aoInativar={inativarTamanho}
+      />
       <ModalMarcas
         aberto={cadastroConfiguracaoAberto === 'marcas'}
         registros={marcas}
@@ -1081,12 +1142,10 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         classeTabela="tabelaRecursosConfiguracao"
         somenteConsulta={usuarioSomenteConsulta}
         colunas={[
-          { key: 'sigla', label: 'Sigla' },
           { key: 'descricao', label: 'Descricao' },
           { key: 'nomeTipoRecurso', label: 'Tipo' }
         ]}
         camposFormulario={[
-          { name: 'sigla', label: 'Sigla', required: true },
           { name: 'descricao', label: 'Descricao', required: true },
           {
             name: 'idTipoRecurso',
@@ -1111,14 +1170,16 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         registros={tiposAgenda}
         chavePrimaria="idTipoAgenda"
         classeTabela="tabelaEtapasPedido"
-        classeFormulario="gradeFormularioEtapas"
+        classeFormulario="gradeFormularioTiposAgenda"
         somenteConsulta={usuarioSomenteConsulta}
         colunas={[
+          { key: 'ordem', label: 'Ordem' },
           { key: 'descricao', label: 'Descricao' },
           { key: 'cor', label: 'Cor', render: renderizarCorConfiguracao },
           { key: 'obrigatorios', label: 'Obrigatorios', render: renderizarObrigatoriosTipoAgenda }
         ]}
         camposFormulario={[
+          { name: 'ordem', label: 'Ordem', type: 'number', required: true, defaultValue: 1, min: 1, max: 999, step: 1, inputMode: 'numeric' },
           { name: 'descricao', label: 'Descricao', required: true },
           { name: 'cor', label: 'Cor', type: 'color', required: true, defaultValue: '#0B74D1' },
           { name: 'obrigarCliente', label: 'Exigir cliente', type: 'checkbox', defaultValue: false },
@@ -1172,12 +1233,16 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         rotuloIncluir="Incluir status"
         registros={statusVisita}
         chavePrimaria="idStatusVisita"
+        classeTabela="tabelaStatusVisitaConfiguracao"
+        classeFormulario="gradeFormularioStatusVisita"
         somenteConsulta={usuarioSomenteConsulta}
         colunas={[
+          { key: 'ordem', label: 'Ordem' },
           { key: 'icone', label: 'Icone' },
           { key: 'descricao', label: 'Descricao' }
         ]}
         camposFormulario={[
+          { name: 'ordem', label: 'Ordem', type: 'number', required: true, defaultValue: 1, min: 1, max: 999, step: 1, inputMode: 'numeric' },
           { name: 'icone', label: 'Icone', required: false },
           { name: 'descricao', label: 'Descricao', required: true },
           { name: 'status', label: 'Registro ativo', type: 'checkbox', defaultValue: true }
@@ -1185,6 +1250,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         aoFechar={fecharCadastroConfiguracao}
         aoSalvar={salvarStatusVisita}
         aoInativar={inativarStatusVisita}
+        podeInativarRegistro={(registro) => !statusVisitaEhCritico(registro)}
       />
       <ModalCadastroConfiguracao
         aberto={cadastroConfiguracaoAberto === 'motivosPerda'}
@@ -1211,15 +1277,15 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         registros={etapasPedido}
         chavePrimaria="idEtapa"
         classeTabela="tabelaEtapasPedido"
-        classeFormulario="gradeFormularioEtapas"
+        classeFormulario="gradeFormularioEtapasPedidoLinha"
         somenteConsulta={usuarioSomenteConsulta}
         colunas={[
-          { key: 'abreviacao', label: 'Abreviacao' },
+          { key: 'ordem', label: 'Ordem' },
           { key: 'descricao', label: 'Descricao' },
           { key: 'cor', label: 'Cor', render: renderizarCorConfiguracao }
         ]}
         camposFormulario={[
-          { name: 'abreviacao', label: 'Abreviacao', required: true },
+          { name: 'ordem', label: 'Ordem', type: 'number', required: true, defaultValue: 1, min: 1, max: 999, step: 1, inputMode: 'numeric' },
           { name: 'descricao', label: 'Descricao', required: true },
           { name: 'cor', label: 'Cor', type: 'color', required: true, defaultValue: '#0B74D1' },
           { name: 'status', label: 'Registro ativo', type: 'checkbox', defaultValue: true }
@@ -1234,29 +1300,40 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         rotuloIncluir="Incluir etapa"
         registros={etapasOrcamento}
         chavePrimaria="idEtapaOrcamento"
-        classeTabela="tabelaEtapasPedido"
-        classeFormulario="gradeFormularioEtapas"
+        classeModal="modalClienteEtapasOrcamentoAmplo"
+        classeTabela="tabelaEtapasOrcamentoConfiguracao"
+        classeFormulario="gradeFormularioEtapasOrcamentoLinha"
+        classeModalFormulario="modalContatoEtapasOrcamentoLinha"
+        agruparCheckboxes
+        classeGrupoCheckboxes="grupoCheckboxesEtapasOrcamento"
         somenteConsulta={usuarioSomenteConsulta}
         colunas={[
-          { key: 'abreviacao', label: 'Abreviacao' },
+          { key: 'ordem', label: 'Ordem' },
           { key: 'descricao', label: 'Descricao' },
           { key: 'cor', label: 'Cor', render: renderizarCorConfiguracao },
           {
             key: 'obrigarMotivoPerda',
             label: 'Motivo da perda',
             render: (registro) => registro.obrigarMotivoPerda ? 'Obrigatorio' : 'Opcional'
+          },
+          {
+            key: 'consideraFunilVendas',
+            label: 'Funil de vendas',
+            render: (registro) => registro.consideraFunilVendas ? 'Considera' : 'Nao considera'
           }
         ]}
         camposFormulario={[
-          { name: 'abreviacao', label: 'Abreviacao', required: true },
+          { name: 'ordem', label: 'Ordem', type: 'number', required: true, defaultValue: 1, min: 1, max: 999, step: 1, inputMode: 'numeric' },
           { name: 'descricao', label: 'Descricao', required: true },
           { name: 'cor', label: 'Cor', type: 'color', required: true, defaultValue: '#0B74D1' },
           { name: 'obrigarMotivoPerda', label: 'Exigir motivo da perda', type: 'checkbox', defaultValue: false },
+          { name: 'consideraFunilVendas', label: 'Considera no Funil de Vendas', type: 'checkbox', defaultValue: true },
           { name: 'status', label: 'Registro ativo', type: 'checkbox', defaultValue: true }
         ]}
         aoFechar={fecharCadastroConfiguracao}
         aoSalvar={salvarEtapaOrcamento}
         aoInativar={inativarEtapaOrcamento}
+        podeInativarRegistro={(registro) => !etapaOrcamentoEhObrigatoria(registro)}
       />
       <ModalCadastroConfiguracao
         aberto={cadastroConfiguracaoAberto === 'orcamentos'}
@@ -1348,6 +1425,16 @@ function normalizarNumeroInteiro(valor, valorPadrao = 0) {
   return Number.isNaN(numero) ? valorPadrao : numero;
 }
 
+function normalizarOrdemCadastro(valor) {
+  const numero = Number.parseInt(String(valor ?? '').trim(), 10);
+
+  if (Number.isNaN(numero) || numero < 1) {
+    return 1;
+  }
+
+  return numero;
+}
+
 function normalizarPayloadUsuario(dadosUsuario) {
   return {
     nome: dadosUsuario.nome.trim(),
@@ -1364,6 +1451,40 @@ function normalizarPayloadUsuario(dadosUsuario) {
 
 function obterResultadoLista(resultado) {
   return resultado.status === 'fulfilled' ? resultado.value : [];
+}
+
+function ordenarRegistrosPorOrdem(registros, chavePrimaria) {
+  if (!Array.isArray(registros)) {
+    return [];
+  }
+
+  return [...registros].sort((registroA, registroB) => {
+    const ordemA = normalizarOrdemOrdenacao(registroA?.ordem, registroA?.[chavePrimaria]);
+    const ordemB = normalizarOrdemOrdenacao(registroB?.ordem, registroB?.[chavePrimaria]);
+
+    if (ordemA !== ordemB) {
+      return ordemA - ordemB;
+    }
+
+    const idA = Number(registroA?.[chavePrimaria] || 0);
+    const idB = Number(registroB?.[chavePrimaria] || 0);
+    return idA - idB;
+  });
+}
+
+function normalizarOrdemOrdenacao(ordem, fallback) {
+  const ordemNumerica = Number(ordem);
+
+  if (Number.isFinite(ordemNumerica) && ordemNumerica > 0) {
+    return ordemNumerica;
+  }
+
+  const fallbackNumerico = Number(fallback);
+  if (Number.isFinite(fallbackNumerico) && fallbackNumerico > 0) {
+    return fallbackNumerico;
+  }
+
+  return Number.MAX_SAFE_INTEGER;
 }
 
 function normalizarPayloadPrazoPagamento(dadosPrazo) {

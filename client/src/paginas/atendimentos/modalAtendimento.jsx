@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
 import { ModalBuscaClientes } from '../../componentes/comuns/modalBuscaClientes';
 import { ModalBuscaContatos } from '../../componentes/comuns/modalBuscaContatos';
@@ -20,6 +20,9 @@ const estadoInicialFormulario = {
   idCanalAtendimento: '',
   idOrigemAtendimento: ''
 };
+
+const ID_ETAPA_ORCAMENTO_FECHAMENTO = 1;
+const ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO = 2;
 
 export function ModalAtendimento({
   aberto,
@@ -74,7 +77,10 @@ export function ModalAtendimento({
   const contatosAtivos = contatos.filter((contato) => contato.status !== 0);
   const canaisAtivos = canaisAtendimento.filter((canal) => canal.status !== 0);
   const origensAtivas = origensAtendimento.filter((origem) => origem.status !== 0);
-  const etapasOrcamentoAtivas = etapasOrcamento.filter((etapa) => etapa.status !== 0);
+  const etapasOrcamentoAtivas = useMemo(
+    () => ordenarEtapasPorOrdem(etapasOrcamento.filter((etapa) => etapa.status !== 0), 'idEtapaOrcamento'),
+    [etapasOrcamento]
+  );
 
   useEffect(() => {
     if (!aberto) {
@@ -1092,6 +1098,38 @@ function normalizarValorFormulario(valor) {
   return String(valor);
 }
 
+function ordenarEtapasPorOrdem(etapas, chaveId) {
+  if (!Array.isArray(etapas)) {
+    return [];
+  }
+
+  return [...etapas].sort((etapaA, etapaB) => {
+    const ordemA = obterValorOrdemEtapa(etapaA?.ordem, etapaA?.[chaveId]);
+    const ordemB = obterValorOrdemEtapa(etapaB?.ordem, etapaB?.[chaveId]);
+
+    if (ordemA !== ordemB) {
+      return ordemA - ordemB;
+    }
+
+    return Number(etapaA?.[chaveId] || 0) - Number(etapaB?.[chaveId] || 0);
+  });
+}
+
+function obterValorOrdemEtapa(ordem, fallback) {
+  const ordemNumerica = Number(ordem);
+
+  if (Number.isFinite(ordemNumerica) && ordemNumerica > 0) {
+    return ordemNumerica;
+  }
+
+  const fallbackNumerico = Number(fallback);
+  if (Number.isFinite(fallbackNumerico) && fallbackNumerico > 0) {
+    return fallbackNumerico;
+  }
+
+  return Number.MAX_SAFE_INTEGER;
+}
+
 function montarRotuloCliente(cliente) {
   const codigo = `#${String(cliente.idCliente || '').padStart(4, '0')}`;
   const nome = cliente.nomeFantasia || cliente.razaoSocial || 'Cliente sem nome';
@@ -1163,17 +1201,11 @@ function etapaAcabouDeFechar(idEtapaAnterior, idEtapaAtual, etapasOrcamento) {
 }
 
 function etapaOrcamentoEhFechamento(etapa) {
-  const descricao = String(etapa?.descricao || '').trim().toLowerCase();
-  const abreviacao = String(etapa?.abreviacao || '').trim().toLowerCase();
-  return ['fechado', 'fechamento'].includes(descricao) || abreviacao === 'fec';
+  return Number(etapa?.idEtapaOrcamento) === ID_ETAPA_ORCAMENTO_FECHAMENTO;
 }
 
 function obterEtapaFechadoSemPedido(etapasOrcamento) {
-  return etapasOrcamento.find((etapa) => {
-    const descricao = String(etapa?.descricao || '').trim().toLowerCase();
-    const abreviacao = String(etapa?.abreviacao || '').trim().toLowerCase();
-    return descricao === 'fechado sem pedido' || abreviacao === 'fsp';
-  }) || null;
+  return etapasOrcamento.find((etapa) => Number(etapa?.idEtapaOrcamento) === ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO) || null;
 }
 
 function enriquecerOrcamentoParaPedidoAtendimento(orcamento, prazosPagamento, produtos) {

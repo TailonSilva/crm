@@ -2269,9 +2269,17 @@ body {
   padding-top: 18px;
 }
 
+.corpoModalUsuariosConfiguracao .painelContatosConfiguracao {
+  height: 520px;
+}
+
+.corpoModalUsuariosConfiguracao .painelContatosConfiguracao .gradeContatosModal {
+  height: 100%;
+  overflow-y: auto;
+}
+
 .cabecalhoGradeContatosModal,
-.acoesFormularioContatoModal,
-.acoesContatoModal {
+.acoesFormularioContatoModal {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2403,8 +2411,11 @@ body {
 }
 
 .acoesContatoModal {
+  display: flex;
+  align-items: center;
   justify-content: flex-end;
-  width: 100%;
+  gap: 6px;
+  width: auto;
 }
 
 .tabelaUsuariosModal th:nth-child(1),
@@ -2439,7 +2450,7 @@ body {
 
 .tabelaUsuariosModal th:nth-child(7),
 .tabelaUsuariosModal td:nth-child(7) {
-  width: 160px;
+  width: 148px;
 }
 
 .tabelaUsuariosModal th.cabecalhoAcoesContato {
@@ -2458,7 +2469,7 @@ body {
 
 .tabelaCadastrosConfiguracao th:last-child,
 .tabelaCadastrosConfiguracao td:last-child {
-  width: 160px;
+  width: 148px;
 }
 
 .tabelaPrazosPagamento th:nth-child(1),
@@ -2521,6 +2532,46 @@ body {
   width: 164px;
 }
 
+.tabelaEtapasOrcamentoConfiguracao th:nth-child(1),
+.tabelaEtapasOrcamentoConfiguracao td:nth-child(1) {
+  width: 92px;
+}
+
+.tabelaEtapasOrcamentoConfiguracao th:nth-child(2),
+.tabelaEtapasOrcamentoConfiguracao td:nth-child(2) {
+  width: 96px;
+}
+
+.tabelaEtapasOrcamentoConfiguracao th:nth-child(3),
+.tabelaEtapasOrcamentoConfiguracao td:nth-child(3) {
+  width: 28%;
+}
+
+.tabelaEtapasOrcamentoConfiguracao th:nth-child(4),
+.tabelaEtapasOrcamentoConfiguracao td:nth-child(4) {
+  width: 16%;
+}
+
+.tabelaEtapasOrcamentoConfiguracao th:nth-child(5),
+.tabelaEtapasOrcamentoConfiguracao td:nth-child(5) {
+  width: 134px;
+}
+
+.tabelaEtapasOrcamentoConfiguracao th:nth-child(6),
+.tabelaEtapasOrcamentoConfiguracao td:nth-child(6) {
+  width: 150px;
+}
+
+.tabelaEtapasOrcamentoConfiguracao th:nth-child(7),
+.tabelaEtapasOrcamentoConfiguracao td:nth-child(7) {
+  width: 138px;
+}
+
+.tabelaEtapasOrcamentoConfiguracao th:nth-child(8),
+.tabelaEtapasOrcamentoConfiguracao td:nth-child(8) {
+  width: 166px;
+}
+
 .tabelaRecursosConfiguracao th:nth-child(1),
 .tabelaRecursosConfiguracao td:nth-child(1) {
   width: 86px;
@@ -2549,6 +2600,45 @@ body {
 .tabelaRecursosConfiguracao th:nth-child(6),
 .tabelaRecursosConfiguracao td:nth-child(6) {
   width: 164px;
+}
+
+.tabelaStatusVisitaConfiguracao th:nth-child(1),
+.tabelaStatusVisitaConfiguracao td:nth-child(1) {
+  width: 92px;
+}
+
+.tabelaStatusVisitaConfiguracao th:nth-child(2),
+.tabelaStatusVisitaConfiguracao td:nth-child(2) {
+  width: 96px;
+  text-align: center;
+}
+
+.tabelaStatusVisitaConfiguracao th:nth-child(3),
+.tabelaStatusVisitaConfiguracao td:nth-child(3) {
+  width: 112px;
+  text-align: center;
+}
+
+.tabelaStatusVisitaConfiguracao th:nth-child(4),
+.tabelaStatusVisitaConfiguracao td:nth-child(4) {
+  width: auto;
+  min-width: 260px;
+}
+
+.tabelaStatusVisitaConfiguracao th:nth-child(5),
+.tabelaStatusVisitaConfiguracao td:nth-child(5) {
+  width: 128px;
+}
+
+.tabelaStatusVisitaConfiguracao th:nth-child(6),
+.tabelaStatusVisitaConfiguracao td:nth-child(6) {
+  width: 170px;
+}
+
+.tabelaStatusVisitaConfiguracao th,
+.tabelaStatusVisitaConfiguracao td {
+  padding-left: 16px;
+  padding-right: 16px;
 }
 
 .visualizacaoCorConfiguracao {
@@ -2589,14 +2679,218 @@ body {
 }
 
 .gradeFormularioEtapas {
-  grid-template-columns: 120px minmax(0, 1fr) 140px auto;
+  grid-template-columns: 92px 88px minmax(0, 1fr);
   align-items: end;
 }
 
 .gradeFormularioEtapas .campoCheckboxFormulario {
+  grid-column: span 2;
+  align-self: start;
+  min-height: 36px;
+  padding: 4px 0 0;
+}
+
+.gradeFormularioEtapas .campoCheckboxFormulario span {
+  white-space: nowrap;
+}
+
+.gradeFormularioEtapas .campoFormulario-descricao {
+  grid-column: 3;
+}
+
+.gradeFormularioEtapas .campoFormulario-ordem .entradaFormulario,
+.gradeFormularioEtapas .campoFormulario-cor .entradaFormulario {
+  text-align: center;
+}
+
+.gradeFormularioEtapas .campoFormulario-cor .entradaFormulario {
+  padding: 4px;
+}
+
+.gradeFormularioEtapasPedidoLinha {
+  grid-template-columns: 120px minmax(300px, 1fr) 132px auto;
+  column-gap: 16px;
+  align-items: end;
+}
+
+.gradeFormularioEtapasPedidoLinha .campoFormulario-descricao {
+  grid-column: 2;
+}
+
+.gradeFormularioEtapasPedidoLinha .campoFormulario-cor {
+  grid-column: 3;
+}
+
+.gradeFormularioEtapasPedidoLinha .campoCheckbox-status {
+  grid-column: 4;
+}
+
+.gradeFormularioEtapasPedidoLinha .campoCheckboxFormulario {
   align-self: end;
-  min-height: 46px;
-  padding-bottom: 10px;
+  min-height: 36px;
+  padding: 0 0 10px;
+}
+
+.gradeFormularioEtapasPedidoLinha .campoCheckboxFormulario span {
+  white-space: nowrap;
+}
+
+.gradeFormularioEtapasPedidoLinha .campoFormulario-ordem .entradaFormulario,
+.gradeFormularioEtapasPedidoLinha .campoFormulario-cor .entradaFormulario {
+  text-align: center;
+}
+
+.gradeFormularioEtapasPedidoLinha .campoFormulario-cor .entradaFormulario {
+  padding: 4px;
+}
+
+.gradeFormularioEtapasOrcamentoLinha {
+  grid-template-columns: 120px minmax(280px, 1fr) 132px;
+  column-gap: 16px;
+  row-gap: 10px;
+  align-items: start;
+}
+
+.gradeFormularioEtapasOrcamentoLinha .campoFormulario-descricao {
+  grid-column: 2;
+}
+
+.gradeFormularioEtapasOrcamentoLinha .campoFormulario-cor {
+  grid-column: 3;
+}
+
+.gradeFormularioEtapasOrcamentoLinha .campoCheckbox-obrigarMotivoPerda {
+  grid-column: 1;
+}
+
+.gradeFormularioEtapasOrcamentoLinha .campoCheckbox-consideraFunilVendas {
+  grid-column: 2;
+}
+
+.gradeFormularioEtapasOrcamentoLinha .campoCheckbox-status {
+  grid-column: 3;
+}
+
+.gradeFormularioEtapasOrcamentoLinha .campoCheckboxFormulario {
+  align-self: start;
+  min-height: 36px;
+  padding: 4px 0 0;
+}
+
+.gradeFormularioEtapasOrcamentoLinha .campoCheckboxFormulario span {
+  white-space: nowrap;
+}
+
+.gradeFormularioEtapasOrcamentoLinha .campoFormulario-ordem .entradaFormulario,
+.gradeFormularioEtapasOrcamentoLinha .campoFormulario-cor .entradaFormulario {
+  text-align: center;
+}
+
+.gradeFormularioEtapasOrcamentoLinha .campoFormulario-cor .entradaFormulario {
+  padding: 4px;
+}
+
+.grupoCheckboxesFormulario {
+  margin-top: 10px;
+}
+
+.grupoCheckboxesEtapasOrcamento {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.grupoCheckboxesEtapasOrcamento .campoCheckboxFormulario {
+  min-height: 36px;
+  padding-top: 0;
+}
+
+.grupoCheckboxesEtapasOrcamento .campoCheckboxFormulario span {
+  white-space: nowrap;
+}
+
+.modalContatoEtapasOrcamentoLinha {
+  width: min(1220px, calc(100vw - 40px));
+}
+
+.modalClienteEtapasOrcamentoAmplo {
+  width: min(1320px, calc(100vw - 24px));
+}
+
+.gradeFormularioTiposAgenda {
+  grid-template-columns: 132px minmax(0, 1fr) minmax(0, 1fr) 182px;
+  column-gap: 20px;
+  row-gap: 10px;
+  align-items: end;
+}
+
+.gradeFormularioTiposAgenda .campoFormulario-descricao {
+  grid-column: 2 / span 2;
+}
+
+.gradeFormularioTiposAgenda .campoFormulario-cor {
+  grid-column: 4;
+}
+
+.gradeFormularioTiposAgenda .campoFormulario-ordem .entradaFormulario,
+.gradeFormularioTiposAgenda .campoFormulario-cor .entradaFormulario {
+  text-align: center;
+}
+
+.gradeFormularioTiposAgenda .campoFormulario-cor .entradaFormulario {
+  padding: 4px;
+}
+
+.gradeFormularioTiposAgenda .campoCheckboxFormulario {
+  align-self: start;
+  min-height: 38px;
+  padding: 4px 0 0;
+}
+
+.gradeFormularioTiposAgenda .campoCheckbox-obrigarCliente {
+  grid-column: 1;
+}
+
+.gradeFormularioTiposAgenda .campoCheckbox-obrigarLocal {
+  grid-column: 2;
+}
+
+.gradeFormularioTiposAgenda .campoCheckbox-obrigarRecurso {
+  grid-column: 3;
+}
+
+.gradeFormularioTiposAgenda .campoCheckbox-status {
+  grid-column: 4;
+}
+
+.gradeFormularioTiposAgenda .campoCheckboxFormulario span {
+  white-space: nowrap;
+}
+
+.gradeFormularioStatusVisita {
+  grid-template-columns: 110px 130px minmax(300px, 1fr) auto;
+  column-gap: 16px;
+  align-items: end;
+}
+
+.gradeFormularioStatusVisita .campoFormulario-descricao {
+  grid-column: 3;
+}
+
+.gradeFormularioStatusVisita .campoCheckboxFormulario {
+  grid-column: 4;
+  align-self: end;
+  min-height: 36px;
+  padding: 0 0 10px;
+}
+
+.gradeFormularioStatusVisita .campoFormulario-ordem .entradaFormulario {
+  text-align: center;
+}
+
+.gradeFormularioStatusVisita .campoCheckboxFormulario span {
+  white-space: nowrap;
 }
 
 .mensagemTabelaContatosModal {
@@ -3186,6 +3480,153 @@ body {
   background: rgba(248, 251, 254, 0.9);
 }
 
+.tabelaGruposProdutoConfiguracao th:nth-child(1),
+.tabelaGruposProdutoConfiguracao td:nth-child(1) {
+  width: 110px;
+}
+
+.tabelaGruposProdutoConfiguracao th:nth-child(3),
+.tabelaGruposProdutoConfiguracao td:nth-child(3) {
+  min-width: 280px;
+}
+
+.modalGrupoProdutoTamanho {
+  width: min(860px, calc(100vw - 48px));
+}
+
+.corpoModalGrupoProdutoTamanho {
+  display: block;
+}
+
+.gradeCamposGrupoProdutoTamanho {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+}
+
+.campoFormulario-descricaoGrupoProduto {
+  min-width: 0;
+}
+
+.campoAcaoTamanhosGrupoProduto {
+  width: 190px;
+}
+
+.campoAcaoTamanhosGrupoProduto .botaoBase {
+  width: 100%;
+}
+
+.campoCheckbox-statusGrupoProduto {
+  justify-self: start;
+}
+
+.secaoTamanhosGrupoProduto {
+  display: grid;
+  gap: 16px;
+}
+
+.cabecalhoSecaoTamanhosGrupoProduto {
+  display: grid;
+  gap: 4px;
+}
+
+.cabecalhoSecaoTamanhosGrupoProduto h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.cabecalhoSecaoTamanhosGrupoProduto p,
+.mensagemSemTamanhosGrupoProduto {
+  margin: 0;
+  color: var(--corTextoSuave);
+}
+
+.listaTamanhosGrupoProduto {
+  display: grid;
+  gap: 12px;
+}
+
+.linhaTamanhoGrupoProduto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  gap: 16px;
+  align-items: end;
+  padding: 14px 16px;
+  border: 1px solid rgba(23, 145, 226, 0.14);
+  border-radius: 18px;
+  background: rgba(248, 251, 254, 0.86);
+}
+
+.linhaTamanhoGrupoProduto.ativo {
+  border-color: rgba(23, 145, 226, 0.28);
+  background: rgba(232, 244, 252, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(23, 145, 226, 0.06);
+}
+
+.checkboxTamanhoGrupoProduto {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.checkboxTamanhoGrupoProduto input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--corPrimaria);
+}
+
+.checkboxTamanhoGrupoProduto span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.campoOrdemTamanhoGrupoProduto {
+  display: grid;
+  gap: 8px;
+}
+
+.campoOrdemTamanhoGrupoProduto label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--corTextoSuave);
+}
+
+.modalSelecaoTamanhosGrupoProduto {
+  width: min(620px, calc(100vw - 72px));
+}
+
+.corpoModalSelecaoTamanhosGrupoProduto {
+  display: grid;
+  gap: 12px;
+  max-height: min(62vh, 460px);
+  overflow: auto;
+}
+
+.linhaTamanhoGrupoProdutoHorizontal {
+  grid-template-columns: minmax(0, 1fr) 120px;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(248, 251, 254, 0.9);
+}
+
+.linhaTamanhoGrupoProdutoHorizontal .campoOrdemTamanhoGrupoProduto {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.linhaTamanhoGrupoProdutoHorizontal .campoOrdemTamanhoGrupoProduto label {
+  margin: 0;
+  min-width: 44px;
+}
+
+.linhaTamanhoGrupoProdutoHorizontal .campoOrdemTamanhoGrupoProduto .entradaFormulario {
+  height: 40px;
+  padding: 8px 10px;
+}
+
 .cartaoResumoAtualizacaoSistema strong {
   color: var(--corPrimariaForte);
   word-break: break-word;
@@ -3611,6 +4052,10 @@ body {
     overflow-x: auto;
   }
 
+  .corpoModalUsuariosConfiguracao .painelContatosConfiguracao {
+    height: auto;
+  }
+
   .tabelaContatosModal {
     min-width: 720px;
   }
@@ -3621,5 +4066,23 @@ body {
 
   .corpoModalContato {
     padding: 16px;
+  }
+
+  .gradeCamposGrupoProdutoTamanho,
+  .linhaTamanhoGrupoProduto {
+    grid-template-columns: 1fr;
+  }
+
+  .campoAcaoTamanhosGrupoProduto {
+    width: 100%;
+  }
+
+  .linhaTamanhoGrupoProdutoHorizontal .campoOrdemTamanhoGrupoProduto {
+    display: grid;
+    gap: 8px;
+  }
+
+  .checkboxTamanhoGrupoProduto span {
+    white-space: normal;
   }
 }

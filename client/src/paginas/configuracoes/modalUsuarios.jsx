@@ -3,6 +3,7 @@ import { Botao } from '../../componentes/comuns/botao';
 import { BotaoAcaoGrade } from '../../componentes/comuns/botaoAcaoGrade';
 import { CampoImagemPadrao } from '../../componentes/comuns/campoImagemPadrao';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
+import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 
 const estadoInicialUsuario = {
   imagem: '',
@@ -36,6 +37,15 @@ export function ModalUsuarios({
   const [formulario, definirFormulario] = useState(estadoInicialUsuario);
   const [salvando, definirSalvando] = useState(false);
   const [mensagemErro, definirMensagemErro] = useState('');
+  const [modalFiltrosAberto, definirModalFiltrosAberto] = useState(false);
+  const [filtros, definirFiltros] = useState(criarFiltrosIniciaisUsuarios());
+  const usuariosFiltrados = usuarios.filter((usuario) => {
+    if (!filtros.status) {
+      return true;
+    }
+
+    return filtros.status === '1' ? Boolean(usuario.ativo) : !Boolean(usuario.ativo);
+  });
 
   useEffect(() => {
     if (!aberto) {
@@ -48,6 +58,8 @@ export function ModalUsuarios({
     definirFormulario(estadoInicialUsuario);
     definirSalvando(false);
     definirMensagemErro('');
+    definirModalFiltrosAberto(false);
+    definirFiltros(criarFiltrosIniciaisUsuarios());
   }, [aberto]);
 
   useEffect(() => {
@@ -191,6 +203,17 @@ export function ModalUsuarios({
             <Botao
               variante="secundario"
               type="button"
+              icone="filtro"
+              somenteIcone
+              title="Filtros"
+              aria-label="Filtros"
+              onClick={() => definirModalFiltrosAberto(true)}
+            >
+              Filtro
+            </Botao>
+            <Botao
+              variante="secundario"
+              type="button"
               icone="fechar"
               somenteIcone
               title="Fechar"
@@ -215,8 +238,8 @@ export function ModalUsuarios({
           </div>
         </header>
 
-        <div className="corpoModalCliente corpoModalUsuarios">
-          <section className="painelContatosModalCliente">
+        <div className="corpoModalCliente corpoModalUsuarios corpoModalUsuariosConfiguracao">
+          <section className="painelContatosModalCliente painelContatosConfiguracao">
             <div className="gradeContatosModal">
               <table className="tabelaContatosModal tabelaUsuariosModal">
                 <thead>
@@ -231,8 +254,8 @@ export function ModalUsuarios({
                   </tr>
                 </thead>
                 <tbody>
-                  {usuarios.length > 0 ? (
-                    usuarios.map((usuario) => (
+                  {usuariosFiltrados.length > 0 ? (
+                    usuariosFiltrados.map((usuario) => (
                       <tr key={usuario.idUsuario}>
                         <td>
                           <div className="celulaAvatarCliente">
@@ -276,7 +299,7 @@ export function ModalUsuarios({
                   ) : (
                     <tr>
                       <td colSpan={7} className="mensagemTabelaContatosModal">
-                        Nenhum usuario cadastrado.
+                        Nenhum usuario encontrado para o filtro atual.
                       </td>
                     </tr>
                   )}
@@ -285,6 +308,28 @@ export function ModalUsuarios({
             </div>
           </section>
         </div>
+
+        <ModalFiltros
+          aberto={modalFiltrosAberto}
+          titulo="Filtros de usuarios"
+          filtros={filtros}
+          campos={[
+            {
+              name: 'status',
+              label: 'Ativo',
+              options: [
+                { valor: '1', label: 'Ativos' },
+                { valor: '0', label: 'Inativos' }
+              ]
+            }
+          ]}
+          aoFechar={() => definirModalFiltrosAberto(false)}
+          aoAplicar={(proximosFiltros) => {
+            definirFiltros(proximosFiltros);
+            definirModalFiltrosAberto(false);
+          }}
+          aoLimpar={() => definirFiltros(criarFiltrosIniciaisUsuarios())}
+        />
 
         {modalFormularioAberto ? (
           <div className="camadaModalContato" role="presentation" onMouseDown={fecharFormularioNoFundo}>
@@ -367,6 +412,12 @@ export function ModalUsuarios({
       </section>
     </div>
   );
+}
+
+function criarFiltrosIniciaisUsuarios() {
+  return {
+    status: '1'
+  };
 }
 
 function CampoFormulario({ label, name, type = 'text', ...props }) {

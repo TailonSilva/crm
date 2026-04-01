@@ -21,6 +21,20 @@ const entidades = [
     camposPermitidos: ['descricao', 'status']
   },
   {
+    nome: 'tamanho',
+    rota: '/api/tamanhos',
+    chavePrimaria: 'idTamanho',
+    camposObrigatorios: ['descricao'],
+    camposPermitidos: ['descricao', 'status']
+  },
+  {
+    nome: 'grupoProdutoTamanho',
+    rota: '/api/gruposProdutoTamanhos',
+    chavePrimaria: 'idGrupoProdutoTamanho',
+    camposObrigatorios: ['idGrupo', 'idTamanho', 'ordem'],
+    camposPermitidos: ['idGrupo', 'idTamanho', 'ordem']
+  },
+  {
     nome: 'marca',
     rota: '/api/marcas',
     chavePrimaria: 'idMarca',
@@ -52,8 +66,8 @@ const entidades = [
     nome: 'recurso',
     rota: '/api/recursos',
     chavePrimaria: 'idRecurso',
-    camposObrigatorios: ['sigla', 'descricao', 'idTipoRecurso'],
-    camposPermitidos: ['sigla', 'descricao', 'idTipoRecurso', 'status']
+    camposObrigatorios: ['descricao', 'idTipoRecurso'],
+    camposPermitidos: ['descricao', 'idTipoRecurso', 'status']
   },
   {
     nome: 'agendamento',
@@ -95,6 +109,7 @@ const entidades = [
       'obrigarCliente',
       'obrigarLocal',
       'obrigarRecurso',
+      'ordem',
       'status'
     ]
   },
@@ -103,7 +118,7 @@ const entidades = [
     rota: '/api/statusVisita',
     chavePrimaria: 'idStatusVisita',
     camposObrigatorios: ['descricao'],
-    camposPermitidos: ['descricao', 'icone', 'status']
+    camposPermitidos: ['descricao', 'icone', 'ordem', 'status']
   },
   {
     nome: 'canalAtendimento',
@@ -154,15 +169,15 @@ const entidades = [
     nome: 'etapaPedido',
     rota: '/api/etapasPedido',
     chavePrimaria: 'idEtapa',
-    camposObrigatorios: ['abreviacao', 'descricao', 'cor'],
-    camposPermitidos: ['abreviacao', 'descricao', 'cor', 'status']
+    camposObrigatorios: ['descricao', 'cor'],
+    camposPermitidos: ['descricao', 'cor', 'ordem', 'status']
   },
   {
     nome: 'etapaOrcamento',
     rota: '/api/etapasOrcamento',
     chavePrimaria: 'idEtapaOrcamento',
-    camposObrigatorios: ['abreviacao', 'descricao', 'cor'],
-    camposPermitidos: ['abreviacao', 'descricao', 'cor', 'obrigarMotivoPerda', 'status']
+    camposObrigatorios: ['descricao', 'cor'],
+    camposPermitidos: ['descricao', 'cor', 'ordem', 'obrigarMotivoPerda', 'consideraFunilVendas', 'status']
   },
   {
     nome: 'campoOrcamentoConfiguravel',

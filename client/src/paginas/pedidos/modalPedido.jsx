@@ -56,10 +56,36 @@ function normalizarEtapasPedido(etapasPedido) {
     return [];
   }
 
-  return etapasPedido.map((etapa) => ({
-    ...etapa,
-    idEtapaPedido: etapa.idEtapaPedido ?? etapa.idEtapa
-  }));
+  return etapasPedido
+    .map((etapa) => ({
+      ...etapa,
+      idEtapaPedido: etapa.idEtapaPedido ?? etapa.idEtapa
+    }))
+    .sort((etapaA, etapaB) => {
+      const ordemA = obterValorOrdemEtapa(etapaA?.ordem, etapaA?.idEtapaPedido);
+      const ordemB = obterValorOrdemEtapa(etapaB?.ordem, etapaB?.idEtapaPedido);
+
+      if (ordemA !== ordemB) {
+        return ordemA - ordemB;
+      }
+
+      return Number(etapaA?.idEtapaPedido || 0) - Number(etapaB?.idEtapaPedido || 0);
+    });
+}
+
+function obterValorOrdemEtapa(ordem, fallback) {
+  const ordemNumerica = Number(ordem);
+
+  if (Number.isFinite(ordemNumerica) && ordemNumerica > 0) {
+    return ordemNumerica;
+  }
+
+  const fallbackNumerico = Number(fallback);
+  if (Number.isFinite(fallbackNumerico) && fallbackNumerico > 0) {
+    return fallbackNumerico;
+  }
+
+  return Number.MAX_SAFE_INTEGER;
 }
 
 export function ModalPedido({
@@ -539,7 +565,7 @@ export function ModalPedido({
                   onChange={alterarCampo}
                   options={etapasPedidoNormalizadas.map((etapa) => ({
                     valor: String(etapa.idEtapaPedido),
-                    label: `${etapa.abreviacao} - ${etapa.descricao}`
+                    label: etapa.descricao
                   }))}
                   disabled={somenteLeitura}
                 />
@@ -950,6 +976,11 @@ function calcularTotalItem(quantidade, valorUnitario) {
   }
 
   return desformatarPreco(numeroQuantidade * numeroValorUnitario);
+}
+
+function formatarPrecoInput(valor) {
+  const numero = converterPrecoParaNumero(valor);
+  return numero === null ? '' : desformatarPreco(numero);
 }
 
 function obterIniciaisItemPedido(item) {

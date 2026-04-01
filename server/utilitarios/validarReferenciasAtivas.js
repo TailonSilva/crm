@@ -58,6 +58,22 @@ const validacoesPorEntidade = {
       mensagem: 'Selecione uma unidade ativa.'
     }
   ],
+  grupoProdutoTamanho: [
+    {
+      campo: 'idGrupo',
+      tabela: 'grupoProduto',
+      chavePrimaria: 'idGrupo',
+      colunaAtiva: 'status',
+      mensagem: 'Selecione um grupo de produto ativo.'
+    },
+    {
+      campo: 'idTamanho',
+      tabela: 'tamanho',
+      chavePrimaria: 'idTamanho',
+      colunaAtiva: 'status',
+      mensagem: 'Selecione um tamanho ativo.'
+    }
+  ],
   recurso: [
     {
       campo: 'idTipoRecurso',

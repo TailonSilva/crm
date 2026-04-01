@@ -23,6 +23,48 @@ function validarCamposObrigatorios(entidade, corpo) {
   });
 }
 
+const etapasCriticasProtegidas = {
+  etapaOrcamento: new Set([1, 2, 3]),
+  statusVisita: new Set([1, 2, 3, 4, 5])
+};
+
+function registroEhRegraCritica(entidade, registro) {
+  const regrasDaEntidade = etapasCriticasProtegidas[entidade.nome];
+
+  if (!regrasDaEntidade) {
+    return false;
+  }
+
+  const idRegistro = Number(registro?.[entidade.chavePrimaria]);
+  return Number.isFinite(idRegistro) && regrasDaEntidade.has(idRegistro);
+}
+
+function statusSolicitaInativacao(valorStatus) {
+  if (valorStatus === undefined) {
+    return false;
+  }
+
+  if (typeof valorStatus === 'string') {
+    const valorNormalizado = valorStatus.trim().toLowerCase();
+
+    if (!valorNormalizado) {
+      return false;
+    }
+
+    return valorNormalizado === '0' || valorNormalizado === 'false';
+  }
+
+  return Number(valorStatus) === 0;
+}
+
+function criarMensagemRegraCritica(entidade) {
+  return entidade.nome === 'etapaOrcamento'
+    ? 'As etapas obrigatorias de orcamento nao podem ser inativadas ou excluidas.'
+    : entidade.nome === 'statusVisita'
+      ? 'Os status criticos da agenda nao podem ser inativados ou excluidos.'
+    : 'Este registro critico nao pode ser inativado ou excluido.';
+}
+
 function criarRotaCrud(entidade) {
   const rota = express.Router();
 
@@ -97,6 +139,14 @@ function criarRotaCrud(entidade) {
         return;
       }
 
+      if (
+        registroEhRegraCritica(entidade, registroExistente)
+        && statusSolicitaInativacao(requisicao.body.status)
+      ) {
+        resposta.status(400).json({ mensagem: criarMensagemRegraCritica(entidade) });
+        return;
+      }
+
       const registroAtualizado = await atualizarRegistro(
         entidade,
         requisicao.params.id,
@@ -123,6 +173,11 @@ function criarRotaCrud(entidade) {
 
       if (!registroExistente) {
         resposta.status(404).json({ mensagem: 'Registro nao encontrado.' });
+        return;
+      }
+
+      if (registroEhRegraCritica(entidade, registroExistente)) {
+        resposta.status(400).json({ mensagem: criarMensagemRegraCritica(entidade) });
         return;
       }
 

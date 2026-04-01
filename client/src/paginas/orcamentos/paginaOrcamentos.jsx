@@ -40,6 +40,9 @@ function criarFiltrosIniciaisOrcamentos(usuarioLogado, empresa = null) {
   };
 }
 
+  const ID_ETAPA_ORCAMENTO_FECHAMENTO = 1;
+  const ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO = 2;
+
 function criarFiltrosLimposOrcamentos(usuarioLogado, empresa = null) {
   return {
     idCliente: '',
@@ -1008,17 +1011,11 @@ function etapaAcabouDeFechar(idEtapaAnterior, idEtapaAtual, etapasOrcamento) {
 }
 
 function etapaOrcamentoEhFechamento(etapa) {
-  const descricao = String(etapa?.descricao || '').trim().toLowerCase();
-  const abreviacao = String(etapa?.abreviacao || '').trim().toLowerCase();
-  return ['fechado', 'fechamento'].includes(descricao) || abreviacao === 'fec';
+  return Number(etapa?.idEtapaOrcamento) === ID_ETAPA_ORCAMENTO_FECHAMENTO;
 }
 
 function obterEtapaFechadoSemPedido(etapasOrcamento) {
-  return etapasOrcamento.find((etapa) => {
-    const descricao = String(etapa?.descricao || '').trim().toLowerCase();
-    const abreviacao = String(etapa?.abreviacao || '').trim().toLowerCase();
-    return descricao === 'fechado sem pedido' || abreviacao === 'fsp';
-  }) || null;
+  return etapasOrcamento.find((etapa) => Number(etapa?.idEtapaOrcamento) === ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO) || null;
 }
 
 function enriquecerOrcamentoParaPedido(orcamento, contexto) {

@@ -24,6 +24,60 @@ export function atualizarGrupoProduto(idGrupo, payload) {
   });
 }
 
+export function listarTamanhosConfiguracao() {
+  return requisitarApi('/tamanhos');
+}
+
+export function incluirTamanho(payload) {
+  return requisitarApi('/tamanhos', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function atualizarTamanho(idTamanho, payload) {
+  return requisitarApi(`/tamanhos/${idTamanho}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function listarGruposProdutoTamanhosConfiguracao() {
+  return requisitarApi('/gruposProdutoTamanhos');
+}
+
+export function incluirGrupoProdutoTamanho(payload) {
+  return requisitarApi('/gruposProdutoTamanhos', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function atualizarGrupoProdutoTamanho(idGrupoProdutoTamanho, payload) {
+  return requisitarApi(`/gruposProdutoTamanhos/${idGrupoProdutoTamanho}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function excluirGrupoProdutoTamanho(idGrupoProdutoTamanho) {
+  return requisitarApi(`/gruposProdutoTamanhos/${idGrupoProdutoTamanho}`, {
+    method: 'DELETE'
+  });
+}
+
 export function listarMarcasConfiguracao() {
   return requisitarApi('/marcas');
 }

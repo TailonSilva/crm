@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
 import { BotaoAcaoGrade } from '../../componentes/comuns/botaoAcaoGrade';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
+import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 
 const estadoInicialFormulario = {
   descricao: '',
@@ -32,6 +33,15 @@ export function ModalPrazosPagamento({
   const [formulario, definirFormulario] = useState(estadoInicialFormulario);
   const [salvando, definirSalvando] = useState(false);
   const [mensagemErro, definirMensagemErro] = useState('');
+  const [modalFiltrosAberto, definirModalFiltrosAberto] = useState(false);
+  const [filtros, definirFiltros] = useState(criarFiltrosIniciaisPrazos());
+  const prazosFiltrados = prazosPagamento.filter((prazo) => {
+    if (!filtros.status) {
+      return true;
+    }
+
+    return filtros.status === '1' ? Boolean(prazo.status) : !Boolean(prazo.status);
+  });
 
   useEffect(() => {
     if (!aberto) {
@@ -44,6 +54,8 @@ export function ModalPrazosPagamento({
     definirFormulario(estadoInicialFormulario);
     definirSalvando(false);
     definirMensagemErro('');
+    definirModalFiltrosAberto(false);
+    definirFiltros(criarFiltrosIniciaisPrazos());
   }, [aberto]);
 
   useEffect(() => {
@@ -196,6 +208,17 @@ export function ModalPrazosPagamento({
             <Botao
               variante="secundario"
               type="button"
+              icone="filtro"
+              somenteIcone
+              title="Filtros"
+              aria-label="Filtros"
+              onClick={() => definirModalFiltrosAberto(true)}
+            >
+              Filtro
+            </Botao>
+            <Botao
+              variante="secundario"
+              type="button"
               icone="fechar"
               somenteIcone
               title="Fechar"
@@ -220,8 +243,8 @@ export function ModalPrazosPagamento({
           </div>
         </header>
 
-        <div className="corpoModalCliente corpoModalUsuarios">
-          <section className="painelContatosModalCliente">
+        <div className="corpoModalCliente corpoModalUsuarios corpoModalUsuariosConfiguracao">
+          <section className="painelContatosModalCliente painelContatosConfiguracao">
             <div className="gradeContatosModal">
               <table className="tabelaContatosModal tabelaCadastrosConfiguracao tabelaPrazosPagamento">
                 <thead>
@@ -235,8 +258,8 @@ export function ModalPrazosPagamento({
                   </tr>
                 </thead>
                 <tbody>
-                  {prazosPagamento.length > 0 ? (
-                    prazosPagamento.map((prazo) => (
+                  {prazosFiltrados.length > 0 ? (
+                    prazosFiltrados.map((prazo) => (
                       <tr key={prazo.idPrazoPagamento}>
                         <td>
                           <CodigoRegistro valor={prazo.idPrazoPagamento} />
@@ -265,7 +288,7 @@ export function ModalPrazosPagamento({
                   ) : (
                     <tr>
                       <td colSpan={6} className="mensagemTabelaContatosModal">
-                        Nenhum prazo de pagamento cadastrado.
+                        Nenhum prazo de pagamento encontrado para o filtro atual.
                       </td>
                     </tr>
                   )}
@@ -274,6 +297,28 @@ export function ModalPrazosPagamento({
             </div>
           </section>
         </div>
+
+        <ModalFiltros
+          aberto={modalFiltrosAberto}
+          titulo="Filtros de prazos de pagamento"
+          filtros={filtros}
+          campos={[
+            {
+              name: 'status',
+              label: 'Ativo',
+              options: [
+                { valor: '1', label: 'Ativos' },
+                { valor: '0', label: 'Inativos' }
+              ]
+            }
+          ]}
+          aoFechar={() => definirModalFiltrosAberto(false)}
+          aoAplicar={(proximosFiltros) => {
+            definirFiltros(proximosFiltros);
+            definirModalFiltrosAberto(false);
+          }}
+          aoLimpar={() => definirFiltros(criarFiltrosIniciaisPrazos())}
+        />
 
         {modalFormularioAberto ? (
           <div className="camadaModalContato" role="presentation" onMouseDown={fecharFormularioNoFundo}>
@@ -367,6 +412,12 @@ export function ModalPrazosPagamento({
       </section>
     </div>
   );
+}
+
+function criarFiltrosIniciaisPrazos() {
+  return {
+    status: '1'
+  };
 }
 
 function CampoFormulario({ label, name, type = 'text', ...props }) {

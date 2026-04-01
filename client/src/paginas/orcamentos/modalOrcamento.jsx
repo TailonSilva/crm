@@ -18,6 +18,8 @@ const abasModalOrcamento = [
   { id: 'campos', label: 'Campos do orcamento' }
 ];
 
+const ID_ETAPA_ORCAMENTO_FECHAMENTO = 1;
+
 const estadoInicialFormulario = {
   dataInclusao: '',
   dataValidade: '',
@@ -87,7 +89,10 @@ export function ModalOrcamento({
   const usuariosAtivos = usuarios.filter((usuario) => usuario.ativo !== 0);
   const vendedoresAtivos = vendedores.filter((vendedor) => vendedor.status !== 0);
   const prazosAtivos = prazosPagamento.filter((prazo) => prazo.status !== 0);
-  const etapasAtivas = etapasOrcamento.filter((etapa) => etapa.status !== 0);
+  const etapasAtivas = useMemo(
+    () => ordenarEtapasPorOrdem(etapasOrcamento.filter((etapa) => etapa.status !== 0), 'idEtapaOrcamento'),
+    [etapasOrcamento]
+  );
   const motivosAtivos = motivosPerda.filter((motivo) => motivo.status !== 0);
   const produtosAtivos = produtos.filter((produto) => produto.status !== 0);
 
@@ -683,7 +688,7 @@ export function ModalOrcamento({
                   onChange={alterarCampo}
                   options={etapasAtivas.map((etapa) => ({
                     valor: String(etapa.idEtapaOrcamento),
-                    label: `${etapa.abreviacao} - ${etapa.descricao}`
+                    label: etapa.descricao
                   }))}
                   disabled={somenteLeitura || Boolean(formulario.idPedidoVinculado)}
                 />
@@ -1114,9 +1119,7 @@ export function ModalOrcamento({
 }
 
 function etapaOrcamentoEhFechamento(etapa) {
-  const descricao = String(etapa?.descricao || '').trim().toLowerCase();
-  const abreviacao = String(etapa?.abreviacao || '').trim().toLowerCase();
-  return ['fechado', 'fechamento'].includes(descricao) || abreviacao === 'fec';
+  return Number(etapa?.idEtapaOrcamento) === ID_ETAPA_ORCAMENTO_FECHAMENTO;
 }
 
 function CampoFormulario({ label, name, type = 'text', ...props }) {
@@ -1280,6 +1283,38 @@ function formatarPercentualInput(valor) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
+}
+
+function ordenarEtapasPorOrdem(etapas, chaveId) {
+  if (!Array.isArray(etapas)) {
+    return [];
+  }
+
+  return [...etapas].sort((etapaA, etapaB) => {
+    const ordemA = obterValorOrdemEtapa(etapaA?.ordem, etapaA?.[chaveId]);
+    const ordemB = obterValorOrdemEtapa(etapaB?.ordem, etapaB?.[chaveId]);
+
+    if (ordemA !== ordemB) {
+      return ordemA - ordemB;
+    }
+
+    return Number(etapaA?.[chaveId] || 0) - Number(etapaB?.[chaveId] || 0);
+  });
+}
+
+function obterValorOrdemEtapa(ordem, fallback) {
+  const ordemNumerica = Number(ordem);
+
+  if (Number.isFinite(ordemNumerica) && ordemNumerica > 0) {
+    return ordemNumerica;
+  }
+
+  const fallbackNumerico = Number(fallback);
+  if (Number.isFinite(fallbackNumerico) && fallbackNumerico > 0) {
+    return fallbackNumerico;
+  }
+
+  return Number.MAX_SAFE_INTEGER;
 }
 
 function normalizarQuantidade(valor) {

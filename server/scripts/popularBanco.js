@@ -139,18 +139,18 @@ async function popularCadastrosBase() {
   }
 
   const etapasOrcamento = [
-    { abreviacao: 'LEA', descricao: 'Lead recebido', cor: '#D9EAF7' },
-    { abreviacao: 'CON', descricao: 'Contato inicial', cor: '#CFE5FF' },
-    { abreviacao: 'QUA', descricao: 'Qualificacao', cor: '#BFE3D0' },
-    { abreviacao: 'APR', descricao: 'Apresentacao da proposta', cor: '#FFE2A8' },
-    { abreviacao: 'NEG', descricao: 'Negociacao', cor: '#FFC98F' },
-    { abreviacao: 'FEC', descricao: 'Fechamento', cor: '#A7E1B8' }
+    { descricao: 'Lead recebido', cor: '#D9EAF7', ordem: 1 },
+    { descricao: 'Contato inicial', cor: '#CFE5FF', ordem: 2 },
+    { descricao: 'Qualificacao', cor: '#BFE3D0', ordem: 3 },
+    { descricao: 'Apresentacao da proposta', cor: '#FFE2A8', ordem: 4 },
+    { descricao: 'Negociacao', cor: '#FFC98F', ordem: 5 },
+    { descricao: 'Fechado', cor: '#A7E1B8', ordem: 6 }
   ];
 
   for (const etapa of etapasOrcamento) {
     await executar(
-      'INSERT INTO etapaOrcamento (abreviacao, descricao, cor, status) VALUES (?, ?, ?, ?)',
-      [etapa.abreviacao, etapa.descricao, etapa.cor, 1]
+      'INSERT INTO etapaOrcamento (descricao, cor, ordem, status) VALUES (?, ?, ?, ?)',
+      [etapa.descricao, etapa.cor, etapa.ordem, 1]
     );
   }
 }

@@ -321,7 +321,7 @@ export function ModalAgendamento({
               titulo="Selecionar recursos"
               itens={recursosAtivos.map((recurso) => ({
                 valor: String(recurso.idRecurso),
-                label: recurso.sigla
+                label: recurso.descricao
               }))}
               valoresSelecionados={formulario.idsRecursos}
               placeholder="Selecionar recursos"

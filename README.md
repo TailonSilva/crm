@@ -71,7 +71,7 @@ Padroes centralizados no frontend:
 - `ModalBuscaContatos`: busca reutilizavel de contatos
 - `ModalContatoCliente`: formulario reutilizavel de contato
 - `ModalRamosAtividade`: lista e cadastro reutilizavel de ramos
-- `ModalGruposProduto`: lista e cadastro reutilizavel de grupos de produto
+- `ModalGruposProduto`: lista e cadastro de grupos de produto com botao dedicado para abrir um submodal compacto de selecao de tamanhos e ordem por grupo
 - `ModalMarcas`: lista e cadastro reutilizavel de marcas
 - `ModalUnidadesMedida`: lista e cadastro reutilizavel de unidades
 
@@ -163,6 +163,7 @@ Filtros de clientes:
 - Upload de imagem no padrao reutilizavel do projeto
 - Campo de preco com mascara e digitacao amigavel em real
 - Campo `Grupo de Produto` com botao de pesquisa para abrir o modal de configuracao
+- O modal de `Grupo de Produto` permite definir quais `Tamanhos` estao disponiveis para cada grupo e em qual ordem devem aparecer
 - Campo `Marca` com botao de pesquisa para abrir o modal de configuracao
 - Campo `Unidade` com botao de pesquisa para abrir o modal de configuracao
 - Inclusao e selecao imediata de registros auxiliares dentro do cadastro de produto
@@ -256,12 +257,14 @@ A tela de configuracoes usa cards grandes e modais padrao. Hoje ela cobre:
 - `Vendedores`
 - `Grupos de produto`
 - `Marcas`
+- `Tamanhos`
 - `Unidades`
 - `Metodos de pagamento`
 - `Prazos de pagamento`
 - `Motivo da perda`
 - `Etapas do pedido`
 - `Etapas do orcamento`
+- `Tamanhos`
 - `Campos do orcamento`
 - `Campos do pedido`
 - `Canais de atendimento`
@@ -278,6 +281,18 @@ Regras importantes:
 - O card de `Atualizacao do sistema` fica apenas na aba `Gerais`
 - O card de `Atualizacao do sistema` fica visivel apenas para `Administrador`
 - O modal de atualizacao permite salvar o link do repositorio GitHub usado para leitura das releases
+- `Etapas do pedido` e `Etapas do orcamento` agora possuem campo `Ordem`; os selects desses status respeitam essa ordem crescente nos formularios
+- O campo `Abreviacao` foi removido das etapas de pedido e orcamento; as regras e exibicao passam a considerar `Descricao`, `Cor`, `Ordem`, `Status` e, para etapas de orcamento, `Considera no Funil de Vendas`
+- Etapas obrigatorias de orcamento nao podem ser inativadas nem excluidas (regra aplicada no backend e refletida no modal de Configuracoes)
+- Regras obrigatorias das etapas de orcamento sao avaliadas por `idEtapaOrcamento` fixo (`1` Fechado, `2` Fechado sem pedido, `3` Pedido excluido)
+- Regras criticas de `Status da visita` sao avaliadas por `idStatusVisita` fixo (`1` Agendado, `2` Confirmado, `3` Realizado, `4` Cancelado, `5` Nao compareceu)
+- Status criticos da agenda podem ser editados, mas nao podem ser inativados nem excluidos (bloqueio no modal de Configuracoes e no backend)
+- `Tipos de agenda` e `Status da visita` agora possuem campo `Ordem`; os selects/imputs da agenda respeitam a ordem crescente definida em Configuracoes
+- `Recursos` nao usam mais `Sigla`; o cadastro e a exibicao passam a considerar `Descricao`, `Tipo` e `Status`
+- `Tamanhos` possuem cadastro proprio em Configuracoes com `Codigo`, `Tamanho` e `Status`
+- Cada `Grupo de Produto` pode vincular varios `Tamanhos`; essa relacao guarda a `Ordem` usada para exibicao no fluxo comercial
+- Os modais de grid da pagina de `Configuracoes` possuem botao que abre `Modal de filtros`; inicialmente ha filtro de `Ativo` e o estado padrao ao abrir e `somente ativos`
+- Os modais de grid da pagina de `Configuracoes` possuem altura fixa na area de listagem para evitar variacao de tamanho ao trocar filtro ou contexto
 
 ### Empresa
 
@@ -286,6 +301,7 @@ O cadastro de empresa tem modal proprio com abas:
 - `Dados gerais`
 - `Endereco`
 - `Agenda`
+- `Orcamentos/Pedidos`
 
 Campos de destaque:
 
@@ -300,6 +316,7 @@ Campos de destaque:
 - Horarios de sabado quando aplicavel
 - `diasValidadeOrcamento`
 - `diasEntregaPedido`
+- `Filtro padrao de status do orcamento`
 
 Esses dados sao usados em:
 
@@ -343,6 +360,8 @@ Cadastros comerciais:
 - `ramoAtividade`
 - `vendedor`
 - `grupoProduto`
+- `tamanho`
+- `grupoProdutoTamanho`
 - `marca`
 - `unidadeMedida`
 - `cliente`
@@ -406,6 +425,8 @@ Rotas CRUD atualmente expostas:
 - `/api/ramosAtividade`
 - `/api/vendedores`
 - `/api/gruposProduto`
+- `/api/tamanhos`
+- `/api/gruposProdutoTamanhos`
 - `/api/marcas`
 - `/api/unidadesMedida`
 - `/api/locaisAgenda`

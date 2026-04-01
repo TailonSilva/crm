@@ -8,7 +8,8 @@ import { normalizarTelefone } from '../../utilitarios/normalizarTelefone';
 const abasModalEmpresa = [
   { id: 'dadosGerais', label: 'Dados gerais' },
   { id: 'endereco', label: 'Endereco' },
-  { id: 'agenda', label: 'Agenda' }
+  { id: 'agenda', label: 'Agenda' },
+  { id: 'orcamentosPedidos', label: 'Orcamentos/Pedidos' }
 ];
 
 const estadoInicialFormulario = {
@@ -316,6 +317,24 @@ export function ModalEmpresa({
               <CampoFormulario label="Fim da manha" name="horaFimManha" type="time" value={formulario.horaFimManha} onChange={alterarCampo} disabled={somenteLeitura} />
               <CampoFormulario label="Inicio da tarde" name="horaInicioTarde" type="time" value={formulario.horaInicioTarde} onChange={alterarCampo} disabled={somenteLeitura} />
               <CampoFormulario label="Fim da tarde" name="horaFimTarde" type="time" value={formulario.horaFimTarde} onChange={alterarCampo} disabled={somenteLeitura} />
+              <CampoCheckbox
+                label="Trabalha aos sabados"
+                name="trabalhaSabado"
+                checked={formulario.trabalhaSabado}
+                onChange={alterarCampo}
+                disabled={somenteLeitura}
+              />
+              {formulario.trabalhaSabado ? (
+                <>
+                  <CampoFormulario label="Inicio do sabado" name="horaInicioSabado" type="time" value={formulario.horaInicioSabado} onChange={alterarCampo} disabled={somenteLeitura} />
+                  <CampoFormulario label="Fim do sabado" name="horaFimSabado" type="time" value={formulario.horaFimSabado} onChange={alterarCampo} disabled={somenteLeitura} />
+                </>
+              ) : null}
+            </section>
+          ) : null}
+
+          {abaAtiva === 'orcamentosPedidos' ? (
+            <section className="gradeCamposModalCliente">
               <CampoFormulario label="Validade padrao do orcamento (dias)" name="diasValidadeOrcamento" type="number" min="0" value={formulario.diasValidadeOrcamento} onChange={alterarCampo} disabled={somenteLeitura} />
               <CampoFormulario label="Prazo padrao de entrega do pedido (dias)" name="diasEntregaPedido" type="number" min="0" value={formulario.diasEntregaPedido} onChange={alterarCampo} disabled={somenteLeitura} />
               <CampoSelecaoMultiplaModal
@@ -334,19 +353,6 @@ export function ModalEmpresa({
                   etapasFiltroPadraoOrcamento: valores
                 }))}
               />
-              <CampoCheckbox
-                label="Trabalha aos sabados"
-                name="trabalhaSabado"
-                checked={formulario.trabalhaSabado}
-                onChange={alterarCampo}
-                disabled={somenteLeitura}
-              />
-              {formulario.trabalhaSabado ? (
-                <>
-                  <CampoFormulario label="Inicio do sabado" name="horaInicioSabado" type="time" value={formulario.horaInicioSabado} onChange={alterarCampo} disabled={somenteLeitura} />
-                  <CampoFormulario label="Fim do sabado" name="horaFimSabado" type="time" value={formulario.horaFimSabado} onChange={alterarCampo} disabled={somenteLeitura} />
-                </>
-              ) : null}
             </section>
           ) : null}
         </div>

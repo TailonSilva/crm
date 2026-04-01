@@ -66,6 +66,7 @@ const filtrosIniciaisAgenda = {
   idRecurso: [],
   idStatusVisita: ''
 };
+const ID_STATUS_VISITA_REALIZADO = 3;
 
 export function PaginaAgenda({ usuarioLogado }) {
   const [dataBase, definirDataBase] = useState(new Date());
@@ -307,8 +308,8 @@ export function PaginaAgenda({ usuarioLogado }) {
 
     definirEmpresa(empresasCarregadas[0] || null);
     definirLocais(locaisCarregados);
-    definirTiposAgenda(tiposAgendaCarregados.filter((tipoAgenda) => tipoAgenda.status));
-    definirStatusVisita(statusVisitaCarregados.filter((status) => status.status));
+    definirTiposAgenda(ordenarRegistrosPorOrdem(tiposAgendaCarregados.filter((tipoAgenda) => tipoAgenda.status), 'idTipoAgenda'));
+    definirStatusVisita(ordenarRegistrosPorOrdem(statusVisitaCarregados.filter((status) => status.status), 'idStatusVisita'));
     definirClientes(clientesCarregados.filter((cliente) => cliente.status));
     definirContatos(contatosCarregados.filter((contato) => contato.status));
     definirVendedores(vendedoresCarregados.filter((vendedor) => vendedor.status));
@@ -618,7 +619,7 @@ export function PaginaAgenda({ usuarioLogado }) {
 
   async function salvarAtendimentoAgenda(dadosAtendimento) {
     const statusRealizado = statusVisita.find(
-      (status) => String(status.descricao || '').trim().toLowerCase() === 'realizado'
+      (status) => Number(status.idStatusVisita) === ID_STATUS_VISITA_REALIZADO
     );
 
     await incluirAtendimento({
@@ -1095,7 +1096,7 @@ export function PaginaAgenda({ usuarioLogado }) {
               .filter((recurso) => recurso.status)
               .map((recurso) => ({
                 valor: String(recurso.idRecurso),
-                label: `${recurso.sigla} - ${recurso.descricao}`
+                label: recurso.descricao
               }))
           },
           {
@@ -1131,6 +1132,38 @@ function normalizarCampoSelectAgendamento(valor) {
   }
 
   return String(valor);
+}
+
+function ordenarRegistrosPorOrdem(registros, chavePrimaria) {
+  if (!Array.isArray(registros)) {
+    return [];
+  }
+
+  return [...registros].sort((registroA, registroB) => {
+    const ordemA = normalizarOrdemOrdenacao(registroA?.ordem, registroA?.[chavePrimaria]);
+    const ordemB = normalizarOrdemOrdenacao(registroB?.ordem, registroB?.[chavePrimaria]);
+
+    if (ordemA !== ordemB) {
+      return ordemA - ordemB;
+    }
+
+    return Number(registroA?.[chavePrimaria] || 0) - Number(registroB?.[chavePrimaria] || 0);
+  });
+}
+
+function normalizarOrdemOrdenacao(ordem, fallback) {
+  const ordemNumerica = Number(ordem);
+
+  if (Number.isFinite(ordemNumerica) && ordemNumerica > 0) {
+    return ordemNumerica;
+  }
+
+  const fallbackNumerico = Number(fallback);
+  if (Number.isFinite(fallbackNumerico) && fallbackNumerico > 0) {
+    return fallbackNumerico;
+  }
+
+  return Number.MAX_SAFE_INTEGER;
 }
 
 function obterInicioSemana(data) {
@@ -1342,7 +1375,7 @@ function enriquecerAgendamentos(
   const recursosPorId = new Map(
     recursos.map((recurso) => [
       recurso.idRecurso,
-      `${recurso.sigla} - ${recurso.descricao} (${tiposPorId.get(recurso.idTipoRecurso) || 'Nao informado'})`
+      `${recurso.descricao} (${tiposPorId.get(recurso.idTipoRecurso) || 'Nao informado'})`
     ])
   );
   const clientesPorId = new Map(
@@ -1909,21 +1942,19 @@ function enriquecerOrcamentosAtendimento(orcamentos, clientes, contatos, usuario
 }
 
 function orcamentoEstaAberto(orcamento) {
-  const descricaoEtapa = String(
-    orcamento?.etapaOrcamento?.descricao
-    || orcamento?.nomeEtapaOrcamento
-    || ''
-  ).trim().toLowerCase();
+  const idEtapa = Number(
+    orcamento?.idEtapaOrcamento
+    || orcamento?.etapaOrcamento?.idEtapaOrcamento
+    || 0
+  );
 
-  return !['encerrado', 'fechado', 'fechamento', 'fechado sem pedido', 'pedido excluido'].includes(descricaoEtapa);
+  return ![1, 2, 3].includes(idEtapa);
 }
 
+const ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO = 2;
+
 function obterEtapaFechadoSemPedido(etapasOrcamento) {
-  return etapasOrcamento.find((etapa) => {
-    const descricao = String(etapa?.descricao || '').trim().toLowerCase();
-    const abreviacao = String(etapa?.abreviacao || '').trim().toLowerCase();
-    return descricao === 'fechado sem pedido' || abreviacao === 'fsp';
-  }) || null;
+  return etapasOrcamento.find((etapa) => Number(etapa?.idEtapaOrcamento) === ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO) || null;
 }
 
 function normalizarPayloadOrcamento(dadosOrcamento, usuarioLogado) {
