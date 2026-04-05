@@ -1,13 +1,21 @@
 import { requisitarApi } from './api';
 import { requisitarListaApi } from './listas';
 import { normalizarTextoCapitalizado } from '../utilitarios/normalizarTextoFormulario';
+import { montarParametrosConsulta } from '../utilitarios/montarParametrosConsulta';
 
-export function listarClientes() {
-  return requisitarApi('/clientes');
+export function listarClientes(parametros) {
+  return requisitarApi(`/clientes${montarParametrosConsulta(parametros)}`);
 }
 
-export function listarContatos() {
-  return requisitarApi('/contatos');
+export function listarClientesGrid({ pesquisa = '', filtros = {} } = {}) {
+  return requisitarApi(`/listagens/clientes${montarParametrosConsulta({
+    search: pesquisa,
+    ...filtros
+  })}`);
+}
+
+export function listarContatos(parametros) {
+  return requisitarApi(`/contatos${montarParametrosConsulta(parametros)}`);
 }
 
 export function listarVendedores(opcoes) {

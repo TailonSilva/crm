@@ -66,10 +66,24 @@ Observacao importante:
 - Sempre que o conteudo textual de uma celula ultrapassar duas linhas, a grade deve truncar visualmente com reticencias para preservar altura previsivel e leitura da listagem
 - Quando uma grade tiver muitas colunas ou textos longos, a distribuicao horizontal deve usar presets de largura por contexto dentro do `GradePadrao`, em vez de voltar para tabelas isoladas ou CSS solto por pagina
 - Quando a empresa puder escolher colunas visiveis de uma grade, essa configuracao deve ficar persistida no cadastro da `Empresa`, refletir todas as colunas persistidas daquele modulo e usar renderizacao dinamica de cabecalho, linhas e `colgroup`
+- Grades principais com pesquisa e filtros devem priorizar filtro no backend: a interface envia os parametros atuais da tela para a API e a listagem retorna somente o recorte solicitado
+- Quando a pagina precisar dados auxiliares para modais e selects, esse contexto deve ser carregado separado da grade principal, para evitar recarregar listas inteiras a cada digitacao ou troca de filtro
 - Cada componente novo deve ter seu proprio arquivo de estilo com o mesmo nome do componente salvo em `client/src/recursos/estilos/`
 - CSS de pagina deve ficar restrito a layout/composicao da pagina e tambem salvo em `client/src/recursos/estilos/`
 - Classes CSS devem ser prefixadas pelo nome do componente para reduzir acoplamento visual e colisao de seletores
 - Mesmo componentes de pagina devem seguir a mesma regra: `paginaInicio.jsx` usa `client/src/recursos/estilos/paginaInicio.css`, `funilVendas.jsx` usa `client/src/recursos/estilos/funilVendas.css`, e assim por diante
+
+## Arquitetura atual das grades
+
+- Grades principais de `Clientes`, `Produtos`, `Atendimentos`, `Orcamentos` e `Pedidos` nao devem mais carregar a tabela inteira para filtrar no frontend
+- O fluxo esperado agora e: carregar contexto da pagina em uma etapa separada, enviar `pesquisa + filtros atuais` para a API e renderizar apenas o recorte devolvido pelo backend
+- Dados auxiliares para filtros, selects, modais de busca e enriquecimento visual continuam vindo das tabelas auxiliares corretas, em requisicoes separadas da grade principal
+- O frontend deve usar `client/src/utilitarios/montarParametrosConsulta.js` para montar query string e manter um formato consistente entre modulos
+- Listagens enxutas de grade ficam concentradas em rotas dedicadas de `server/rotas/listagens.js` quando o modulo usar CRUD simples; fluxos customizados como `Orcamentos` e `Pedidos` continuam filtrando dentro das proprias rotas
+- A camada SQL compartilhada de filtros fica em `server/utilitarios/filtrosSql.js` e deve ser o ponto central de normalizacao de valores, listas e filtros numericos
+- O frontend nao deve depender de carregar todos os registros para preencher filtros de selecao; esses filtros devem buscar diretamente suas tabelas auxiliares, como `ramosAtividade`, `gruposEmpresa`, `gruposProduto`, `marcas`, `unidadesMedida`, `vendedores`, `etapas` e similares
+- Quando a tela precisar contexto e grade ao mesmo tempo, falhas no contexto nao devem derrubar automaticamente a carga da grade; essas duas responsabilidades devem permanecer separadas
+- Em erros de grade, a interface deve priorizar expor a mensagem real retornada pela API ou pelo navegador durante desenvolvimento para reduzir diagnostico por tentativa e erro
 
 ## Componentes e padroes reutilizaveis
 
@@ -619,6 +633,9 @@ Rotas CRUD atualmente expostas:
 - `/api/contatos`
 - `/api/produtos`
 - `/api/atendimentos`
+- `/api/listagens/clientes`: listagem enxuta para o grid principal, com busca textual e filtros enviados pela tela
+- `/api/listagens/produtos`: listagem enxuta para o grid principal, com busca textual e filtros enviados pela tela
+- `/api/listagens/atendimentos`: listagem enxuta para o grid principal, com busca textual, filtros e recorte por carteira quando aplicavel
 - `/api/itensOrcamento`
 - `/api/valoresCamposOrcamento`
 - `/api/itensPedido`
@@ -630,6 +647,7 @@ Rotas CRUD atualmente expostas:
 - `/api/agendamentos`: CRUD customizado para agendamento, com suporte a multiplos recursos e multiplos usuarios
 - `/api/orcamentos`: fluxo customizado de orcamentos com itens e campos extras
 - `/api/pedidos`: fluxo customizado de pedidos com itens e campos extras
+- `GET /api/orcamentos` e `GET /api/pedidos` aceitam os filtros das paginas principais para reduzir carga no frontend e retornar apenas o recorte solicitado
 - `GET /api/atualizacaoSistema`: leitura da configuracao de update
 - `PUT /api/atualizacaoSistema`: persistencia da configuracao de update
 - `/api/arquivos/imagens`: entrega de imagens locais do sistema
@@ -671,6 +689,14 @@ Os dados de teste usam:
 - `npm run dev:backend`: sobe somente o backend Express com `nodemon`
 - `npm run dev:web`: sobe somente o frontend web com Vite
 - `npm run dev:electron`: abre somente o Electron, aguardando backend e frontend
+
+Observacoes do ambiente local:
+
+- Em desenvolvimento, o backend local usa a porta `3101`
+- Em desenvolvimento, o banco usado pelo projeto deve ser `data/crm.sqlite` dentro deste repositorio
+- Essa separacao evita conflito com uma versao instalada do app no mesmo computador, que continua usando a propria pasta de dados
+- O frontend web em desenvolvimento aponta para `http://127.0.0.1:3101/api`
+- A `Content-Security-Policy` definida em `client/index.html` precisa permitir `connect-src` para `http://127.0.0.1:3101` e `http://localhost:3101`; sem isso, o navegador bloqueia a API local antes mesmo de a requisicao chegar ao backend
 
 ### Inicializacao manual
 

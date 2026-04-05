@@ -3,6 +3,7 @@ import { Botao } from '../../componentes/comuns/botao';
 import { CampoSelecaoMultiplaModal } from '../../componentes/comuns/campoSelecaoMultiplaModal';
 import { formatarNomeContato } from '../../utilitarios/formatarNomeContato';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
+import { registroEstaAtivo } from '../../utilitarios/statusRegistro';
 
 const estadoInicialFormulario = {
   idAgendamento: '',
@@ -40,14 +41,14 @@ export function ModalAgendamento({
   const [salvando, definirSalvando] = useState(false);
   const [mensagemErro, definirMensagemErro] = useState('');
   const [confirmandoExclusao, definirConfirmandoExclusao] = useState(false);
-  const locaisAtivos = locais.filter((local) => local.status !== 0);
-  const recursosAtivos = recursos.filter((recurso) => recurso.status !== 0);
-  const clientesAtivos = clientes.filter((cliente) => cliente.status !== 0);
-  const contatosAtivos = contatos.filter((contato) => contato.status !== 0);
-  const usuariosAtivos = usuarios.filter((usuario) => usuario.ativo !== 0);
-  const tiposAgendaAtivos = tiposAgenda.filter((tipoAgenda) => tipoAgenda.status !== 0);
+  const locaisAtivos = locais.filter((local) => registroEstaAtivo(local.status));
+  const recursosAtivos = recursos.filter((recurso) => registroEstaAtivo(recurso.status));
+  const clientesAtivos = clientes.filter((cliente) => registroEstaAtivo(cliente.status));
+  const contatosAtivos = contatos.filter((contato) => registroEstaAtivo(contato.status));
+  const usuariosAtivos = usuarios.filter((usuario) => registroEstaAtivo(usuario.ativo));
+  const tiposAgendaAtivos = tiposAgenda.filter((tipoAgenda) => registroEstaAtivo(tipoAgenda.status));
   const statusAtivos = useMemo(
-    () => statusVisita.filter((status) => status.status !== 0),
+    () => statusVisita.filter((status) => registroEstaAtivo(status.status)),
     [statusVisita]
   );
 

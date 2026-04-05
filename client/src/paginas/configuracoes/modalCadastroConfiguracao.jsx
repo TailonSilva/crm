@@ -5,6 +5,7 @@ import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { GradePadrao } from '../../componentes/comuns/gradePadrao';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
+import { registroEstaAtivo } from '../../utilitarios/statusRegistro';
 
 export function ModalCadastroConfiguracao({
   aberto,
@@ -262,8 +263,8 @@ export function ModalCadastroConfiguracao({
     }
 
     return filtros.status === '1'
-      ? Boolean(registro[statusField])
-      : !Boolean(registro[statusField]);
+      ? registroEstaAtivo(registro[statusField])
+      : !registroEstaAtivo(registro[statusField]);
   });
 
   return (

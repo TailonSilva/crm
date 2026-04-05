@@ -5,6 +5,7 @@ import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { GradePadrao } from '../../componentes/comuns/gradePadrao';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
+import { registroEstaAtivo } from '../../utilitarios/statusRegistro';
 
 const estadoInicialFormulario = {
   descricao: '',
@@ -44,7 +45,7 @@ export function ModalPrazosPagamento({
       return true;
     }
 
-    return filtros.status === '1' ? Boolean(prazo.status) : !Boolean(prazo.status);
+    return filtros.status === '1' ? registroEstaAtivo(prazo.status) : !registroEstaAtivo(prazo.status);
   });
 
   useEffect(() => {

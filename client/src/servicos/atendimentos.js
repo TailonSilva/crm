@@ -1,8 +1,16 @@
 import { requisitarApi } from './api';
 import { requisitarListaApi } from './listas';
+import { montarParametrosConsulta } from '../utilitarios/montarParametrosConsulta';
 
-export function listarAtendimentos() {
-  return requisitarApi('/atendimentos');
+export function listarAtendimentos(parametros) {
+  return requisitarApi(`/atendimentos${montarParametrosConsulta(parametros)}`);
+}
+
+export function listarAtendimentosGrid({ pesquisa = '', filtros = {} } = {}) {
+  return requisitarApi(`/listagens/atendimentos${montarParametrosConsulta({
+    search: pesquisa,
+    ...filtros
+  })}`);
 }
 
 export function incluirAtendimento(payload) {

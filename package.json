@@ -7,17 +7,17 @@
   "scripts": {
     "dev": "concurrently -k \"npm:dev:backend\" \"npm:dev:web\" \"npm:dev:electron\"",
     "dev:webapp": "concurrently -k \"npm:dev:backend\" \"npm:dev:web\"",
-    "dev:backend": "nodemon server/index.js",
+    "dev:backend": "nodemon scripts/iniciarBackendDev.js",
     "dev:web": "vite",
-    "dev:electron": "wait-on tcp:3001 tcp:5174 && node scripts/abrirElectron.js .",
-    "start:backend": "node server/index.js",
+    "dev:electron": "wait-on tcp:3101 tcp:5174 && node scripts/abrirElectron.js .",
+    "start:backend": "node scripts/iniciarBackendLocal.js",
     "start:web": "vite",
     "start:electron": "npm run build:web && node scripts/abrirElectron.js .",
     "build": "npm run build:web",
     "build:web": "vite build",
     "build:electron": "npm run build:web && node scripts/executarElectronBuilder.js",
     "release": "npm run build:web && node scripts/executarElectronBuilder.js --publish always",
-    "popular:banco": "node server/scripts/popularBanco.js"
+    "popular:banco": "node scripts/popularBancoLocal.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

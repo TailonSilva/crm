@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Icone } from '../../componentes/comuns/icone';
 import { ModalManualPagina } from '../../componentes/comuns/modalManualPagina';
+import { registroEstaAtivo } from '../../utilitarios/statusRegistro';
 
 const intervaloMinutosManual = 15;
 const configuracaoExpedientePadrao = {
@@ -75,7 +76,7 @@ export function ModalManualAgenda({
     },
     {
       titulo: 'Estrutura atual',
-      descricao: `${locais.filter((local) => local.status).length} locais ativos e ${recursos.filter((recurso) => recurso.status).length} recursos ativos.`,
+      descricao: `${locais.filter((local) => registroEstaAtivo(local.status)).length} locais ativos e ${recursos.filter((recurso) => registroEstaAtivo(recurso.status)).length} recursos ativos.`,
       detalhe: `${tiposAgenda.length} tipos de agenda ativos`,
       icone: 'caixa'
     }
@@ -208,7 +209,7 @@ export function ModalManualAgenda({
 
 function criarResumoObrigatoriedades(tiposAgenda) {
   return tiposAgenda
-    .filter((tipoAgenda) => tipoAgenda?.status)
+    .filter((tipoAgenda) => registroEstaAtivo(tipoAgenda?.status))
     .map((tipoAgenda) => ({
       id: tipoAgenda.idTipoAgenda,
       nome: tipoAgenda.descricao || 'Tipo sem descricao',
@@ -223,7 +224,7 @@ function criarResumoObrigatoriedades(tiposAgenda) {
 
 function obterStatusInicial(statusVisita) {
   const statusAtivos = statusVisita
-    .filter((status) => status?.status)
+    .filter((status) => registroEstaAtivo(status?.status))
     .sort((primeiro, segundo) => {
       const ordemPrimeira = Number(primeiro?.ordem);
       const ordemSegunda = Number(segundo?.ordem);

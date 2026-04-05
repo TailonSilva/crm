@@ -1,7 +1,8 @@
 import { requisitarApi } from './api';
+import { montarParametrosConsulta } from '../utilitarios/montarParametrosConsulta';
 
-export function listarPedidos() {
-  return requisitarApi('/pedidos');
+export function listarPedidos(parametros) {
+  return requisitarApi(`/pedidos${montarParametrosConsulta(parametros)}`);
 }
 
 export function consultarPedido(idPedido) {

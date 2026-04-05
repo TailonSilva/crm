@@ -1,7 +1,8 @@
 import { requisitarApi } from './api';
+import { montarParametrosConsulta } from '../utilitarios/montarParametrosConsulta';
 
-export function listarOrcamentos() {
-  return requisitarApi('/orcamentos');
+export function listarOrcamentos(parametros) {
+  return requisitarApi(`/orcamentos${montarParametrosConsulta(parametros)}`);
 }
 
 export function consultarOrcamento(idOrcamento) {

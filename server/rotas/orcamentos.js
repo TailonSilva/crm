@@ -6,19 +6,67 @@ const {
   removerArquivoImagem,
   salvarImagemItemOrcamento
 } = require('../utilitarios/imagens');
+const { montarUrlArquivo, obterBaseUrlApi } = require('../utilitarios/urlApi');
 const { validarReferenciasAtivasDaEntidade } = require('../utilitarios/validarReferenciasAtivas');
+const {
+  adicionarFiltroBusca,
+  adicionarFiltroIgual,
+  adicionarFiltroLista,
+  adicionarFiltroPeriodo,
+  montarWhere
+} = require('../utilitarios/filtrosSql');
 
 const rotaOrcamentos = express.Router();
 const IDS_ETAPAS_ORCAMENTO_FECHADAS = new Set([1, 2, 3]);
 
-rotaOrcamentos.get('/', async (_requisicao, resposta) => {
+rotaOrcamentos.get('/', async (requisicao, resposta) => {
   try {
+    const clausulas = [];
+    const parametros = [];
+    const { query } = requisicao;
+
+    adicionarFiltroBusca(clausulas, parametros, query.search, [
+      'COALESCE(cliente.nomeFantasia, cliente.razaoSocial)',
+      'contato.nome',
+      'usuario.nome',
+      'vendedorCliente.nome',
+      'vendedorOrcamento.nome',
+      'prazoPagamento.descricao',
+      'metodoPagamento.descricao',
+      'etapaOrcamento.descricao',
+      'motivoPerda.descricao',
+      'orcamento.observacao',
+      'CAST(orcamento.idOrcamento AS TEXT)'
+    ]);
+    adicionarFiltroIgual(clausulas, parametros, 'orcamento.idCliente', query.idCliente, Number);
+    adicionarFiltroLista(clausulas, parametros, 'orcamento.idUsuario', query.idUsuario, Number);
+    adicionarFiltroLista(clausulas, parametros, 'cliente.idVendedor', query.idVendedorCliente, Number);
+    adicionarFiltroLista(clausulas, parametros, 'orcamento.idVendedor', query.idVendedor, Number);
+    adicionarFiltroLista(clausulas, parametros, 'orcamento.idEtapaOrcamento', query.idsEtapaOrcamento, Number);
+    adicionarFiltroPeriodo(clausulas, parametros, 'orcamento.dataInclusao', query.dataInclusaoInicio, query.dataInclusaoFim);
+    adicionarFiltroPeriodo(clausulas, parametros, 'orcamento.dataFechamento', query.dataFechamentoInicio, query.dataFechamentoFim);
+
+    if (query.escopoIdVendedor && query.escopoIdUsuario) {
+      clausulas.push('(cliente.idVendedor = ? OR orcamento.idUsuario = ?)');
+      parametros.push(Number(query.escopoIdVendedor), Number(query.escopoIdUsuario));
+    }
+
     const registros = await consultarTodos(`
       SELECT
-        orcamento.*
+        orcamento.idOrcamento
       FROM orcamento
+      LEFT JOIN cliente ON cliente.idCliente = orcamento.idCliente
+      LEFT JOIN contato ON contato.idContato = orcamento.idContato
+      LEFT JOIN usuario ON usuario.idUsuario = orcamento.idUsuario
+      LEFT JOIN vendedor AS vendedorCliente ON vendedorCliente.idVendedor = cliente.idVendedor
+      LEFT JOIN vendedor AS vendedorOrcamento ON vendedorOrcamento.idVendedor = orcamento.idVendedor
+      LEFT JOIN prazoPagamento ON prazoPagamento.idPrazoPagamento = orcamento.idPrazoPagamento
+      LEFT JOIN metodoPagamento ON metodoPagamento.idMetodoPagamento = prazoPagamento.idMetodoPagamento
+      LEFT JOIN etapaOrcamento ON etapaOrcamento.idEtapaOrcamento = orcamento.idEtapaOrcamento
+      LEFT JOIN motivoPerda ON motivoPerda.idMotivo = orcamento.idMotivoPerda
+      ${montarWhere(clausulas)}
       ORDER BY orcamento.idOrcamento DESC
-    `);
+    `, parametros);
 
     const registrosCompletos = await Promise.all(
       registros.map((registro) => consultarOrcamentoCompleto(registro.idOrcamento))
@@ -469,7 +517,7 @@ function normalizarCaminhoImagem(valorImagem) {
     return valorImagem || '';
   }
 
-  return `http://127.0.0.1:3001/api/arquivos/${valorImagem}`;
+  return montarUrlArquivo(valorImagem);
 }
 
 function desnormalizarCaminhoImagem(valorImagem) {
@@ -477,7 +525,7 @@ function desnormalizarCaminhoImagem(valorImagem) {
     return valorImagem || null;
   }
 
-  const prefixoCompleto = 'http://127.0.0.1:3001/api/arquivos/';
+  const prefixoCompleto = `${obterBaseUrlApi()}/api/arquivos/`;
   const prefixoRelativo = '/api/arquivos/';
 
   if (valorImagem.startsWith(prefixoCompleto)) {

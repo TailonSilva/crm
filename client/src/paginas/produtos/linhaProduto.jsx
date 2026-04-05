@@ -2,6 +2,7 @@ import { AcoesRegistro } from '../../componentes/comuns/acoesRegistro';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { TextoGradeClamp } from '../../componentes/comuns/textoGradeClamp';
 import { normalizarPreco } from '../../utilitarios/normalizarPreco';
+import { registroEstaAtivo } from '../../utilitarios/statusRegistro';
 import { obterValorGrid } from '../../utilitarios/valorPadraoGrid';
 import { ImagemProduto } from './imagemProduto';
 
@@ -12,6 +13,8 @@ export function LinhaProduto({
   aoInativar,
   somenteConsulta = false
 }) {
+  const ativo = registroEstaAtivo(produto.status);
+
   return (
     <tr className="linhaProduto">
       <td className="colunaGradeMidia"><ImagemProduto produto={produto} /></td>
@@ -23,8 +26,8 @@ export function LinhaProduto({
       <td className="colunaGradeTextoCurto"><TextoGradeClamp>{obterValorGrid(produto.nomeUnidade)}</TextoGradeClamp></td>
       <td className="colunaGradeValor">{normalizarPreco(produto.preco)}</td>
       <td className="colunaGradeStatus">
-        <span className={`etiquetaStatus ${produto.status ? 'ativo' : 'inativo'}`}>
-          {produto.status ? 'Ativo' : 'Inativo'}
+        <span className={`etiquetaStatus ${ativo ? 'ativo' : 'inativo'}`}>
+          {ativo ? 'Ativo' : 'Inativo'}
         </span>
       </td>
       <td className="colunaGradeAcoes">

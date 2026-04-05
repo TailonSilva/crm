@@ -39,6 +39,9 @@ export function PaginaLogin({ aoEntrar }) {
     }
   }
 
+  const logoExibida = empresa?.imagem || logoConnecta;
+  const rotuloLogo = empresa?.nomeFantasia || empresa?.razaoSocial || 'Connecta CRM';
+
   return (
     <main className="paginaLogin">
       <section className="paginaLoginCartao">
@@ -46,8 +49,8 @@ export function PaginaLogin({ aoEntrar }) {
           <div className="paginaLoginLogo" aria-hidden="true">
             <img
               className="paginaLoginLogoImagem"
-              src={logoConnecta}
-              alt="Connecta CRM"
+              src={logoExibida}
+              alt={rotuloLogo}
             />
           </div>
 

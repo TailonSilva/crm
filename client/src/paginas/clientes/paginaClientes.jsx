@@ -11,7 +11,7 @@ import {
   incluirCliente,
   incluirContato,
   importarClientesPlanilha,
-  listarClientes,
+  listarClientesGrid,
   listarContatos,
   listarGruposEmpresa,
   listarRamosAtividade,
@@ -23,7 +23,6 @@ import {
   incluirContatoGrupoEmpresa,
   listarContatosGruposEmpresaConfiguracao
 } from '../../servicos/configuracoes';
-import { filtrarClientes } from '../../utilitarios/filtrarClientes';
 import { normalizarTelefone } from '../../utilitarios/normalizarTelefone';
 import { obterPrimeiroCodigoDisponivel } from '../../utilitarios/obterPrimeiroCodigoDisponivel';
 import { obterValorGrid } from '../../utilitarios/valorPadraoGrid';
@@ -56,7 +55,8 @@ export function PaginaClientes({ usuarioLogado }) {
   const [empresa, definirEmpresa] = useState(null);
   const [vendedores, definirVendedores] = useState([]);
   const [ramosAtividade, definirRamosAtividade] = useState([]);
-  const [carregando, definirCarregando] = useState(true);
+  const [carregandoContexto, definirCarregandoContexto] = useState(true);
+  const [carregandoGrade, definirCarregandoGrade] = useState(true);
   const [mensagemErro, definirMensagemErro] = useState('');
   const [modalAberto, definirModalAberto] = useState(false);
   const [modalManualAberto, definirModalManualAberto] = useState(false);
@@ -79,12 +79,17 @@ export function PaginaClientes({ usuarioLogado }) {
   });
 
   useEffect(() => {
-    carregarDados();
+    carregarContexto();
   }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor]);
 
   useEffect(() => {
+    carregarGradeClientes();
+  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor, pesquisa, JSON.stringify(filtros)]);
+
+  useEffect(() => {
     function tratarGrupoEmpresaAtualizado() {
-      carregarDados();
+      carregarContexto();
+      carregarGradeClientes();
     }
 
     window.addEventListener('grupo-empresa-atualizado', tratarGrupoEmpresaAtualizado);
@@ -92,11 +97,12 @@ export function PaginaClientes({ usuarioLogado }) {
     return () => {
       window.removeEventListener('grupo-empresa-atualizado', tratarGrupoEmpresaAtualizado);
     };
-  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor]);
+  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor, pesquisa, JSON.stringify(filtros)]);
 
   useEffect(() => {
     function tratarEmpresaAtualizada() {
-      carregarDados();
+      carregarContexto();
+      carregarGradeClientes();
     }
 
     window.addEventListener('empresa-atualizada', tratarEmpresaAtualizada);
@@ -104,7 +110,7 @@ export function PaginaClientes({ usuarioLogado }) {
     return () => {
       window.removeEventListener('empresa-atualizada', tratarEmpresaAtualizada);
     };
-  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor]);
+  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor, pesquisa, JSON.stringify(filtros)]);
 
   useEffect(() => {
     function tratarAtalhosClientes(evento) {
@@ -126,21 +132,10 @@ export function PaginaClientes({ usuarioLogado }) {
     };
   }, [modalAberto, modalManualAberto, modalFiltrosAberto, modalImportacaoAberto]);
 
-  async function carregarDados() {
-    definirCarregando(true);
-    definirMensagemErro('');
-
+  async function carregarContexto() {
+    definirCarregandoContexto(true);
     try {
-      const [
-        clientesCarregados,
-        contatosCarregados,
-        gruposEmpresaCarregados,
-        contatosGruposEmpresaCarregados,
-        empresasCarregadas,
-        vendedoresCarregados,
-        ramosCarregados
-      ] = await Promise.all([
-        listarClientes(),
+      const resultados = await Promise.allSettled([
         listarContatos(),
         listarGruposEmpresa({ incluirInativos: true }),
         listarContatosGruposEmpresaConfiguracao({ incluirInativos: true }),
@@ -149,6 +144,40 @@ export function PaginaClientes({ usuarioLogado }) {
         listarRamosAtividade()
       ]);
 
+      const [
+        contatosResultado,
+        gruposEmpresaResultado,
+        contatosGrupoResultado,
+        empresasResultado,
+        vendedoresResultado,
+        ramosResultado
+      ] = resultados;
+
+      definirContatos(contatosResultado.status === 'fulfilled' ? contatosResultado.value : []);
+      definirGruposEmpresa(gruposEmpresaResultado.status === 'fulfilled' ? gruposEmpresaResultado.value : []);
+      definirContatosGruposEmpresa(contatosGrupoResultado.status === 'fulfilled' ? contatosGrupoResultado.value : []);
+      definirEmpresa(
+        empresasResultado.status === 'fulfilled'
+          ? (empresasResultado.value[0] || null)
+          : null
+      );
+      definirVendedores(vendedoresResultado.status === 'fulfilled' ? vendedoresResultado.value : []);
+      definirRamosAtividade(ramosResultado.status === 'fulfilled' ? ramosResultado.value : []);
+    } finally {
+      definirCarregandoContexto(false);
+    }
+  }
+
+  async function carregarGradeClientes() {
+    definirCarregandoGrade(true);
+    definirMensagemErro('');
+
+    try {
+      const clientesCarregados = await listarClientesGrid({
+        pesquisa,
+        filtros
+      });
+
       const clientesVisiveis = usuarioSomenteVendedor
         ? clientesCarregados.filter((cliente) => cliente.idVendedor === usuarioLogado.idVendedor)
         : clientesCarregados;
@@ -156,23 +185,21 @@ export function PaginaClientes({ usuarioLogado }) {
       definirClientes(
         enriquecerClientes(
           clientesVisiveis,
-          contatosCarregados,
-          vendedoresCarregados,
-          gruposEmpresaCarregados,
-          ramosCarregados
+          contatos,
+          vendedores,
+          gruposEmpresa,
+          ramosAtividade
         )
       );
-      definirContatos(contatosCarregados);
-      definirGruposEmpresa(gruposEmpresaCarregados);
-      definirContatosGruposEmpresa(contatosGruposEmpresaCarregados);
-      definirEmpresa(empresasCarregadas[0] || null);
-      definirVendedores(vendedoresCarregados);
-      definirRamosAtividade(ramosCarregados);
     } catch (erro) {
-      definirMensagemErro('Nao foi possivel carregar os clientes.');
+      definirMensagemErro(erro?.message || 'Nao foi possivel carregar os clientes.');
     } finally {
-      definirCarregando(false);
+      definirCarregandoGrade(false);
     }
+  }
+
+  async function recarregarPagina() {
+    await Promise.all([carregarContexto(), carregarGradeClientes()]);
   }
 
   async function salvarCliente(dadosCliente) {
@@ -194,7 +221,7 @@ export function PaginaClientes({ usuarioLogado }) {
       dadosCliente.contatos || []
     );
 
-    await carregarDados();
+    await recarregarPagina();
     definirModalAberto(false);
     definirClienteEmEdicao(null);
   }
@@ -209,7 +236,7 @@ export function PaginaClientes({ usuarioLogado }) {
       });
 
       definirResultadoImportacao(resultado);
-      await carregarDados();
+      await recarregarPagina();
     } finally {
       definirImportando(false);
     }
@@ -259,7 +286,7 @@ export function PaginaClientes({ usuarioLogado }) {
       }
     }
 
-    await carregarDados();
+    await recarregarPagina();
     window.dispatchEvent(new CustomEvent('grupo-empresa-atualizado'));
     return grupoSalvo;
   }
@@ -284,7 +311,7 @@ export function PaginaClientes({ usuarioLogado }) {
 
     await atualizarGrupoEmpresa(registro.idGrupoEmpresa, { status: 0 });
 
-    await carregarDados();
+    await recarregarPagina();
     window.dispatchEvent(new CustomEvent('grupo-empresa-atualizado'));
   }
 
@@ -308,7 +335,7 @@ export function PaginaClientes({ usuarioLogado }) {
 
   async function inativarCliente(cliente) {
     await atualizarCliente(cliente.idCliente, { status: 0 });
-    await carregarDados();
+    await recarregarPagina();
   }
 
   function fecharModalCliente() {
@@ -317,7 +344,7 @@ export function PaginaClientes({ usuarioLogado }) {
     definirModoModalCliente('novo');
   }
 
-  const clientesFiltrados = filtrarClientes(clientes, pesquisa, filtros);
+  const carregando = carregandoContexto || carregandoGrade;
   const proximoCodigoCliente = obterPrimeiroCodigoDisponivel(clientes, 'idCliente');
   const filtrosAtivos = Object.values(filtros).some((valor) => (
     Array.isArray(valor) ? valor.length > 0 : Boolean(valor)
@@ -365,7 +392,7 @@ export function PaginaClientes({ usuarioLogado }) {
       />
       <CorpoClientes
         empresa={empresa}
-        clientes={clientesFiltrados}
+        clientes={clientes}
         carregando={carregando}
         mensagemErro={mensagemErro}
         aoEditarCliente={abrirEdicaoCliente}
@@ -468,7 +495,7 @@ export function PaginaClientes({ usuarioLogado }) {
       <ModalManualClientes
         aberto={modalManualAberto}
         aoFechar={() => definirModalManualAberto(false)}
-        clientes={clientesFiltrados}
+        clientes={clientes}
         contatos={contatos}
         gruposEmpresa={gruposEmpresa}
         vendedores={vendedoresDisponiveis}
@@ -535,28 +562,38 @@ async function salvarContatosCliente(idCliente, contatos) {
 function enriquecerClientes(clientes, contatos, vendedores, gruposEmpresa, ramosAtividade) {
   const contatosPrincipaisPorCliente = new Map();
   const vendedoresPorId = new Map(
-    vendedores.map((vendedor) => [vendedor.idVendedor, vendedor.nome])
+    vendedores.map((vendedor) => [String(vendedor.idVendedor), vendedor.nome])
   );
   const gruposEmpresaPorId = new Map(
-    (gruposEmpresa || []).map((grupo) => [grupo.idGrupoEmpresa, grupo.descricao])
+    (gruposEmpresa || []).map((grupo) => [String(grupo.idGrupoEmpresa), grupo.descricao])
   );
   const ramosPorId = new Map(
-    (ramosAtividade || []).map((ramo) => [ramo.idRamo, ramo.descricao])
+    (ramosAtividade || []).map((ramo) => [String(ramo.idRamo), ramo.descricao])
   );
 
   contatos.forEach((contato) => {
     if (contato.principal) {
-      contatosPrincipaisPorCliente.set(contato.idCliente, contato);
+      contatosPrincipaisPorCliente.set(String(contato.idCliente), contato);
     }
   });
 
   return clientes.map((cliente) => ({
     ...cliente,
-    nomeGrupoEmpresa: obterValorGrid(gruposEmpresaPorId.get(cliente.idGrupoEmpresa)),
-    nomeRamo: obterValorGrid(ramosPorId.get(cliente.idRamo)),
-    nomeVendedor: obterValorGrid(vendedoresPorId.get(cliente.idVendedor)),
-    nomeContatoPrincipal: obterValorGrid(contatosPrincipaisPorCliente.get(cliente.idCliente)?.nome),
-    emailContatoPrincipal: obterValorGrid(contatosPrincipaisPorCliente.get(cliente.idCliente)?.email)
+    nomeGrupoEmpresa: obterValorGrid(
+      cliente.nomeGrupoEmpresa || gruposEmpresaPorId.get(String(cliente.idGrupoEmpresa))
+    ),
+    nomeRamo: obterValorGrid(
+      cliente.nomeRamo || ramosPorId.get(String(cliente.idRamo))
+    ),
+    nomeVendedor: obterValorGrid(
+      cliente.nomeVendedor || vendedoresPorId.get(String(cliente.idVendedor))
+    ),
+    nomeContatoPrincipal: obterValorGrid(
+      cliente.nomeContatoPrincipal || contatosPrincipaisPorCliente.get(String(cliente.idCliente))?.nome
+    ),
+    emailContatoPrincipal: obterValorGrid(
+      cliente.emailContatoPrincipal || contatosPrincipaisPorCliente.get(String(cliente.idCliente))?.email
+    )
   }));
 }
 

@@ -1,5 +1,6 @@
 const express = require('express');
 const { consultarUm } = require('../configuracoes/banco');
+const { obterBaseUrlApi, montarUrlArquivo } = require('../utilitarios/urlApi');
 
 const rota = express.Router();
 
@@ -58,11 +59,11 @@ function normalizarImagemUsuario(valorImagem) {
   }
 
   if (imagem.startsWith('/api/arquivos/')) {
-    return `http://127.0.0.1:3001${imagem}`;
+    return `${obterBaseUrlApi()}${imagem}`;
   }
 
   if (imagem.startsWith('imagens/')) {
-    return `http://127.0.0.1:3001/api/arquivos/${imagem}`;
+    return montarUrlArquivo(imagem);
   }
 
   return imagem;

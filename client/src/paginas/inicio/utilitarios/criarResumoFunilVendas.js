@@ -1,7 +1,9 @@
+import { registroEstaAtivo } from '../../../utilitarios/statusRegistro';
+
 export function criarResumoFunilVendas(etapasOrcamento, orcamentos) {
   const etapasAtivasFunil = Array.isArray(etapasOrcamento)
     ? [...etapasOrcamento]
-      .filter((etapa) => Boolean(etapa?.status) && Boolean(etapa?.consideraFunilVendas))
+      .filter((etapa) => registroEstaAtivo(etapa?.status) && registroEstaAtivo(etapa?.consideraFunilVendas))
       .sort((primeira, segunda) => {
         const ordemPrimeira = Number(primeira?.ordem || 0);
         const ordemSegunda = Number(segunda?.ordem || 0);

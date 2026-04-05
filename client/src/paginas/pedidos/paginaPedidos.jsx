@@ -109,7 +109,8 @@ export function PaginaPedidos({ usuarioLogado }) {
   const [camposPedido, definirCamposPedido] = useState([]);
   const [etapasPedido, definirEtapasPedido] = useState([]);
   const [empresa, definirEmpresa] = useState(null);
-  const [carregando, definirCarregando] = useState(true);
+  const [carregandoContexto, definirCarregandoContexto] = useState(true);
+  const [carregandoGrade, definirCarregandoGrade] = useState(true);
   const [mensagemErro, definirMensagemErro] = useState('');
   const [pedidoSelecionado, definirPedidoSelecionado] = useState(null);
   const [modoModal, definirModoModal] = useState('consulta');
@@ -121,12 +122,17 @@ export function PaginaPedidos({ usuarioLogado }) {
   const permitirExcluir = usuarioLogado?.tipo !== 'Usuario padrao';
 
   useEffect(() => {
-    carregarDados();
+    carregarContexto();
   }, []);
 
   useEffect(() => {
+    carregarGradePedidos();
+  }, [pesquisa, JSON.stringify(filtros)]);
+
+  useEffect(() => {
     function tratarGrupoEmpresaAtualizado() {
-      carregarDados();
+      carregarContexto();
+      carregarGradePedidos();
     }
 
     window.addEventListener('grupo-empresa-atualizado', tratarGrupoEmpresaAtualizado);
@@ -134,7 +140,20 @@ export function PaginaPedidos({ usuarioLogado }) {
     return () => {
       window.removeEventListener('grupo-empresa-atualizado', tratarGrupoEmpresaAtualizado);
     };
-  }, []);
+  }, [pesquisa, JSON.stringify(filtros)]);
+
+  useEffect(() => {
+    function tratarEmpresaAtualizada() {
+      carregarContexto();
+      carregarGradePedidos();
+    }
+
+    window.addEventListener('empresa-atualizada', tratarEmpresaAtualizada);
+
+    return () => {
+      window.removeEventListener('empresa-atualizada', tratarEmpresaAtualizada);
+    };
+  }, [pesquisa, JSON.stringify(filtros)]);
 
   useEffect(() => {
     function tratarAtalhosPedidos(evento) {
@@ -156,13 +175,12 @@ export function PaginaPedidos({ usuarioLogado }) {
     };
   }, [modalAberto, modalManualAberto, modalFiltrosAberto, pedidoExclusaoPendente]);
 
-  async function carregarDados() {
-    definirCarregando(true);
+  async function carregarContexto() {
+    definirCarregandoContexto(true);
     definirMensagemErro('');
 
     try {
       const [
-        pedidosCarregados,
         etapasCarregadas,
         clientesCarregados,
         contatosCarregados,
@@ -174,7 +192,6 @@ export function PaginaPedidos({ usuarioLogado }) {
         camposCarregados,
         empresasCarregadas
       ] = await Promise.all([
-        listarPedidos(),
         listarEtapasPedidoConfiguracao(),
         listarClientes(),
         listarContatos(),
@@ -189,7 +206,6 @@ export function PaginaPedidos({ usuarioLogado }) {
 
       const etapasNormalizadas = normalizarEtapasPedido(etapasCarregadas);
 
-      definirPedidos(enriquecerPedidos(pedidosCarregados, etapasNormalizadas));
       definirEtapasPedido(etapasNormalizadas);
       definirClientes(clientesCarregados);
       definirContatos(contatosCarregados);
@@ -203,8 +219,30 @@ export function PaginaPedidos({ usuarioLogado }) {
     } catch (_erro) {
       definirMensagemErro('Nao foi possivel carregar os pedidos.');
     } finally {
-      definirCarregando(false);
+      definirCarregandoContexto(false);
     }
+  }
+
+  async function carregarGradePedidos() {
+    definirCarregandoGrade(true);
+    definirMensagemErro('');
+
+    try {
+      const pedidosCarregados = await listarPedidos({
+        search: pesquisa,
+        ...filtros
+      });
+
+      definirPedidos(enriquecerPedidos(pedidosCarregados, etapasPedido));
+    } catch (_erro) {
+      definirMensagemErro('Nao foi possivel carregar os pedidos.');
+    } finally {
+      definirCarregandoGrade(false);
+    }
+  }
+
+  async function recarregarPagina() {
+    await Promise.all([carregarContexto(), carregarGradePedidos()]);
   }
 
   function abrirNovoPedido() {
@@ -245,7 +283,7 @@ export function PaginaPedidos({ usuarioLogado }) {
       await incluirPedido(payload);
     }
 
-    await carregarDados();
+    await recarregarPagina();
     fecharModal();
   }
 
@@ -255,7 +293,7 @@ export function PaginaPedidos({ usuarioLogado }) {
       ? await atualizarPrazoPagamento(dadosPrazo.idPrazoPagamento, payload)
       : await incluirPrazoPagamento(payload);
 
-    await carregarDados();
+    await recarregarPagina();
     return enriquecerPrazoPagamento(registroSalvo, metodosPagamento);
   }
 
@@ -276,7 +314,7 @@ export function PaginaPedidos({ usuarioLogado }) {
       })
     );
 
-    await carregarDados();
+    await recarregarPagina();
     return null;
   }
 
@@ -299,7 +337,7 @@ export function PaginaPedidos({ usuarioLogado }) {
 
     await excluirPedido(pedidoExclusaoPendente.idPedido);
     definirPedidoExclusaoPendente(null);
-    await carregarDados();
+    await recarregarPagina();
   }
 
   async function alterarEtapaRapidamente(pedido, proximoIdEtapaPedido) {
@@ -322,13 +360,10 @@ export function PaginaPedidos({ usuarioLogado }) {
     });
 
     await atualizarPedido(pedido.idPedido, payload);
-    await carregarDados();
+    await recarregarPagina();
   }
 
-  const pedidosFiltrados = useMemo(
-    () => filtrarPedidos(pedidos, pesquisa, filtros),
-    [pedidos, pesquisa, filtros]
-  );
+  const carregando = carregandoContexto || carregandoGrade;
   const colunasVisiveisPedidos = useMemo(
     () => normalizarColunasGridPedidos(empresa?.colunasGridPedidos),
     [empresa?.colunasGridPedidos]
@@ -376,11 +411,11 @@ export function PaginaPedidos({ usuarioLogado }) {
           cabecalho={<CabecalhoGradePedidos colunas={colunasVisiveisPedidos} />}
           carregando={carregando}
           mensagemErro={mensagemErro}
-          temItens={pedidosFiltrados.length > 0}
+          temItens={pedidos.length > 0}
           mensagemCarregando="Carregando pedidos..."
           mensagemVazia="Nenhum pedido encontrado."
         >
-          {pedidosFiltrados.map((pedido) => (
+          {pedidos.map((pedido) => (
             <LinhaPedido
               key={pedido.idPedido}
               pedido={pedido}
@@ -494,7 +529,7 @@ export function PaginaPedidos({ usuarioLogado }) {
       <ModalManualPedidos
         aberto={modalManualAberto}
         aoFechar={() => definirModalManualAberto(false)}
-        pedidos={pedidosFiltrados}
+        pedidos={pedidos}
         etapasPedido={etapasPedido}
         prazosPagamento={prazosPagamento}
         filtros={filtros}
@@ -814,37 +849,6 @@ function formatarDataGridPedido(valor) {
 
   const [ano, mes, dia] = texto.split('-');
   return `${dia}/${mes}/${ano}`;
-}
-
-function filtrarPedidos(pedidos, pesquisa, filtros) {
-  const termo = String(pesquisa || '').trim().toLowerCase();
-  const etapasSelecionadas = Array.isArray(filtros.idEtapaPedido)
-    ? filtros.idEtapaPedido.map(String).filter(Boolean)
-    : [];
-
-  return pedidos.filter((pedido) => {
-    const atendePesquisa = !termo || [
-      pedido.nomeClienteSnapshot,
-      pedido.nomeContatoSnapshot,
-      pedido.nomeUsuarioSnapshot,
-      pedido.nomeVendedorSnapshot,
-      pedido.nomePrazoPagamentoSnapshot,
-      pedido.nomeEtapaPedidoSnapshot,
-      pedido.observacao,
-      pedido.codigoOrcamentoOrigem
-    ].some((valor) => String(valor || '').toLowerCase().includes(termo));
-
-    const atendeFiltros = (
-      (!filtros.idCliente || String(pedido.idCliente) === String(filtros.idCliente))
-      && (!filtros.idUsuario || String(pedido.idUsuario) === String(filtros.idUsuario))
-      && (!filtros.idVendedor || String(pedido.idVendedor) === String(filtros.idVendedor))
-      && (etapasSelecionadas.length === 0 || etapasSelecionadas.includes(String(pedido.idEtapaPedido)))
-      && validarPeriodoData(pedido.dataInclusao, filtros.dataInclusaoInicio, filtros.dataInclusaoFim)
-      && validarPeriodoData(pedido.dataEntrega, filtros.dataEntregaInicio, filtros.dataEntregaFim)
-    );
-
-    return atendePesquisa && atendeFiltros;
-  });
 }
 
 function pedidoBloqueadoParaUsuarioPadrao(pedido, usuarioLogado) {

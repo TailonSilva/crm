@@ -1,7 +1,17 @@
 import { requisitarApi } from './api';
 
 const chaveSessao = 'crm.usuarioLogado';
-const prefixoImagemApi = 'http://127.0.0.1:3001/api/arquivos/';
+function obterUrlApiPadrao() {
+  if (typeof window !== 'undefined' && window.location?.protocol !== 'file:') {
+    return 'http://127.0.0.1:3101/api';
+  }
+
+  return 'http://127.0.0.1:3001/api';
+}
+
+const urlApi = import.meta.env.VITE_API_URL || obterUrlApiPadrao();
+const origemApi = urlApi.replace(/\/api\/?$/, '');
+const prefixoImagemApi = `${origemApi}/api/arquivos/`;
 
 export async function autenticarUsuario(usuario, senha) {
   const usuarioAutenticado = await requisitarApi('/auth/login', {
@@ -107,7 +117,7 @@ function normalizarImagemUsuario(valorImagem) {
   }
 
   if (imagem.startsWith('/api/arquivos/')) {
-    return `http://127.0.0.1:3001${imagem}`;
+    return `${origemApi}${imagem}`;
   }
 
   if (imagem.startsWith('imagens/')) {

@@ -7,7 +7,7 @@ import {
   incluirProduto,
   listarGruposProduto,
   listarMarcas,
-  listarProdutos,
+  listarProdutosGrid,
   listarUnidadesMedida
 } from '../../servicos/produtos';
 import { listarEmpresas } from '../../servicos/empresa';
@@ -19,7 +19,6 @@ import {
   incluirMarca,
   incluirUnidadeMedida
 } from '../../servicos/configuracoes';
-import { filtrarProdutos } from '../../utilitarios/filtrarProdutos';
 import { converterPrecoParaNumero } from '../../utilitarios/normalizarPreco';
 import { obterPrimeiroCodigoDisponivel } from '../../utilitarios/obterPrimeiroCodigoDisponivel';
 import { obterValorGrid } from '../../utilitarios/valorPadraoGrid';
@@ -53,7 +52,8 @@ export function PaginaProdutos({ usuarioLogado }) {
   const [gruposProduto, definirGruposProduto] = useState([]);
   const [marcas, definirMarcas] = useState([]);
   const [unidadesMedida, definirUnidadesMedida] = useState([]);
-  const [carregando, definirCarregando] = useState(true);
+  const [carregandoContexto, definirCarregandoContexto] = useState(true);
+  const [carregandoGrade, definirCarregandoGrade] = useState(true);
   const [mensagemErro, definirMensagemErro] = useState('');
   const [modalAberto, definirModalAberto] = useState(false);
   const [modalManualAberto, definirModalManualAberto] = useState(false);
@@ -66,8 +66,25 @@ export function PaginaProdutos({ usuarioLogado }) {
   const usuarioSomenteConsulta = usuarioLogado?.tipo === 'Usuario padrao';
 
   useEffect(() => {
-    carregarDados();
+    carregarContexto();
   }, []);
+
+  useEffect(() => {
+    carregarGradeProdutos();
+  }, [pesquisa, JSON.stringify(filtros)]);
+
+  useEffect(() => {
+    function tratarEmpresaAtualizada() {
+      carregarContexto();
+      carregarGradeProdutos();
+    }
+
+    window.addEventListener('empresa-atualizada', tratarEmpresaAtualizada);
+
+    return () => {
+      window.removeEventListener('empresa-atualizada', tratarEmpresaAtualizada);
+    };
+  }, [pesquisa, JSON.stringify(filtros)]);
 
   useEffect(() => {
     function tratarAtalhosProdutos(evento) {
@@ -89,33 +106,17 @@ export function PaginaProdutos({ usuarioLogado }) {
     };
   }, [modalAberto, modalManualAberto, modalFiltrosAberto, modalImportacaoAberto]);
 
-  async function carregarDados() {
-    definirCarregando(true);
+  async function carregarContexto() {
+    definirCarregandoContexto(true);
     definirMensagemErro('');
 
     try {
-      const [
-        produtosCarregados,
-        empresasCarregadas,
-        gruposCarregados,
-        marcasCarregadas,
-        unidadesCarregadas
-      ] = await Promise.all([
-        listarProdutos(),
+      const [empresasCarregadas, gruposCarregados, marcasCarregadas, unidadesCarregadas] = await Promise.all([
         listarEmpresas(),
         listarGruposProduto(),
         listarMarcas(),
         listarUnidadesMedida()
       ]);
-
-      definirProdutos(
-        enriquecerProdutos(
-          produtosCarregados,
-          gruposCarregados,
-          marcasCarregadas,
-          unidadesCarregadas
-        )
-      );
       definirEmpresa(empresasCarregadas[0] || null);
       definirGruposProduto(gruposCarregados);
       definirMarcas(marcasCarregadas);
@@ -123,8 +124,45 @@ export function PaginaProdutos({ usuarioLogado }) {
     } catch (erro) {
       definirMensagemErro('Nao foi possivel carregar os produtos.');
     } finally {
-      definirCarregando(false);
+      definirCarregandoContexto(false);
     }
+  }
+
+  async function carregarGradeProdutos() {
+    definirCarregandoGrade(true);
+    definirMensagemErro('');
+
+    try {
+      const produtosCarregados = await listarProdutosGrid({
+        pesquisa,
+        filtros
+      });
+
+      definirProdutos(
+        enriquecerProdutos(
+          produtosCarregados,
+          gruposProduto,
+          marcas,
+          unidadesMedida
+        )
+      );
+    } catch (erro) {
+      definirMensagemErro('Nao foi possivel carregar os produtos.');
+    } finally {
+      definirCarregandoGrade(false);
+    }
+  }
+
+  async function recarregarPagina() {
+    await Promise.all([carregarContexto(), carregarGradeProdutos()]);
+  }
+
+  async function recarregarGradeProdutos() {
+    await carregarGradeProdutos();
+  }
+
+  async function recarregarContextoProdutos() {
+    await recarregarPagina();
   }
 
   async function salvarProduto(dadosProduto) {
@@ -139,7 +177,7 @@ export function PaginaProdutos({ usuarioLogado }) {
       await incluirProduto(payload);
     }
 
-    await carregarDados();
+    await recarregarGradeProdutos();
     fecharModalProduto();
   }
 
@@ -149,7 +187,7 @@ export function PaginaProdutos({ usuarioLogado }) {
     try {
       const resultado = await importarProdutosPlanilha({ linhas });
       definirResultadoImportacao(resultado);
-      await carregarDados();
+      await recarregarGradeProdutos();
     } finally {
       definirImportando(false);
     }
@@ -161,7 +199,7 @@ export function PaginaProdutos({ usuarioLogado }) {
     }
 
     await atualizarProduto(produto.idProduto, { status: 0 });
-    await carregarDados();
+    await recarregarGradeProdutos();
   }
 
   async function salvarGrupoProduto(dadosGrupo) {
@@ -179,13 +217,13 @@ export function PaginaProdutos({ usuarioLogado }) {
       grupoSalvo = await incluirGrupoProduto(payload);
     }
 
-    await carregarDados();
+    await recarregarContextoProdutos();
     return grupoSalvo;
   }
 
   async function inativarGrupoProdutoRegistro(registro) {
     await atualizarGrupoProduto(registro.idGrupo, { status: 0 });
-    await carregarDados();
+    await recarregarContextoProdutos();
   }
 
   async function salvarMarca(dadosMarca) {
@@ -203,13 +241,13 @@ export function PaginaProdutos({ usuarioLogado }) {
       marcaSalva = await incluirMarca(payload);
     }
 
-    await carregarDados();
+    await recarregarContextoProdutos();
     return marcaSalva;
   }
 
   async function inativarMarcaRegistro(registro) {
     await atualizarMarca(registro.idMarca, { status: 0 });
-    await carregarDados();
+    await recarregarContextoProdutos();
   }
 
   async function salvarUnidadeMedida(dadosUnidade) {
@@ -227,13 +265,13 @@ export function PaginaProdutos({ usuarioLogado }) {
       unidadeSalva = await incluirUnidadeMedida(payload);
     }
 
-    await carregarDados();
+    await recarregarContextoProdutos();
     return unidadeSalva;
   }
 
   async function inativarUnidadeMedidaRegistro(registro) {
     await atualizarUnidadeMedida(registro.idUnidade, { status: 0 });
-    await carregarDados();
+    await recarregarContextoProdutos();
   }
 
   function abrirNovoProduto() {
@@ -269,7 +307,7 @@ export function PaginaProdutos({ usuarioLogado }) {
     definirModoModalProduto('novo');
   }
 
-  const produtosFiltrados = filtrarProdutos(produtos, pesquisa, filtros);
+  const carregando = carregandoContexto || carregandoGrade;
   const proximoCodigoProduto = obterPrimeiroCodigoDisponivel(produtos, 'idProduto');
   const filtrosAtivos = Object.values(filtros).some((valor) => (
     Array.isArray(valor) ? valor.length > 0 : Boolean(valor)
@@ -311,7 +349,7 @@ export function PaginaProdutos({ usuarioLogado }) {
       />
       <CorpoProdutos
         empresa={empresa}
-        produtos={produtosFiltrados}
+        produtos={produtos}
         carregando={carregando}
         mensagemErro={mensagemErro}
         aoConsultarProduto={abrirConsultaProduto}
@@ -395,7 +433,7 @@ export function PaginaProdutos({ usuarioLogado }) {
       <ModalManualProdutos
         aberto={modalManualAberto}
         aoFechar={() => definirModalManualAberto(false)}
-        produtos={produtosFiltrados}
+        produtos={produtos}
         gruposProduto={gruposProduto}
         marcas={marcas}
         unidadesMedida={unidadesMedida}
@@ -408,6 +446,29 @@ export function PaginaProdutos({ usuarioLogado }) {
         carregando={importando}
         resultado={resultadoImportacao}
         referenciasRelacionais={referenciasImportacaoProdutos}
+        cadastrosRelacionais={{
+          grupoProduto: {
+            registros: gruposProduto,
+            somenteConsulta: usuarioSomenteConsulta,
+            aoSalvar: salvarGrupoProduto,
+            aoInativar: inativarGrupoProdutoRegistro,
+            tituloBotao: 'Abrir grupos de produto'
+          },
+          marca: {
+            registros: marcas,
+            somenteConsulta: usuarioSomenteConsulta,
+            aoSalvar: salvarMarca,
+            aoInativar: inativarMarcaRegistro,
+            tituloBotao: 'Abrir marcas'
+          },
+          unidadeMedida: {
+            registros: unidadesMedida,
+            somenteConsulta: usuarioSomenteConsulta,
+            aoSalvar: salvarUnidadeMedida,
+            aoInativar: inativarUnidadeMedidaRegistro,
+            tituloBotao: 'Abrir unidades'
+          }
+        }}
         onFechar={() => {
           definirModalImportacaoAberto(false);
           definirResultadoImportacao(null);
@@ -432,20 +493,26 @@ function normalizarFiltrosProdutos(filtros, filtrosPadrao) {
 
 function enriquecerProdutos(produtos, grupos, marcas, unidades) {
   const gruposPorId = new Map(
-    grupos.map((grupo) => [grupo.idGrupo, grupo.descricao])
+    grupos.map((grupo) => [String(grupo.idGrupo), grupo.descricao])
   );
   const marcasPorId = new Map(
-    marcas.map((marca) => [marca.idMarca, marca.descricao])
+    marcas.map((marca) => [String(marca.idMarca), marca.descricao])
   );
   const unidadesPorId = new Map(
-    unidades.map((unidade) => [unidade.idUnidade, unidade.descricao])
+    unidades.map((unidade) => [String(unidade.idUnidade), unidade.descricao])
   );
 
   return produtos.map((produto) => ({
     ...produto,
-    nomeGrupo: obterValorGrid(gruposPorId.get(produto.idGrupo)),
-    nomeMarca: obterValorGrid(marcasPorId.get(produto.idMarca)),
-    nomeUnidade: obterValorGrid(unidadesPorId.get(produto.idUnidade))
+    nomeGrupo: obterValorGrid(
+      produto.nomeGrupo || gruposPorId.get(String(produto.idGrupo))
+    ),
+    nomeMarca: obterValorGrid(
+      produto.nomeMarca || marcasPorId.get(String(produto.idMarca))
+    ),
+    nomeUnidade: obterValorGrid(
+      produto.nomeUnidade || unidadesPorId.get(String(produto.idUnidade))
+    )
   }));
 }
 

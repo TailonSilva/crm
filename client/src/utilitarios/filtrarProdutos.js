@@ -6,26 +6,19 @@ function normalizarTexto(valor) {
     .trim();
 }
 
+import { listaIncluiValorFiltro } from './compararValoresFiltro';
+import { normalizarStatusRegistro, registroEstaAtivo } from './statusRegistro';
 import { normalizarPreco } from './normalizarPreco';
-
-function incluiValorLista(lista, valorComparacao, normalizador = (valor) => String(valor || '')) {
-  if (!Array.isArray(lista) || lista.length === 0) {
-    return true;
-  }
-
-  const valorNormalizado = normalizador(valorComparacao);
-  return lista.some((item) => normalizador(item) === valorNormalizado);
-}
 
 export function filtrarProdutos(produtos, pesquisa, filtros = {}) {
   const termo = normalizarTexto(pesquisa);
 
   return produtos.filter((produto) => {
     const passouFiltros = (
-      incluiValorLista(filtros.idGrupo, produto.idGrupo) &&
-      incluiValorLista(filtros.idMarca, produto.idMarca) &&
-      incluiValorLista(filtros.idUnidade, produto.idUnidade) &&
-      incluiValorLista(filtros.status, Number(Boolean(produto.status)))
+      listaIncluiValorFiltro(filtros.idGrupo, produto.idGrupo) &&
+      listaIncluiValorFiltro(filtros.idMarca, produto.idMarca) &&
+      listaIncluiValorFiltro(filtros.idUnidade, produto.idUnidade) &&
+      listaIncluiValorFiltro(filtros.status, normalizarStatusRegistro(produto.status))
     );
 
     if (!passouFiltros) {
@@ -44,7 +37,7 @@ export function filtrarProdutos(produtos, pesquisa, filtros = {}) {
       produto.nomeMarca,
       produto.nomeUnidade,
       normalizarPreco(produto.preco),
-      produto.status ? 'ativo' : 'inativo'
+      registroEstaAtivo(produto.status) ? 'ativo' : 'inativo'
     ];
 
     return camposPesquisa.some((campo) => normalizarTexto(campo).includes(termo));

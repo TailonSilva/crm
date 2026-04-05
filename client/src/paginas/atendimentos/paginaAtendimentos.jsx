@@ -13,7 +13,7 @@ import {
   atualizarAtendimento,
   excluirAtendimento,
   incluirAtendimento,
-  listarAtendimentos,
+  listarAtendimentosGrid,
   listarCanaisAtendimento,
   listarOrigensAtendimento
 } from '../../servicos/atendimentos';
@@ -138,8 +138,25 @@ export function PaginaAtendimentos({ usuarioLogado }) {
   });
 
   useEffect(() => {
-    carregarDados();
+    carregarContexto();
   }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor]);
+
+  useEffect(() => {
+    carregarGradeAtendimentos();
+  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor, usuarioLogado?.idUsuario, pesquisa, JSON.stringify(filtros)]);
+
+  useEffect(() => {
+    function tratarEmpresaAtualizada() {
+      carregarContexto();
+      carregarGradeAtendimentos();
+    }
+
+    window.addEventListener('empresa-atualizada', tratarEmpresaAtualizada);
+
+    return () => {
+      window.removeEventListener('empresa-atualizada', tratarEmpresaAtualizada);
+    };
+  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor, usuarioLogado?.idUsuario, pesquisa, JSON.stringify(filtros)]);
 
   useEffect(() => {
     function tratarAtalhosAtendimentos(evento) {
@@ -159,13 +176,12 @@ export function PaginaAtendimentos({ usuarioLogado }) {
     };
   }, [modalAberto, modalManualAberto, modalFiltrosAberto, modalPedidoAberto]);
 
-  async function carregarDados() {
+  async function carregarContexto() {
     definirCarregando(true);
     definirMensagemErro('');
 
     try {
       const [
-        atendimentosCarregados,
         clientesCarregados,
         contatosCarregados,
         usuariosCarregados,
@@ -184,7 +200,6 @@ export function PaginaAtendimentos({ usuarioLogado }) {
         camposPedidoCarregados,
         empresasCarregadas
       ] = await Promise.all([
-        listarAtendimentos(),
         listarClientes(),
         listarContatos(),
         listarUsuarios(),
@@ -209,24 +224,6 @@ export function PaginaAtendimentos({ usuarioLogado }) {
         : clientesCarregados;
       const idsClientesCarteira = new Set(clientesCarteira.map((cliente) => cliente.idCliente));
       const contatosCarteira = contatosCarregados.filter((contato) => idsClientesCarteira.has(contato.idCliente));
-      const atendimentosVisiveis = usuarioSomenteVendedor
-        ? atendimentosCarregados.filter((atendimento) => (
-          idsClientesCarteira.has(atendimento.idCliente)
-          || String(atendimento.idUsuario) === String(usuarioLogado.idUsuario)
-        ))
-        : atendimentosCarregados;
-
-      definirAtendimentos(
-        enriquecerAtendimentos(
-          atendimentosVisiveis,
-          clientesCarteira,
-          contatosCarteira,
-          usuariosCarregados,
-          vendedoresCarregados,
-          canaisCarregados,
-          origensCarregadas
-        )
-      );
       definirClientes(clientesCarteira);
       definirContatos(contatosCarteira);
       definirUsuarios(usuariosCarregados);
@@ -265,6 +262,36 @@ export function PaginaAtendimentos({ usuarioLogado }) {
     }
   }
 
+  async function carregarGradeAtendimentos() {
+    definirCarregando(true);
+    definirMensagemErro('');
+
+    try {
+      const atendimentosCarregados = await listarAtendimentosGrid({
+        pesquisa,
+        filtros: {
+          ...filtros,
+          ...(usuarioSomenteVendedor
+            ? {
+              escopoIdVendedor: usuarioLogado?.idVendedor,
+              escopoIdUsuario: usuarioLogado?.idUsuario
+            }
+            : {})
+        }
+      });
+
+      definirAtendimentos(atendimentosCarregados);
+    } catch (_erro) {
+      definirMensagemErro('Nao foi possivel carregar os atendimentos.');
+    } finally {
+      definirCarregando(false);
+    }
+  }
+
+  async function recarregarPagina() {
+    await Promise.all([carregarContexto(), carregarGradeAtendimentos()]);
+  }
+
   async function salvarAtendimento(dadosAtendimento) {
     const estaEditando = modoModal === 'edicao' && Boolean(atendimentoSelecionado?.idAtendimento);
 
@@ -282,7 +309,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
       await incluirAtendimento(payload);
     }
 
-    await carregarDados();
+    await recarregarPagina();
     fecharModal();
   }
 
@@ -294,7 +321,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
 
     const clienteSalvo = await incluirCliente(payload);
     await salvarContatosClienteAtendimento(clienteSalvo.idCliente, dadosCliente.contatos || []);
-    await carregarDados();
+    await recarregarPagina();
 
     const clientesAtualizados = await listarClientes();
     const clienteCompleto = clientesAtualizados.find((cliente) => cliente.idCliente === clienteSalvo.idCliente);
@@ -304,7 +331,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
 
   async function incluirOrcamentoPeloAtendimento(dadosOrcamento) {
     const orcamentoSalvo = await incluirOrcamento(normalizarPayloadOrcamento(dadosOrcamento, usuarioLogado));
-    await carregarDados();
+    await recarregarPagina();
     return orcamentoSalvo;
   }
 
@@ -316,7 +343,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
     }
 
     const orcamentoSalvo = await atualizarOrcamento(dadosOrcamento.idOrcamento, payload);
-    await carregarDados();
+    await recarregarPagina();
     return orcamentoSalvo;
   }
 
@@ -326,7 +353,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
       ? await atualizarPrazoPagamento(dadosPrazo.idPrazoPagamento, payload)
       : await incluirPrazoPagamento(payload);
 
-    await carregarDados();
+    await recarregarPagina();
     return enriquecerPrazoPagamento(registroSalvo, metodosPagamento);
   }
 
@@ -347,7 +374,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
       })
     );
 
-    await carregarDados();
+    await recarregarPagina();
     return null;
   }
 
@@ -369,7 +396,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
       )
     );
 
-    await carregarDados();
+    await recarregarPagina();
     return orcamentoSalvo;
   }
 
@@ -402,7 +429,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
 
   async function salvarPedidoPeloAtendimento(dadosPedido) {
     await incluirPedido(normalizarPayloadPedido(dadosPedido));
-    await carregarDados();
+    await recarregarPagina();
     definirModalPedidoAberto(false);
     definirDadosIniciaisPedido(null);
     definirOrcamentoPedidoEmCriacao(null);
@@ -445,7 +472,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
 
   async function excluirRegistroAtendimento(idAtendimento) {
     await excluirAtendimento(idAtendimento);
-    await carregarDados();
+    await recarregarPagina();
     fecharModal();
   }
 
@@ -465,10 +492,6 @@ export function PaginaAtendimentos({ usuarioLogado }) {
     definirFiltrosEmEdicao(null);
   }
 
-  const atendimentosFiltrados = useMemo(
-    () => filtrarAtendimentos(atendimentos, pesquisa, filtros),
-    [atendimentos, pesquisa, filtros]
-  );
   const colunasVisiveisAtendimentos = useMemo(
     () => normalizarColunasGridAtendimentos(empresa?.colunasGridAtendimentos),
     [empresa?.colunasGridAtendimentos]
@@ -518,11 +541,11 @@ export function PaginaAtendimentos({ usuarioLogado }) {
           cabecalho={<CabecalhoGradeAtendimentos colunas={colunasVisiveisAtendimentos} />}
           carregando={carregando}
           mensagemErro={mensagemErro}
-          temItens={atendimentosFiltrados.length > 0}
+          temItens={atendimentos.length > 0}
           mensagemCarregando="Carregando atendimentos..."
           mensagemVazia="Nenhum atendimento encontrado."
         >
-          {atendimentosFiltrados.map((atendimento) => (
+          {atendimentos.map((atendimento) => (
             <LinhaAtendimento
               key={atendimento.idAtendimento}
               atendimento={atendimento}
@@ -655,7 +678,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
       <ModalManualAtendimento
         aberto={modalManualAberto}
         aoFechar={() => definirModalManualAberto(false)}
-        atendimentos={atendimentosFiltrados}
+        atendimentos={atendimentos}
         canaisAtendimento={canaisAtendimento}
         origensAtendimento={origensAtendimento}
         orcamentos={orcamentos}
@@ -913,51 +936,6 @@ function normalizarFiltrosAtendimentos(filtros, filtrosPadrao) {
     ...normalizarIntervaloAtendimento(filtrosNormalizados, filtrosPadrao, 'dataInicio', 'dataFim', normalizarDataFiltroAtendimento),
     ...normalizarIntervaloAtendimento(filtrosNormalizados, filtrosPadrao, 'horaInicioFiltro', 'horaFimFiltro', normalizarHoraFiltroAtendimento)
   };
-}
-
-function filtrarAtendimentos(atendimentos, pesquisa, filtros) {
-  const termo = String(pesquisa || '').trim().toLowerCase();
-
-  return atendimentos.filter((atendimento) => {
-    const atendePesquisa = !termo || [
-      atendimento.assunto,
-      atendimento.descricao,
-      atendimento.nomeCliente,
-      atendimento.nomeContato,
-      atendimento.nomeCanalAtendimento,
-      atendimento.nomeOrigemAtendimento,
-      atendimento.nomeUsuario,
-      atendimento.nomeVendedorCliente
-    ].some((valor) => String(valor || '').toLowerCase().includes(termo));
-
-    const atendeFiltros = (
-      (!filtros.idCliente || String(atendimento.idCliente) === String(filtros.idCliente))
-      && (
-        !Array.isArray(filtros.idUsuario)
-        || filtros.idUsuario.length === 0
-        || filtros.idUsuario.map(String).includes(String(atendimento.idUsuario))
-      )
-      && (
-        !Array.isArray(filtros.idVendedorCliente)
-        || filtros.idVendedorCliente.length === 0
-        || filtros.idVendedorCliente.map(String).includes(String(atendimento.idVendedorCliente || ''))
-      )
-      && (
-        !Array.isArray(filtros.idCanalAtendimento)
-        || filtros.idCanalAtendimento.length === 0
-        || filtros.idCanalAtendimento.map(String).includes(String(atendimento.idCanalAtendimento || ''))
-      )
-      && (
-        !Array.isArray(filtros.idOrigemAtendimento)
-        || filtros.idOrigemAtendimento.length === 0
-        || filtros.idOrigemAtendimento.map(String).includes(String(atendimento.idOrigemAtendimento || ''))
-      )
-      && validarPeriodoAtendimento(atendimento.data, filtros.dataInicio, filtros.dataFim, normalizarDataFiltroAtendimento)
-      && validarPeriodoAtendimento(atendimento.horaInicio, filtros.horaInicioFiltro, filtros.horaFimFiltro, normalizarHoraFiltroAtendimento)
-    );
-
-    return atendePesquisa && atendeFiltros;
-  });
 }
 
 function enriquecerAtendimentos(

@@ -12,17 +12,48 @@ const {
   removerArquivoImagem,
   salvarImagemItemPedido
 } = require('../utilitarios/imagens');
+const { montarUrlArquivo, obterBaseUrlApi } = require('../utilitarios/urlApi');
 const { validarReferenciasAtivasDaEntidade } = require('../utilitarios/validarReferenciasAtivas');
+const {
+  adicionarFiltroBusca,
+  adicionarFiltroIgual,
+  adicionarFiltroLista,
+  adicionarFiltroPeriodo,
+  montarWhere
+} = require('../utilitarios/filtrosSql');
 
 const rotaPedidos = express.Router();
 
-rotaPedidos.get('/', async (_requisicao, resposta) => {
+rotaPedidos.get('/', async (requisicao, resposta) => {
   try {
+    const clausulas = [];
+    const parametros = [];
+    const { query } = requisicao;
+
+    adicionarFiltroBusca(clausulas, parametros, query.search, [
+      'CAST(pedido.idPedido AS TEXT)',
+      'CAST(pedido.codigoOrcamentoOrigem AS TEXT)',
+      'pedido.nomeClienteSnapshot',
+      'pedido.nomeContatoSnapshot',
+      'pedido.nomeUsuarioSnapshot',
+      'pedido.nomeVendedorSnapshot',
+      'pedido.nomePrazoPagamentoSnapshot',
+      'pedido.nomeEtapaPedidoSnapshot',
+      'pedido.observacao'
+    ]);
+    adicionarFiltroIgual(clausulas, parametros, 'pedido.idCliente', query.idCliente, Number);
+    adicionarFiltroIgual(clausulas, parametros, 'pedido.idUsuario', query.idUsuario, Number);
+    adicionarFiltroIgual(clausulas, parametros, 'pedido.idVendedor', query.idVendedor, Number);
+    adicionarFiltroLista(clausulas, parametros, 'pedido.idEtapaPedido', query.idEtapaPedido, Number);
+    adicionarFiltroPeriodo(clausulas, parametros, 'pedido.dataInclusao', query.dataInclusaoInicio, query.dataInclusaoFim);
+    adicionarFiltroPeriodo(clausulas, parametros, 'pedido.dataEntrega', query.dataEntregaInicio, query.dataEntregaFim);
+
     const registros = await consultarTodos(`
-      SELECT pedido.*
+      SELECT pedido.idPedido
       FROM pedido
+      ${montarWhere(clausulas)}
       ORDER BY pedido.idPedido DESC
-    `);
+    `, parametros);
 
     const registrosCompletos = await Promise.all(
       registros.map((registro) => consultarPedidoCompleto(registro.idPedido))
@@ -651,7 +682,7 @@ function normalizarCaminhoImagem(valorImagem) {
     return valorImagem || '';
   }
 
-  return `http://127.0.0.1:3001/api/arquivos/${valorImagem}`;
+  return montarUrlArquivo(valorImagem);
 }
 
 function desnormalizarCaminhoImagem(valorImagem) {
@@ -659,7 +690,7 @@ function desnormalizarCaminhoImagem(valorImagem) {
     return valorImagem || null;
   }
 
-  const prefixoCompleto = 'http://127.0.0.1:3001/api/arquivos/';
+  const prefixoCompleto = `${obterBaseUrlApi()}/api/arquivos/`;
   const prefixoRelativo = '/api/arquivos/';
 
   if (valorImagem.startsWith(prefixoCompleto)) {

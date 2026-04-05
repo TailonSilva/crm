@@ -93,11 +93,13 @@ export function normalizarValorFiltroPersistido(valor) {
 }
 
 export function normalizarListaFiltroPersistido(valores) {
-  if (!Array.isArray(valores)) {
-    return [];
-  }
+  const listaValores = Array.isArray(valores)
+    ? valores
+    : valores === null || valores === undefined || valores === ''
+      ? []
+      : [valores];
 
-  return valores
+  return listaValores
     .map((valor) => normalizarValorFiltroPersistido(valor))
     .filter(Boolean);
 }

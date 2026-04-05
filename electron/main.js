@@ -98,6 +98,10 @@ function obterDiretorioDadosPersistente() {
   return path.join(app.getPath('appData'), nomeDiretorioPersistencia, 'data');
 }
 
+function obterDiretorioDadosProjeto() {
+  return path.resolve(__dirname, '..', 'data');
+}
+
 function obterDiretorioBackupsPersistente() {
   return path.join(app.getPath('appData'), nomeDiretorioPersistencia, 'backups');
 }
@@ -114,7 +118,6 @@ function obterDiretoriosDadosLegados() {
   const base = app.getPath('appData');
   const pastaExecutavel = path.dirname(process.execPath);
   const pastaResources = process.resourcesPath || path.join(pastaExecutavel, 'resources');
-  const pastaBaseApp = path.resolve(__dirname, '..', '..');
 
   return normalizarListaDiretorios([
     path.join(app.getPath('userData'), 'data'),
@@ -126,9 +129,7 @@ function obterDiretoriosDadosLegados() {
     path.join(base, 'crm', 'data'),
     path.join(pastaExecutavel, 'data'),
     path.join(pastaExecutavel, 'resources', 'data'),
-    path.join(pastaResources, 'data'),
-    path.join(pastaBaseApp, 'data'),
-    path.join(process.cwd(), 'data')
+    path.join(pastaResources, 'data')
   ]);
 }
 
@@ -328,7 +329,11 @@ function startBundledBackend() {
     return;
   }
 
-  const diretorioDadosPersistente = obterDiretorioDadosPersistente();
+  const diretorioDadosPersistente = process.env.CRM_DATA_DIR
+    ? path.resolve(process.env.CRM_DATA_DIR)
+    : isDev
+      ? obterDiretorioDadosProjeto()
+      : obterDiretorioDadosPersistente();
   fs.mkdirSync(diretorioDadosPersistente, { recursive: true });
   migrarBancoSeNecessario(diretorioDadosPersistente);
   process.env.CRM_DATA_DIR = diretorioDadosPersistente;

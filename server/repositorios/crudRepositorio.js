@@ -5,6 +5,7 @@ const {
   removerArquivoImagem,
   salvarImagemBase64
 } = require('../utilitarios/imagens');
+const { montarUrlArquivo, obterBaseUrlApi } = require('../utilitarios/urlApi');
 const { validarReferenciasAtivasDaEntidade } = require('../utilitarios/validarReferenciasAtivas');
 const {
   sincronizarGrupoEmpresaDoCliente,
@@ -164,7 +165,7 @@ function normalizarCaminhoImagem(valorImagem) {
     return valorImagem || '';
   }
 
-  return `http://127.0.0.1:3001/api/arquivos/${valorImagem}`;
+  return montarUrlArquivo(valorImagem);
 }
 
 function desnormalizarCaminhoImagem(valorImagem) {
@@ -173,7 +174,7 @@ function desnormalizarCaminhoImagem(valorImagem) {
   }
 
   const imagemSemSufixo = removerQueryStringImagem(valorImagem.trim());
-  const prefixoCompleto = 'http://127.0.0.1:3001/api/arquivos/';
+  const prefixoCompleto = `${obterBaseUrlApi()}/api/arquivos/`;
   const prefixoRelativo = '/api/arquivos/';
 
   if (imagemSemSufixo.startsWith(prefixoCompleto)) {

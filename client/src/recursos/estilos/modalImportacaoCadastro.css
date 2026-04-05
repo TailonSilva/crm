@@ -1,5 +1,5 @@
 .modalContatoCliente.modalImportacaoCadastro {
-  width: min(1260px, calc(100vw - 24px));
+  width: min(1440px, calc(100vw - 24px));
   max-width: calc(100vw - 24px);
 }
 
@@ -94,6 +94,10 @@
   width: 100%;
   min-width: 100%;
   table-layout: fixed;
+}
+
+.modalImportacaoCadastroTabelaPendencias {
+  min-width: 980px;
 }
 
 .modalImportacaoCadastroTabela td,
@@ -198,17 +202,27 @@
 
 .modalImportacaoCadastroTabelaPendencias th:nth-child(3),
 .modalImportacaoCadastroTabelaPendencias td:nth-child(3) {
+  width: 180px !important;
   min-width: 0;
 }
 
 .modalImportacaoCadastroTabelaPendencias th:nth-child(4),
 .modalImportacaoCadastroTabelaPendencias td:nth-child(4) {
+  width: 190px !important;
   min-width: 0;
 }
 
 .modalImportacaoCadastroTabelaPendencias th:nth-child(5),
 .modalImportacaoCadastroTabelaPendencias td:nth-child(5) {
+  width: 280px !important;
   min-width: 0;
+}
+
+.modalImportacaoCadastroTabelaPendencias th:nth-child(3),
+.modalImportacaoCadastroTabelaPendencias th:nth-child(4),
+.modalImportacaoCadastroTabelaPendencias th:nth-child(5) {
+  white-space: nowrap;
+  word-break: normal;
 }
 
 .modalImportacaoCadastroSelect {

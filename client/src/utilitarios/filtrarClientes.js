@@ -1,3 +1,6 @@
+import { normalizarStatusRegistro, registroEstaAtivo } from './statusRegistro';
+import { listaIncluiValorFiltro, normalizarValorComparacaoFiltro } from './compararValoresFiltro';
+
 function normalizarTexto(valor) {
   return String(valor || '')
     .normalize('NFD')
@@ -6,27 +9,18 @@ function normalizarTexto(valor) {
     .trim();
 }
 
-function incluiValorLista(lista, valorComparacao, normalizador = (valor) => String(valor || '')) {
-  if (!Array.isArray(lista) || lista.length === 0) {
-    return true;
-  }
-
-  const valorNormalizado = normalizador(valorComparacao);
-  return lista.some((item) => normalizador(item) === valorNormalizado);
-}
-
 export function filtrarClientes(clientes, pesquisa, filtros = {}) {
   const termo = normalizarTexto(pesquisa);
 
   return clientes.filter((cliente) => {
     const passouFiltros = (
-      incluiValorLista(filtros.estado, cliente.estado, normalizarTexto) &&
+      listaIncluiValorFiltro(filtros.estado, cliente.estado, normalizarTexto) &&
       (!filtros.cidade || normalizarTexto(cliente.cidade) === normalizarTexto(filtros.cidade)) &&
-      (!filtros.idGrupoEmpresa || String(cliente.idGrupoEmpresa) === String(filtros.idGrupoEmpresa)) &&
-      incluiValorLista(filtros.idRamo, cliente.idRamo) &&
-      incluiValorLista(filtros.idVendedor, cliente.idVendedor) &&
-      incluiValorLista(filtros.tipo, cliente.tipo, normalizarTexto) &&
-      incluiValorLista(filtros.status, Number(Boolean(cliente.status)))
+      (!filtros.idGrupoEmpresa || normalizarValorComparacaoFiltro(cliente.idGrupoEmpresa) === normalizarValorComparacaoFiltro(filtros.idGrupoEmpresa)) &&
+      listaIncluiValorFiltro(filtros.idRamo, cliente.idRamo) &&
+      listaIncluiValorFiltro(filtros.idVendedor, cliente.idVendedor) &&
+      listaIncluiValorFiltro(filtros.tipo, cliente.tipo, normalizarTexto) &&
+      listaIncluiValorFiltro(filtros.status, normalizarStatusRegistro(cliente.status))
     );
 
     if (!passouFiltros) {
@@ -49,7 +43,7 @@ export function filtrarClientes(clientes, pesquisa, filtros = {}) {
       cliente.nomeContatoPrincipal,
       cliente.emailContatoPrincipal,
       cliente.nomeVendedor,
-      cliente.status ? 'ativo' : 'inativo'
+      registroEstaAtivo(cliente.status) ? 'ativo' : 'inativo'
     ];
 
     return camposPesquisa.some((campo) => normalizarTexto(campo).includes(termo));

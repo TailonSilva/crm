@@ -6,6 +6,7 @@ import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { GradePadrao } from '../../componentes/comuns/gradePadrao';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
+import { registroEstaAtivo } from '../../utilitarios/statusRegistro';
 
 const estadoInicialUsuario = {
   imagem: '',
@@ -32,7 +33,7 @@ export function ModalUsuarios({
   aoSalvar,
   aoInativar
 }) {
-  const vendedoresAtivos = vendedores.filter((vendedor) => vendedor.status);
+  const vendedoresAtivos = vendedores.filter((vendedor) => registroEstaAtivo(vendedor.status));
   const [modalFormularioAberto, definirModalFormularioAberto] = useState(false);
   const [modoFormulario, definirModoFormulario] = useState('novo');
   const [usuarioSelecionado, definirUsuarioSelecionado] = useState(null);
@@ -46,7 +47,7 @@ export function ModalUsuarios({
       return true;
     }
 
-    return filtros.status === '1' ? Boolean(usuario.ativo) : !Boolean(usuario.ativo);
+    return filtros.status === '1' ? registroEstaAtivo(usuario.ativo) : !registroEstaAtivo(usuario.ativo);
   });
 
   useEffect(() => {

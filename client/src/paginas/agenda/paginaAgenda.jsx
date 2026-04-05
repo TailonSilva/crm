@@ -50,6 +50,8 @@ import {
   normalizarListaFiltroPersistido,
   useFiltrosPersistidos
 } from '../../utilitarios/useFiltrosPersistidos';
+import { listaIncluiValorFiltro, normalizarValorComparacaoFiltro } from '../../utilitarios/compararValoresFiltro';
+import { registroEstaAtivo } from '../../utilitarios/statusRegistro';
 import { ModalAtendimento } from '../atendimentos/modalAtendimento';
 import { ModalPedido } from '../pedidos/modalPedido';
 import { ModalAgendamento } from './modalAgendamento';
@@ -334,15 +336,15 @@ export function PaginaAgenda({ usuarioLogado }) {
 
     definirEmpresa(empresasCarregadas[0] || null);
     definirLocais(locaisCarregados);
-    definirTiposAgenda(ordenarRegistrosPorOrdem(tiposAgendaCarregados.filter((tipoAgenda) => tipoAgenda.status), 'idTipoAgenda'));
-    definirStatusVisita(ordenarRegistrosPorOrdem(statusVisitaCarregados.filter((status) => status.status), 'idStatusVisita'));
-    definirClientes(clientesCarregados.filter((cliente) => cliente.status));
-    definirContatos(contatosCarregados.filter((contato) => contato.status));
-    definirVendedores(vendedoresCarregados.filter((vendedor) => vendedor.status));
+    definirTiposAgenda(ordenarRegistrosPorOrdem(tiposAgendaCarregados.filter((tipoAgenda) => registroEstaAtivo(tipoAgenda.status)), 'idTipoAgenda'));
+    definirStatusVisita(ordenarRegistrosPorOrdem(statusVisitaCarregados.filter((status) => registroEstaAtivo(status.status)), 'idStatusVisita'));
+    definirClientes(clientesCarregados.filter((cliente) => registroEstaAtivo(cliente.status)));
+    definirContatos(contatosCarregados.filter((contato) => registroEstaAtivo(contato.status)));
+    definirVendedores(vendedoresCarregados.filter((vendedor) => registroEstaAtivo(vendedor.status)));
     definirRamosAtividade(ramosCarregados);
-    definirCanaisAtendimento(canaisAtendimentoCarregados.filter((canal) => canal.status));
-    definirOrigensAtendimento(origensAtendimentoCarregadas.filter((origem) => origem.status));
-    definirUsuarios(usuariosCarregados.filter((usuario) => usuario.ativo));
+    definirCanaisAtendimento(canaisAtendimentoCarregados.filter((canal) => registroEstaAtivo(canal.status)));
+    definirOrigensAtendimento(origensAtendimentoCarregadas.filter((origem) => registroEstaAtivo(origem.status)));
+    definirUsuarios(usuariosCarregados.filter((usuario) => registroEstaAtivo(usuario.ativo)));
     definirMetodosPagamento(metodosCarregados);
     definirPrazosPagamento(enriquecerPrazosPagamento(prazosCarregados, metodosCarregados));
     definirEtapasOrcamento(etapasOrcamentoCarregadas);
@@ -351,7 +353,7 @@ export function PaginaAgenda({ usuarioLogado }) {
       idEtapaPedido: etapa.idEtapaPedido ?? etapa.idEtapa
     })));
     definirMotivosPerda(motivosPerdaCarregados);
-    definirProdutos(produtosCarregados.filter((produto) => produto.status !== 0));
+    definirProdutos(produtosCarregados.filter((produto) => registroEstaAtivo(produto.status)));
     definirCamposOrcamento(camposOrcamentoCarregados);
     definirCamposPedido(camposPedidoCarregados);
     definirOrcamentos(
@@ -977,8 +979,8 @@ export function PaginaAgenda({ usuarioLogado }) {
       <ModalAgendamento
         aberto={modalAberto}
         dadosIniciais={dadosIniciaisModal}
-        locais={locais.filter((local) => local.status)}
-        recursos={recursos.filter((recurso) => recurso.status)}
+        locais={locais.filter((local) => registroEstaAtivo(local.status))}
+        recursos={recursos.filter((recurso) => registroEstaAtivo(recurso.status))}
         clientes={clientes}
         contatos={contatos}
         usuarios={usuarios}
@@ -1189,7 +1191,7 @@ export function PaginaAgenda({ usuarioLogado }) {
             multiple: true,
             placeholder: 'Todos os locais',
             options: locais
-              .filter((local) => local.status)
+              .filter((local) => registroEstaAtivo(local.status))
               .map((local) => ({
                 valor: String(local.idLocal),
                 label: local.descricao
@@ -1201,7 +1203,7 @@ export function PaginaAgenda({ usuarioLogado }) {
             multiple: true,
             placeholder: 'Todos os recursos',
             options: recursos
-              .filter((recurso) => recurso.status)
+              .filter((recurso) => registroEstaAtivo(recurso.status))
               .map((recurso) => ({
                 valor: String(recurso.idRecurso),
                 label: recurso.descricao
@@ -1950,17 +1952,15 @@ function filtrarAgendamentos(agendamentos, filtros) {
       return false;
     }
 
-    if (filtros.idCliente && String(agendamento.idCliente) !== String(filtros.idCliente)) {
+    if (filtros.idCliente && normalizarValorComparacaoFiltro(agendamento.idCliente) !== normalizarValorComparacaoFiltro(filtros.idCliente)) {
       return false;
     }
 
-    const idsVendedoresFiltro = Array.isArray(filtros.idVendedor) ? filtros.idVendedor.map(String) : [];
-    if (idsVendedoresFiltro.length > 0 && !idsVendedoresFiltro.includes(String(agendamento.idVendedor || ''))) {
+    if (!listaIncluiValorFiltro(filtros.idVendedor, agendamento.idVendedor)) {
       return false;
     }
 
-    const idsLocaisFiltro = Array.isArray(filtros.idLocal) ? filtros.idLocal.map(String) : [];
-    if (idsLocaisFiltro.length > 0 && !idsLocaisFiltro.includes(String(agendamento.idLocal || ''))) {
+    if (!listaIncluiValorFiltro(filtros.idLocal, agendamento.idLocal)) {
       return false;
     }
 
@@ -1976,8 +1976,7 @@ function filtrarAgendamentos(agendamentos, filtros) {
       return false;
     }
 
-    const idsStatusFiltro = Array.isArray(filtros.idStatusVisita) ? filtros.idStatusVisita.map(String) : [];
-    if (idsStatusFiltro.length > 0 && !idsStatusFiltro.includes(String(agendamento.idStatusVisita))) {
+    if (!listaIncluiValorFiltro(filtros.idStatusVisita, agendamento.idStatusVisita)) {
       return false;
     }
 

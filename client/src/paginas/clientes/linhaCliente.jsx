@@ -3,9 +3,12 @@ import { AcoesRegistro } from '../../componentes/comuns/acoesRegistro';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { TextoGradeClamp } from '../../componentes/comuns/textoGradeClamp';
 import { obterCodigoPrincipalCliente } from '../../utilitarios/codigoCliente';
+import { registroEstaAtivo } from '../../utilitarios/statusRegistro';
 import { obterValorGrid } from '../../utilitarios/valorPadraoGrid';
 
 export function LinhaCliente({ empresa, cliente, aoConsultar, aoEditar, aoInativar }) {
+  const ativo = registroEstaAtivo(cliente.status);
+
   return (
     <tr className="linhaCliente">
       <td className="colunaGradeMidia"><AvatarCliente cliente={cliente} /></td>
@@ -20,8 +23,8 @@ export function LinhaCliente({ empresa, cliente, aoConsultar, aoEditar, aoInativ
       <td className="colunaGradeTexto"><TextoGradeClamp>{obterValorGrid(cliente.emailContatoPrincipal)}</TextoGradeClamp></td>
       <td className="colunaGradeTexto"><TextoGradeClamp>{obterValorGrid(cliente.nomeVendedor)}</TextoGradeClamp></td>
       <td className="colunaGradeStatus">
-        <span className={`etiquetaStatus ${cliente.status ? 'ativo' : 'inativo'}`}>
-          {cliente.status ? 'Ativo' : 'Inativo'}
+        <span className={`etiquetaStatus ${ativo ? 'ativo' : 'inativo'}`}>
+          {ativo ? 'Ativo' : 'Inativo'}
         </span>
       </td>
       <td className="colunaGradeAcoes">

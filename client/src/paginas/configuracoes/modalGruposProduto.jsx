@@ -5,6 +5,7 @@ import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { GradePadrao } from '../../componentes/comuns/gradePadrao';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
+import { registroEstaAtivo } from '../../utilitarios/statusRegistro';
 import {
   atualizarGrupoProdutoTamanho,
   excluirGrupoProdutoTamanho,
@@ -44,7 +45,7 @@ export function ModalGruposProduto({
       return true;
     }
 
-    return filtros.status === '1' ? Boolean(registro.status) : !Boolean(registro.status);
+    return filtros.status === '1' ? registroEstaAtivo(registro.status) : !registroEstaAtivo(registro.status);
   }), [registros, filtros.status]);
 
   useEffect(() => {

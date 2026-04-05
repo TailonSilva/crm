@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Botao } from './botao';
 import { GradePadrao } from './gradePadrao';
 import { baixarModeloImportacao, lerArquivoImportacao, obterConfiguracaoImportacaoCadastro } from '../../utilitarios/importacaoCadastros';
+import { ModalGruposProduto } from '../../paginas/configuracoes/modalGruposProduto';
+import { ModalMarcas } from '../../paginas/configuracoes/modalMarcas';
+import { ModalUnidadesMedida } from '../../paginas/configuracoes/modalUnidadesMedida';
 import '../../recursos/estilos/modalImportacaoCadastro.css';
 
 export function ModalImportacaoCadastro({
@@ -10,6 +13,7 @@ export function ModalImportacaoCadastro({
   carregando = false,
   resultado = null,
   referenciasRelacionais = {},
+  cadastrosRelacionais = {},
   onFechar,
   onImportar
 }) {
@@ -19,6 +23,7 @@ export function ModalImportacaoCadastro({
   const [carregandoArquivo, definirCarregandoArquivo] = useState(false);
   const [mensagemErro, definirMensagemErro] = useState('');
   const [correcoesPendencias, definirCorrecoesPendencias] = useState({});
+  const [cadastroRelacionalAberto, definirCadastroRelacionalAberto] = useState(null);
   const bloqueado = carregando || carregandoArquivo;
   const pendenciasRelacionais = useMemo(() => montarPendenciasRelacionais(resultado, referenciasRelacionais), [resultado, referenciasRelacionais]);
 
@@ -41,7 +46,7 @@ export function ModalImportacaoCadastro({
   }, [aberto, bloqueado]);
 
   useEffect(() => {
-    definirCorrecoesPendencias(criarEstadoInicialPendencias(pendenciasRelacionais));
+    definirCorrecoesPendencias((estadoAtual) => combinarCorrecoesPendencias(estadoAtual, pendenciasRelacionais));
   }, [pendenciasRelacionais]);
 
   if (!aberto || !configuracao) {
@@ -83,6 +88,37 @@ export function ModalImportacaoCadastro({
       ...estadoAtual,
       [chave]: valor
     }));
+  }
+
+  function abrirCadastroRelacional(pendencia) {
+    const configuracaoCadastro = cadastrosRelacionais?.[pendencia.campo];
+
+    if (!configuracaoCadastro || configuracaoCadastro.somenteConsulta) {
+      return;
+    }
+
+    definirCadastroRelacionalAberto({
+      campo: pendencia.campo,
+      chavePendencia: pendencia.chave
+    });
+  }
+
+  function fecharCadastroRelacional() {
+    definirCadastroRelacionalAberto(null);
+  }
+
+  async function selecionarCadastroRelacional(campo, registroSelecionado) {
+    if (!registroSelecionado) {
+      return;
+    }
+
+    const valorSelecionado = obterValorCadastroRelacional(campo, registroSelecionado);
+
+    if (valorSelecionado) {
+      alterarCorrecaoPendencia(cadastroRelacionalAberto?.chavePendencia, valorSelecionado);
+    }
+
+    fecharCadastroRelacional();
   }
 
   async function reprocessarPendenciasRelacionais() {
@@ -301,20 +337,37 @@ export function ModalImportacaoCadastro({
                       <td>{pendencia.rotulo}</td>
                       <td>{pendencia.valorInformado || '-'}</td>
                       <td>
-                        <select
-                          className="entradaFormulario modalImportacaoCadastroSelect"
-                          value={valorSelecionado}
-                          onChange={(evento) => alterarCorrecaoPendencia(pendencia.chave, evento.target.value)}
-                          disabled={bloqueado}
-                        >
-                          <option value="">{pendencia.obrigatorio ? 'Selecione uma opcao' : 'Selecione ou remova o vinculo'}</option>
-                          {!pendencia.obrigatorio ? <option value={VALOR_LIMPAR_REFERENCIA}>Nao vincular</option> : null}
-                          {pendencia.opcoes.map((opcao) => (
-                            <option key={`${pendencia.chave}-${opcao.valor}`} value={opcao.valor}>
-                              {opcao.label}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="campoSelectComAcao temAcao">
+                          <select
+                            className="entradaFormulario modalImportacaoCadastroSelect"
+                            value={valorSelecionado}
+                            onChange={(evento) => alterarCorrecaoPendencia(pendencia.chave, evento.target.value)}
+                            disabled={bloqueado}
+                          >
+                            <option value="">{pendencia.obrigatorio ? 'Selecione uma opcao' : 'Selecione ou remova o vinculo'}</option>
+                            {!pendencia.obrigatorio ? <option value={VALOR_LIMPAR_REFERENCIA}>Nao vincular</option> : null}
+                            {pendencia.opcoes.map((opcao) => (
+                              <option key={`${pendencia.chave}-${opcao.valor}`} value={opcao.valor}>
+                                {opcao.label}
+                              </option>
+                            ))}
+                          </select>
+                          {cadastrosRelacionais?.[pendencia.campo] && !cadastrosRelacionais?.[pendencia.campo]?.somenteConsulta ? (
+                            <Botao
+                              variante="secundario"
+                              type="button"
+                              icone="pesquisa"
+                              className="botaoCampoAcao"
+                              onClick={() => abrirCadastroRelacional(pendencia)}
+                              somenteIcone
+                              title={cadastrosRelacionais?.[pendencia.campo]?.tituloBotao || `Abrir cadastro de ${pendencia.rotulo}`}
+                              aria-label={cadastrosRelacionais?.[pendencia.campo]?.tituloBotao || `Abrir cadastro de ${pendencia.rotulo}`}
+                              disabled={bloqueado}
+                            >
+                              Abrir cadastro
+                            </Botao>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -323,6 +376,13 @@ export function ModalImportacaoCadastro({
             </section>
           ) : null}
         </div>
+
+        {renderizarCadastroRelacional({
+          cadastroRelacionalAberto,
+          cadastrosRelacionais,
+          aoFechar: fecharCadastroRelacional,
+          aoSelecionar: selecionarCadastroRelacional
+        })}
       </div>
     </div>
   );
@@ -359,6 +419,78 @@ function criarEstadoInicialPendencias(pendenciasRelacionais) {
     acumulador[pendencia.chave] = '';
     return acumulador;
   }, {});
+}
+
+function combinarCorrecoesPendencias(correcoesAtuais, pendenciasRelacionais) {
+  return pendenciasRelacionais.reduce((acumulador, pendencia) => {
+    acumulador[pendencia.chave] = correcoesAtuais?.[pendencia.chave] || '';
+    return acumulador;
+  }, {});
+}
+
+function obterValorCadastroRelacional(campo, registroSelecionado) {
+  if (campo === 'grupoProduto' || campo === 'marca' || campo === 'unidadeMedida') {
+    return String(registroSelecionado?.descricao || '').trim();
+  }
+
+  return '';
+}
+
+function renderizarCadastroRelacional({ cadastroRelacionalAberto, cadastrosRelacionais, aoFechar, aoSelecionar }) {
+  const configuracaoCadastro = cadastroRelacionalAberto
+    ? cadastrosRelacionais?.[cadastroRelacionalAberto.campo]
+    : null;
+
+  if (!cadastroRelacionalAberto || !configuracaoCadastro) {
+    return null;
+  }
+
+  if (cadastroRelacionalAberto.campo === 'grupoProduto') {
+    return (
+      <ModalGruposProduto
+        aberto
+        registros={configuracaoCadastro.registros || []}
+        somenteConsulta={Boolean(configuracaoCadastro.somenteConsulta)}
+        fecharAoSalvar
+        aoFechar={aoFechar}
+        aoSalvar={configuracaoCadastro.aoSalvar}
+        aoInativar={configuracaoCadastro.aoInativar}
+        aoSelecionarGrupo={(registroSelecionado) => aoSelecionar('grupoProduto', registroSelecionado)}
+      />
+    );
+  }
+
+  if (cadastroRelacionalAberto.campo === 'marca') {
+    return (
+      <ModalMarcas
+        aberto
+        registros={configuracaoCadastro.registros || []}
+        somenteConsulta={Boolean(configuracaoCadastro.somenteConsulta)}
+        fecharAoSalvar
+        aoFechar={aoFechar}
+        aoSalvar={configuracaoCadastro.aoSalvar}
+        aoInativar={configuracaoCadastro.aoInativar}
+        aoSelecionarMarca={(registroSelecionado) => aoSelecionar('marca', registroSelecionado)}
+      />
+    );
+  }
+
+  if (cadastroRelacionalAberto.campo === 'unidadeMedida') {
+    return (
+      <ModalUnidadesMedida
+        aberto
+        registros={configuracaoCadastro.registros || []}
+        somenteConsulta={Boolean(configuracaoCadastro.somenteConsulta)}
+        fecharAoSalvar
+        aoFechar={aoFechar}
+        aoSalvar={configuracaoCadastro.aoSalvar}
+        aoInativar={configuracaoCadastro.aoInativar}
+        aoSelecionarUnidade={(registroSelecionado) => aoSelecionar('unidadeMedida', registroSelecionado)}
+      />
+    );
+  }
+
+  return null;
 }
 
 function criarChavePendencia(linha, campo) {

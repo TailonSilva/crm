@@ -94,7 +94,8 @@ export function PaginaOrcamentos({ usuarioLogado }) {
   const [camposPedido, definirCamposPedido] = useState([]);
   const [etapasPedido, definirEtapasPedido] = useState([]);
   const [empresa, definirEmpresa] = useState(null);
-  const [carregando, definirCarregando] = useState(true);
+  const [carregandoContexto, definirCarregandoContexto] = useState(true);
+  const [carregandoGrade, definirCarregandoGrade] = useState(true);
   const [mensagemErro, definirMensagemErro] = useState('');
   const [modalAberto, definirModalAberto] = useState(false);
   const [modalManualAberto, definirModalManualAberto] = useState(false);
@@ -125,18 +126,36 @@ export function PaginaOrcamentos({ usuarioLogado }) {
   });
 
   useEffect(() => {
-    carregarDados();
+    carregarContexto();
   }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor]);
 
   useEffect(() => {
+    carregarGradeOrcamentos();
+  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor, usuarioLogado?.idUsuario, pesquisa, JSON.stringify(filtros)]);
+
+  useEffect(() => {
     function tratarGrupoEmpresaAtualizado() {
-      carregarDados();
+      carregarContexto();
+      carregarGradeOrcamentos();
     }
 
     window.addEventListener('grupo-empresa-atualizado', tratarGrupoEmpresaAtualizado);
 
     return () => {
       window.removeEventListener('grupo-empresa-atualizado', tratarGrupoEmpresaAtualizado);
+    };
+  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor, usuarioLogado?.idUsuario, pesquisa, JSON.stringify(filtros)]);
+
+  useEffect(() => {
+    function tratarEmpresaAtualizada() {
+      carregarContexto();
+      carregarGradeOrcamentos();
+    }
+
+    window.addEventListener('empresa-atualizada', tratarEmpresaAtualizada);
+
+    return () => {
+      window.removeEventListener('empresa-atualizada', tratarEmpresaAtualizada);
     };
   }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor]);
 
@@ -178,13 +197,12 @@ export function PaginaOrcamentos({ usuarioLogado }) {
     orcamentoPedidoPendente
   ]);
 
-  async function carregarDados() {
-    definirCarregando(true);
+  async function carregarContexto() {
+    definirCarregandoContexto(true);
     definirMensagemErro('');
 
     try {
       const [
-        orcamentosCarregados,
         clientesCarregados,
         contatosCarregados,
         usuariosCarregados,
@@ -199,7 +217,6 @@ export function PaginaOrcamentos({ usuarioLogado }) {
         etapasPedidoCarregadas,
         empresasCarregadas
       ] = await Promise.all([
-        listarOrcamentos(),
         listarClientes(),
         listarContatos(),
         listarUsuarios(),
@@ -219,29 +236,9 @@ export function PaginaOrcamentos({ usuarioLogado }) {
         ? clientesCarregados.filter((cliente) => cliente.idVendedor === usuarioLogado.idVendedor)
         : clientesCarregados;
       const etapasCarregadasOrdenadas = ordenarEtapasPorOrdem(etapasCarregadas, 'idEtapaOrcamento');
-      const idsClientesCarteira = new Set(clientesCarteira.map((cliente) => cliente.idCliente));
-      const orcamentosVisiveis = usuarioSomenteVendedor
-        ? orcamentosCarregados.filter((orcamento) => (
-          idsClientesCarteira.has(orcamento.idCliente)
-          || String(orcamento.idUsuario) === String(usuarioLogado.idUsuario)
-        ))
-        : orcamentosCarregados;
       const clientesDisponiveis = usuarioSomenteVendedor ? clientesCarteira : clientesCarregados;
       const idsClientesDisponiveis = new Set(clientesDisponiveis.map((cliente) => cliente.idCliente));
 
-      definirOrcamentos(
-        enriquecerOrcamentos(
-          orcamentosVisiveis,
-          clientesDisponiveis,
-          contatosCarregados,
-          usuariosCarregados,
-          vendedoresCarregados,
-          enriquecerPrazosPagamento(prazosCarregados, metodosCarregados),
-          etapasCarregadasOrdenadas,
-          produtosCarregados,
-          motivosPerdaCarregados
-        )
-      );
       definirClientes(clientesDisponiveis);
       definirContatos(contatosCarregados.filter((contato) => idsClientesDisponiveis.has(contato.idCliente)));
       definirUsuarios(usuariosCarregados);
@@ -258,8 +255,48 @@ export function PaginaOrcamentos({ usuarioLogado }) {
     } catch (_erro) {
       definirMensagemErro('Nao foi possivel carregar os orcamentos.');
     } finally {
-      definirCarregando(false);
+      definirCarregandoContexto(false);
     }
+  }
+
+  async function carregarGradeOrcamentos() {
+    definirCarregandoGrade(true);
+    definirMensagemErro('');
+
+    try {
+      const orcamentosCarregados = await listarOrcamentos({
+        search: pesquisa,
+        ...filtros,
+        ...(usuarioSomenteVendedor
+          ? {
+            escopoIdVendedor: usuarioLogado?.idVendedor,
+            escopoIdUsuario: usuarioLogado?.idUsuario
+          }
+          : {})
+      });
+
+      definirOrcamentos(
+        enriquecerOrcamentos(
+          orcamentosCarregados,
+          clientes,
+          contatos,
+          usuarios,
+          vendedores,
+          prazosPagamento,
+          etapasOrcamento,
+          produtos,
+          motivosPerda
+        )
+      );
+    } catch (_erro) {
+      definirMensagemErro('Nao foi possivel carregar os orcamentos.');
+    } finally {
+      definirCarregandoGrade(false);
+    }
+  }
+
+  async function recarregarPagina() {
+    await Promise.all([carregarContexto(), carregarGradeOrcamentos()]);
   }
 
   async function salvarOrcamento(dadosOrcamento) {
@@ -274,7 +311,7 @@ export function PaginaOrcamentos({ usuarioLogado }) {
       registroSalvo = await incluirOrcamento(payload);
     }
 
-    await carregarDados();
+    await recarregarPagina();
     fecharModal();
 
     if (etapaAcabouDeFechar(etapaAnterior, etapaAtual, etapasOrcamento) && !registroSalvo?.idPedidoVinculado) {
@@ -316,7 +353,7 @@ export function PaginaOrcamentos({ usuarioLogado }) {
       ? await atualizarPrazoPagamento(dadosPrazo.idPrazoPagamento, payload)
       : await incluirPrazoPagamento(payload);
 
-    await carregarDados();
+    await recarregarPagina();
     return enriquecerPrazoPagamento(registroSalvo, metodosPagamento);
   }
 
@@ -337,7 +374,7 @@ export function PaginaOrcamentos({ usuarioLogado }) {
       })
     );
 
-    await carregarDados();
+    await recarregarPagina();
     return null;
   }
 
@@ -355,7 +392,7 @@ export function PaginaOrcamentos({ usuarioLogado }) {
     );
 
     const registroAtualizado = await atualizarOrcamento(orcamento.idOrcamento, payload);
-    await carregarDados();
+    await recarregarPagina();
     return registroAtualizado;
   }
 
@@ -502,7 +539,7 @@ export function PaginaOrcamentos({ usuarioLogado }) {
 
     await excluirOrcamento(orcamentoExclusaoPendente.idOrcamento);
     definirOrcamentoExclusaoPendente(null);
-    await carregarDados();
+    await recarregarPagina();
   }
 
   async function abrirPedidoAPartirDoOrcamento() {
@@ -573,7 +610,7 @@ export function PaginaOrcamentos({ usuarioLogado }) {
         orcamentoAtual.idMotivoPerda || null
       );
     } else {
-      await carregarDados();
+      await recarregarPagina();
     }
 
     definirOrcamentoPedidoPendente(null);
@@ -590,15 +627,12 @@ export function PaginaOrcamentos({ usuarioLogado }) {
 
   async function salvarPedido(dadosPedido) {
     await incluirPedido(normalizarPayloadPedido(dadosPedido));
-    await carregarDados();
+    await recarregarPagina();
     definirOrcamentoPedidoEmCriacao(null);
     fecharModalPedido();
   }
 
-  const orcamentosFiltrados = useMemo(
-    () => filtrarOrcamentos(orcamentos, pesquisa, filtros),
-    [orcamentos, pesquisa, filtros]
-  );
+  const carregando = carregandoContexto || carregandoGrade;
   const colunasVisiveisOrcamentos = useMemo(
     () => normalizarColunasGridOrcamentos(empresa?.colunasGridOrcamentos),
     [empresa?.colunasGridOrcamentos]
@@ -646,11 +680,11 @@ export function PaginaOrcamentos({ usuarioLogado }) {
           cabecalho={<CabecalhoGradeOrcamentos colunas={colunasVisiveisOrcamentos} />}
           carregando={carregando}
           mensagemErro={mensagemErro}
-          temItens={orcamentosFiltrados.length > 0}
+          temItens={orcamentos.length > 0}
           mensagemCarregando="Carregando orcamentos..."
           mensagemVazia="Nenhum orcamento encontrado."
         >
-          {orcamentosFiltrados.map((orcamento) => (
+          {orcamentos.map((orcamento) => (
             <LinhaOrcamento
               key={orcamento.idOrcamento}
               orcamento={orcamento}
@@ -835,7 +869,7 @@ export function PaginaOrcamentos({ usuarioLogado }) {
       <ModalManualOrcamentos
         aberto={modalManualAberto}
         aoFechar={() => definirModalManualAberto(false)}
-        orcamentos={orcamentosFiltrados}
+        orcamentos={orcamentos}
         etapasOrcamento={etapasOrcamento}
         motivosPerda={motivosPerda}
         prazosPagamento={prazosPagamento}
@@ -1332,51 +1366,6 @@ function normalizarFiltrosOrcamentos(filtros, filtrosPadrao) {
       'dataFechamentoFim'
     )
   };
-}
-
-function filtrarOrcamentos(orcamentos, pesquisa, filtros) {
-  const termo = String(pesquisa || '').trim().toLowerCase();
-
-  return orcamentos.filter((orcamento) => {
-    const atendePesquisa = !termo || [
-      orcamento.nomeCliente,
-      orcamento.nomeContato,
-      orcamento.nomeUsuario,
-      orcamento.nomeVendedor,
-      orcamento.nomeVendedorCliente,
-      orcamento.nomePrazoPagamento,
-      orcamento.nomeEtapaOrcamento,
-      orcamento.observacao
-    ].some((valor) => String(valor || '').toLowerCase().includes(termo));
-
-    const atendeFiltros = (
-      (!filtros.idCliente || String(orcamento.idCliente) === String(filtros.idCliente))
-      && (
-        !Array.isArray(filtros.idUsuario)
-        || filtros.idUsuario.length === 0
-        || filtros.idUsuario.includes(String(orcamento.idUsuario))
-      )
-      && (
-        !Array.isArray(filtros.idVendedorCliente)
-        || filtros.idVendedorCliente.length === 0
-        || filtros.idVendedorCliente.includes(String(orcamento.idVendedorCliente || ''))
-      )
-      && (
-        !Array.isArray(filtros.idVendedor)
-        || filtros.idVendedor.length === 0
-        || filtros.idVendedor.includes(String(orcamento.idVendedor))
-      )
-      && (
-        !Array.isArray(filtros.idsEtapaOrcamento)
-        || filtros.idsEtapaOrcamento.length === 0
-        || filtros.idsEtapaOrcamento.includes(String(orcamento.idEtapaOrcamento))
-      )
-      && validarPeriodoData(orcamento.dataInclusao, filtros.dataInclusaoInicio, filtros.dataInclusaoFim)
-      && validarPeriodoData(orcamento.dataFechamento, filtros.dataFechamentoInicio, filtros.dataFechamentoFim)
-    );
-
-    return atendePesquisa && atendeFiltros;
-  });
 }
 
 function ordenarEtapasPorOrdem(etapas, chaveId) {

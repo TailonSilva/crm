@@ -290,6 +290,7 @@ const secoesConfiguracao = [
         'empresa',
         'usuarios',
         'vendedores',
+        'colunasGridAtendimentos',
         'locaisAgenda',
         'tiposRecurso',
         'recursos',
