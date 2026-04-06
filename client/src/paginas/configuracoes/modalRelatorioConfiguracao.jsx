@@ -13,7 +13,7 @@ import { listarEtapasOrcamentoConfiguracao, listarEtapasPedidoConfiguracao } fro
 import { desktopTemExportacaoPdf } from '../../servicos/desktop';
 import { listarOrcamentos } from '../../servicos/orcamentos';
 import { listarPedidos } from '../../servicos/pedidos';
-import { listarGruposProduto, listarProdutos } from '../../servicos/produtos';
+import { listarGruposProduto, listarMarcas, listarProdutos } from '../../servicos/produtos';
 import { listarUsuarios } from '../../servicos/usuarios';
 import { normalizarPreco } from '../../utilitarios/normalizarPreco';
 import { exportarRelatorioAtendimentosPdf } from './utilitarios/exportarRelatorioAtendimentosPdf';
@@ -57,6 +57,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
   const [vendedores, definirVendedores] = useState([]);
   const [gruposEmpresaRelatorio, definirGruposEmpresaRelatorio] = useState([]);
   const [gruposProdutoRelatorio, definirGruposProdutoRelatorio] = useState([]);
+  const [marcasRelatorio, definirMarcasRelatorio] = useState([]);
   const [etapasPedido, definirEtapasPedido] = useState([]);
   const [avisosPopup, definirAvisosPopup] = useState([]);
   const [gerandoPdf, definirGerandoPdf] = useState(false);
@@ -92,6 +93,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
         definirMensagemErroPedidos('');
         definirGruposEmpresaRelatorio([]);
         definirGruposProdutoRelatorio([]);
+        definirMarcasRelatorio([]);
         definirAvisosPopup([]);
       }
       return undefined;
@@ -111,6 +113,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
           listarEtapasPedidoConfiguracao(),
           listarGruposEmpresa(),
           listarGruposProduto(),
+          listarMarcas(),
           listarProdutos()
         ]);
 
@@ -121,6 +124,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
           etapasResultado,
           gruposEmpresaResultado,
           gruposProdutoResultado,
+          marcasResultado,
           produtosResultado
         ] = resultados;
 
@@ -134,23 +138,27 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
         const etapasCarregadas = etapasResultado.status === 'fulfilled' ? etapasResultado.value : [];
         const gruposEmpresaCarregados = gruposEmpresaResultado.status === 'fulfilled' ? gruposEmpresaResultado.value : [];
         const gruposProdutoCarregados = gruposProdutoResultado.status === 'fulfilled' ? gruposProdutoResultado.value : [];
+        const marcasCarregadas = marcasResultado.status === 'fulfilled' ? marcasResultado.value : [];
         const produtosCarregados = produtosResultado.status === 'fulfilled' ? produtosResultado.value : [];
 
         const clientesAtivos = filtrarRegistrosAtivosLocais(clientesCarregados);
         const gruposEmpresaAtivos = filtrarRegistrosAtivosLocais(gruposEmpresaCarregados, 'status');
         const gruposProdutoAtivos = filtrarRegistrosAtivosLocais(gruposProdutoCarregados, 'status');
+        const marcasAtivas = filtrarRegistrosAtivosLocais(marcasCarregadas, 'status');
 
         definirPedidos(enriquecerPedidosRelatorio(
           pedidosCarregados,
           clientesAtivos,
           produtosCarregados,
           gruposEmpresaAtivos,
-          gruposProdutoAtivos
+          gruposProdutoAtivos,
+          marcasAtivas
         ));
         definirClientes(clientesAtivos);
         definirVendedores(filtrarRegistrosAtivosLocais(vendedoresCarregados));
         definirGruposEmpresaRelatorio(gruposEmpresaAtivos);
         definirGruposProdutoRelatorio(gruposProdutoAtivos);
+        definirMarcasRelatorio(marcasAtivas);
         definirEtapasPedido(normalizarEtapasPedido(filtrarRegistrosAtivosLocais(etapasCarregadas, 'status')));
       } catch (_erro) {
         if (!cancelado) {
@@ -160,6 +168,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
           definirVendedores([]);
           definirGruposEmpresaRelatorio([]);
           definirGruposProdutoRelatorio([]);
+          definirMarcasRelatorio([]);
           definirEtapasPedido([]);
         }
       } finally {
@@ -185,6 +194,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
         definirEtapasOrcamentoConversao([]);
         definirGruposEmpresaRelatorio([]);
         definirGruposProdutoRelatorio([]);
+        definirMarcasRelatorio([]);
         definirModalFiltrosConversaoAberto(false);
         definirModalBuscaClienteConversaoAberto(false);
       }
@@ -207,6 +217,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
           listarEtapasOrcamentoConfiguracao(),
           listarGruposEmpresa(),
           listarGruposProduto(),
+          listarMarcas(),
           listarProdutos()
         ]);
 
@@ -223,6 +234,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
           etapasResultado,
           gruposEmpresaResultado,
           gruposProdutoResultado,
+          marcasResultado,
           produtosResultado
         ] = resultados;
 
@@ -234,6 +246,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
         const etapasCarregadas = etapasResultado.status === 'fulfilled' ? etapasResultado.value : [];
         const gruposEmpresaCarregados = gruposEmpresaResultado.status === 'fulfilled' ? gruposEmpresaResultado.value : [];
         const gruposProdutoCarregados = gruposProdutoResultado.status === 'fulfilled' ? gruposProdutoResultado.value : [];
+        const marcasCarregadas = marcasResultado.status === 'fulfilled' ? marcasResultado.value : [];
         const produtosCarregados = produtosResultado.status === 'fulfilled' ? produtosResultado.value : [];
 
         const clientesAtivos = filtrarRegistrosAtivosLocais(clientesCarregados);
@@ -242,12 +255,14 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
         const vendedoresAtivos = filtrarRegistrosAtivosLocais(vendedoresCarregados);
         const gruposEmpresaAtivos = filtrarRegistrosAtivosLocais(gruposEmpresaCarregados, 'status');
         const gruposProdutoAtivos = filtrarRegistrosAtivosLocais(gruposProdutoCarregados, 'status');
+        const marcasAtivas = filtrarRegistrosAtivosLocais(marcasCarregadas, 'status');
         const etapasAtivas = normalizarEtapasOrcamentoConversao(filtrarRegistrosAtivosLocais(etapasCarregadas, 'status'));
 
         definirClientes(clientesAtivos);
         definirVendedores(vendedoresAtivos);
         definirGruposEmpresaRelatorio(gruposEmpresaAtivos);
         definirGruposProdutoRelatorio(gruposProdutoAtivos);
+        definirMarcasRelatorio(marcasAtivas);
         definirUsuariosConversao(usuariosAtivos);
         definirEtapasOrcamentoConversao(ordenarEtapasPorOrdem(etapasAtivas, 'idEtapaOrcamento'));
         definirOrcamentosConversao(
@@ -260,7 +275,8 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
             etapasAtivas,
             produtosCarregados,
             gruposEmpresaAtivos,
-            gruposProdutoAtivos
+            gruposProdutoAtivos,
+            marcasAtivas
           )
         );
       } catch (_erro) {
@@ -269,6 +285,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
           definirOrcamentosConversao([]);
           definirGruposEmpresaRelatorio([]);
           definirGruposProdutoRelatorio([]);
+          definirMarcasRelatorio([]);
         }
       } finally {
         if (!cancelado) {
@@ -461,9 +478,10 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
       vendedores,
       etapasPedido,
       gruposEmpresa: gruposEmpresaRelatorio,
-      gruposProduto: gruposProdutoRelatorio
+      gruposProduto: gruposProdutoRelatorio,
+      marcas: marcasRelatorio
     }),
-    [clientes, etapasPedido, filtrosPedidosFechados, gruposEmpresaRelatorio, gruposProdutoRelatorio, vendedores]
+    [clientes, etapasPedido, filtrosPedidosFechados, gruposEmpresaRelatorio, gruposProdutoRelatorio, marcasRelatorio, vendedores]
   );
 
   const quantidadeTotalPedidosFechados = useMemo(
@@ -493,9 +511,10 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
       vendedores,
       etapasOrcamento: etapasOrcamentoConversao,
       gruposEmpresa: gruposEmpresaRelatorio,
-      gruposProduto: gruposProdutoRelatorio
+      gruposProduto: gruposProdutoRelatorio,
+      marcas: marcasRelatorio
     }),
-    [clientes, etapasOrcamentoConversao, filtrosConversao, gruposEmpresaRelatorio, gruposProdutoRelatorio, usuariosConversao, vendedores]
+    [clientes, etapasOrcamentoConversao, filtrosConversao, gruposEmpresaRelatorio, gruposProdutoRelatorio, marcasRelatorio, usuariosConversao, vendedores]
   );
 
   const atendimentosRelatorioFiltrados = useMemo(
@@ -761,6 +780,17 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
               options: gruposProdutoRelatorio.map((grupo) => ({
                 valor: String(grupo.idGrupo),
                 label: grupo.descricao || `Grupo #${grupo.idGrupo}`
+              }))
+            },
+            {
+              name: 'idsMarcas',
+              label: 'Marca',
+              multiple: true,
+              tituloSelecao: 'Selecionar marcas',
+              placeholder: 'Todas as marcas',
+              options: marcasRelatorio.map((marca) => ({
+                valor: String(marca.idMarca),
+                label: marca.descricao || `Marca #${marca.idMarca}`
               }))
             },
             {
@@ -1136,6 +1166,17 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
               }))
             },
             {
+              name: 'idsMarcas',
+              label: 'Marca',
+              multiple: true,
+              tituloSelecao: 'Selecionar marcas',
+              placeholder: 'Todas as marcas',
+              options: marcasRelatorio.map((marca) => ({
+                valor: String(marca.idMarca),
+                label: marca.descricao || `Marca #${marca.idMarca}`
+              }))
+            },
+            {
               name: 'idsEtapaOrcamento',
               label: 'Etapa',
               multiple: true,
@@ -1229,7 +1270,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
   );
 }
 
-function enriquecerPedidosRelatorio(pedidos, clientes = [], produtos = [], gruposEmpresa = [], gruposProduto = []) {
+function enriquecerPedidosRelatorio(pedidos, clientes = [], produtos = [], gruposEmpresa = [], gruposProduto = [], marcas = []) {
   const clientesPorId = new Map(
     (clientes || []).map((cliente) => [
       cliente.idCliente,
@@ -1244,7 +1285,9 @@ function enriquecerPedidosRelatorio(pedidos, clientes = [], produtos = [], grupo
       produto.idProduto,
       {
         idGrupo: produto.idGrupo,
-        nomeGrupoProduto: obterNomeGrupoProdutoPorId(gruposProduto, produto.idGrupo)
+        nomeGrupoProduto: obterNomeGrupoProdutoPorId(gruposProduto, produto.idGrupo),
+        idMarca: produto.idMarca,
+        nomeMarca: obterNomeMarcaPorId(marcas, produto.idMarca)
       }
     ])
   );
@@ -1257,6 +1300,12 @@ function enriquecerPedidosRelatorio(pedidos, clientes = [], produtos = [], grupo
       idsGruposProduto: Array.from(new Set(
         (Array.isArray(pedido.itens) ? pedido.itens : [])
           .map((item) => produtosPorId.get(item.idProduto)?.idGrupo)
+          .filter((valor) => valor !== null && valor !== undefined && valor !== '')
+          .map(String)
+      )),
+      idsMarcas: Array.from(new Set(
+        (Array.isArray(pedido.itens) ? pedido.itens : [])
+          .map((item) => produtosPorId.get(item.idProduto)?.idMarca)
           .filter((valor) => valor !== null && valor !== undefined && valor !== '')
           .map(String)
       )),
@@ -1313,6 +1362,14 @@ function filtrarPedidosFechados(pedidos, filtros) {
       Array.isArray(filtros.idsGruposProduto)
       && filtros.idsGruposProduto.length > 0
       && !filtros.idsGruposProduto.some((idGrupo) => (pedido.idsGruposProduto || []).includes(String(idGrupo)))
+    ) {
+      return false;
+    }
+
+    if (
+      Array.isArray(filtros.idsMarcas)
+      && filtros.idsMarcas.length > 0
+      && !filtros.idsMarcas.some((idMarca) => (pedido.idsMarcas || []).includes(String(idMarca)))
     ) {
       return false;
     }
@@ -1389,6 +1446,7 @@ function normalizarFiltrosPedidosFechados(filtros = {}) {
   const idsVendedores = normalizarListaIdentificadoresFiltro(filtros.idsVendedores);
   const idsGruposEmpresa = normalizarListaIdentificadoresFiltro(filtros.idsGruposEmpresa);
   const idsGruposProduto = normalizarListaIdentificadoresFiltro(filtros.idsGruposProduto);
+  const idsMarcas = normalizarListaIdentificadoresFiltro(filtros.idsMarcas);
   const idsEtapasPedido = normalizarListaIdentificadoresFiltro(filtros.idsEtapasPedido);
   const dataInclusaoInicio = normalizarDataFiltro(filtros.dataInclusaoInicio);
   const dataInclusaoFim = normalizarDataFiltro(filtros.dataInclusaoFim);
@@ -1402,6 +1460,7 @@ function normalizarFiltrosPedidosFechados(filtros = {}) {
     idsVendedores,
     idsGruposEmpresa,
     idsGruposProduto,
+    idsMarcas,
     idsEtapasPedido,
     dataInclusaoInicio: periodoInclusao.dataInicio,
     dataInclusaoFim: periodoInclusao.dataFim,
@@ -1428,6 +1487,7 @@ function possuiFiltrosAtivos(filtros = {}) {
     || (Array.isArray(filtros.idsVendedores) && filtros.idsVendedores.length > 0)
     || (Array.isArray(filtros.idsGruposEmpresa) && filtros.idsGruposEmpresa.length > 0)
     || (Array.isArray(filtros.idsGruposProduto) && filtros.idsGruposProduto.length > 0)
+    || (Array.isArray(filtros.idsMarcas) && filtros.idsMarcas.length > 0)
     || (Array.isArray(filtros.idsEtapasPedido) && filtros.idsEtapasPedido.length > 0)
     || filtros.dataInclusaoInicio
     || filtros.dataInclusaoFim
@@ -1441,7 +1501,8 @@ function montarChipsFiltrosPedidosFechados(filtros, {
   vendedores,
   etapasPedido,
   gruposEmpresa,
-  gruposProduto
+  gruposProduto,
+  marcas
 }) {
   const chips = [];
 
@@ -1532,6 +1593,7 @@ function obterFiltrosPadraoPedidosFechados() {
     idsVendedores: [],
     idsGruposEmpresa: [],
     idsGruposProduto: [],
+    idsMarcas: [],
     idsEtapasPedido: [],
     dataInclusaoInicio: formatarDataInput(inicioMes),
     dataInclusaoFim: formatarDataInput(fimMes),
@@ -1923,6 +1985,7 @@ function normalizarFiltrosConversao(filtros = {}) {
   const idVendedor = normalizarListaIdentificadoresFiltro(filtros.idVendedor);
   const idsGruposEmpresa = normalizarListaIdentificadoresFiltro(filtros.idsGruposEmpresa);
   const idsGruposProduto = normalizarListaIdentificadoresFiltro(filtros.idsGruposProduto);
+  const idsMarcas = normalizarListaIdentificadoresFiltro(filtros.idsMarcas);
   const idsEtapaOrcamento = normalizarListaIdentificadoresFiltro(filtros.idsEtapaOrcamento);
   const dataInclusaoInicio = normalizarDataFiltro(filtros.dataInclusaoInicio);
   const dataInclusaoFim = normalizarDataFiltro(filtros.dataInclusaoFim);
@@ -1938,6 +2001,7 @@ function normalizarFiltrosConversao(filtros = {}) {
     idVendedor,
     idsGruposEmpresa,
     idsGruposProduto,
+    idsMarcas,
     idsEtapaOrcamento,
     dataInclusaoInicio: periodoInclusao.dataInicio,
     dataInclusaoFim: periodoInclusao.dataFim,
@@ -1954,6 +2018,7 @@ function possuiFiltrosConversaoAtivos(filtros = {}) {
     || (Array.isArray(filtros.idVendedor) && filtros.idVendedor.length > 0)
     || (Array.isArray(filtros.idsGruposEmpresa) && filtros.idsGruposEmpresa.length > 0)
     || (Array.isArray(filtros.idsGruposProduto) && filtros.idsGruposProduto.length > 0)
+    || (Array.isArray(filtros.idsMarcas) && filtros.idsMarcas.length > 0)
     || (Array.isArray(filtros.idsEtapaOrcamento) && filtros.idsEtapaOrcamento.length > 0)
     || filtros.dataInclusaoInicio
     || filtros.dataInclusaoFim
@@ -1968,7 +2033,8 @@ function montarChipsFiltrosConversao(filtros, {
   vendedores,
   etapasOrcamento,
   gruposEmpresa,
-  gruposProduto
+  gruposProduto,
+  marcas
 }) {
   const chips = [];
 
@@ -2006,6 +2072,16 @@ function montarChipsFiltrosConversao(filtros, {
       chips.push({
         id: `grupo-produto-${idGrupoProduto}`,
         rotulo: `Grupo de produto: ${grupo?.descricao || `#${idGrupoProduto}`}`
+      });
+    });
+  }
+
+  if (Array.isArray(filtros.idsMarcas) && filtros.idsMarcas.length > 0) {
+    filtros.idsMarcas.forEach((idMarca) => {
+      const marca = marcas.find((item) => String(item.idMarca) === String(idMarca));
+      chips.push({
+        id: `marca-${idMarca}`,
+        rotulo: `Marca: ${marca?.descricao || `#${idMarca}`}`
       });
     });
   }
@@ -2069,6 +2145,7 @@ function obterFiltrosPadraoConversao() {
     idVendedor: [],
     idsGruposEmpresa: [],
     idsGruposProduto: [],
+    idsMarcas: [],
     idsEtapaOrcamento: [],
     dataInclusaoInicio: formatarDataInput(inicioMes),
     dataInclusaoFim: formatarDataInput(fimMes),
@@ -2106,6 +2183,11 @@ function filtrarOrcamentosConversao(orcamentos, filtros) {
       || filtros.idsGruposProduto.some((idGrupo) => (orcamento.idsGruposProduto || []).includes(String(idGrupo)))
     )
     && (
+      !Array.isArray(filtros.idsMarcas)
+      || filtros.idsMarcas.length === 0
+      || filtros.idsMarcas.some((idMarca) => (orcamento.idsMarcas || []).includes(String(idMarca)))
+    )
+    && (
       !Array.isArray(filtros.idsEtapaOrcamento)
       || filtros.idsEtapaOrcamento.length === 0
       || filtros.idsEtapaOrcamento.includes(String(orcamento.idEtapaOrcamento || ''))
@@ -2124,7 +2206,8 @@ function enriquecerOrcamentosConversao(
   etapasOrcamento,
   produtos = [],
   gruposEmpresa = [],
-  gruposProduto = []
+  gruposProduto = [],
+  marcas = []
 ) {
   const clientesPorId = new Map(
     (clientes || []).map((cliente) => [
@@ -2154,7 +2237,9 @@ function enriquecerOrcamentosConversao(
       produto.idProduto,
       {
         idGrupo: produto.idGrupo,
-        nomeGrupoProduto: obterNomeGrupoProdutoPorId(gruposProduto, produto.idGrupo)
+        nomeGrupoProduto: obterNomeGrupoProdutoPorId(gruposProduto, produto.idGrupo),
+        idMarca: produto.idMarca,
+        nomeMarca: obterNomeMarcaPorId(marcas, produto.idMarca)
       }
     ])
   );
@@ -2180,6 +2265,12 @@ function enriquecerOrcamentosConversao(
         idsGruposProduto: Array.from(new Set(
           (Array.isArray(orcamento.itens) ? orcamento.itens : [])
             .map((item) => produtosPorId.get(item.idProduto)?.idGrupo)
+            .filter((valor) => valor !== null && valor !== undefined && valor !== '')
+            .map(String)
+        )),
+        idsMarcas: Array.from(new Set(
+          (Array.isArray(orcamento.itens) ? orcamento.itens : [])
+            .map((item) => produtosPorId.get(item.idProduto)?.idMarca)
             .filter((valor) => valor !== null && valor !== undefined && valor !== '')
             .map(String)
         )),
@@ -2209,6 +2300,11 @@ function obterNomeGrupoEmpresaPorId(gruposEmpresa, idGrupoEmpresa) {
 function obterNomeGrupoProdutoPorId(gruposProduto, idGrupo) {
   const grupo = (gruposProduto || []).find((item) => String(item.idGrupo) === String(idGrupo || ''));
   return grupo?.descricao || 'Sem grupo';
+}
+
+function obterNomeMarcaPorId(marcas, idMarca) {
+  const marca = (marcas || []).find((item) => String(item.idMarca) === String(idMarca || ''));
+  return marca?.descricao || 'Sem marca';
 }
 
 function ordenarEtapasPorOrdem(etapas, chaveId) {
@@ -2243,11 +2339,11 @@ function obterValorOrdemEtapa(ordem, fallback) {
 }
 
 function etapaOrcamentoEhFechadoPorId(idEtapaOrcamento) {
-  return [1, 2, 3].includes(Number(idEtapaOrcamento));
+  return [1, 2, 3, 4].includes(Number(idEtapaOrcamento));
 }
 
 function etapaOrcamentoEhRecusadoPorId(idEtapaOrcamento) {
-  return Number(idEtapaOrcamento) === 3;
+  return Number(idEtapaOrcamento) === 4;
 }
 
 function normalizarEtapasOrcamentoConversao(etapas) {
@@ -2263,12 +2359,12 @@ function normalizarEtapasOrcamentoConversao(etapas) {
       if (!recusadoInserido) {
         etapasNormalizadas.push({
           ...etapa,
-          idEtapaOrcamento: 3,
+          idEtapaOrcamento: 4,
           descricao: 'Recusado',
           cor: etapa.cor || '#E5E7EB',
           obrigarMotivoPerda: 1,
           consideraFunilVendas: 0,
-          ordem: 3,
+          ordem: 4,
           status: 1
         });
         recusadoInserido = true;
@@ -2286,11 +2382,11 @@ function normalizarEtapasOrcamentoConversao(etapas) {
 function normalizarIdEtapaOrcamentoConversao(idEtapaOrcamento, etapasOrcamento) {
   const etapa = (etapasOrcamento || []).find((item) => String(item.idEtapaOrcamento) === String(idEtapaOrcamento || ''));
 
-  return etapaOrcamentoEhRecusado(etapa || { idEtapaOrcamento }) ? 3 : Number(idEtapaOrcamento || 0);
+  return etapaOrcamentoEhRecusado(etapa || { idEtapaOrcamento }) ? 4 : Number(idEtapaOrcamento || 0);
 }
 
 function etapaOrcamentoEhRecusado(etapa) {
   const descricao = String(etapa?.descricao || '').trim().toLowerCase();
 
-  return Number(etapa?.idEtapaOrcamento) === 3 || descricao === 'recusado' || descricao === 'pedido excluido';
+  return Number(etapa?.idEtapaOrcamento) === 4 || descricao === 'recusado';
 }

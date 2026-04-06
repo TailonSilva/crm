@@ -127,6 +127,7 @@ export function ModalPedido({
   const [confirmandoSaida, definirConfirmandoSaida] = useState(false);
   const [modalBuscaClienteAberto, definirModalBuscaClienteAberto] = useState(false);
   const [modalBuscaContatoAberto, definirModalBuscaContatoAberto] = useState(false);
+  const [contatosCriadosLocalmente, definirContatosCriadosLocalmente] = useState([]);
   const [modalPrazosPagamentoAberto, definirModalPrazosPagamentoAberto] = useState(false);
   const somenteLeitura = modo === 'consulta';
   const modoInclusao = !pedido;
@@ -150,8 +151,8 @@ export function ModalPedido({
     [formulario.itens]
   );
   const contatosDoCliente = useMemo(
-    () => contatosAtivos.filter((contato) => String(contato.idCliente) === String(formulario.idCliente)),
-    [contatosAtivos, formulario.idCliente]
+    () => combinarContatosDoCliente(contatosAtivos, contatosCriadosLocalmente, formulario.idCliente),
+    [contatosAtivos, contatosCriadosLocalmente, formulario.idCliente]
   );
   const {
     modalItemAberto,
@@ -198,6 +199,7 @@ export function ModalPedido({
     definirConfirmandoSaida(false);
     definirModalBuscaClienteAberto(false);
     definirModalBuscaContatoAberto(false);
+    definirContatosCriadosLocalmente([]);
     definirModalPrazosPagamentoAberto(false);
     redefinirItemModal();
   }, [aberto, chaveRegistroBase, usuarioLogado?.idUsuario, quantidadeCamposPedido, chaveEmpresa]);
@@ -449,6 +451,14 @@ export function ModalPedido({
     }));
 
     fecharModalBuscaContato();
+  }
+
+  function registrarContatoCriado(contato) {
+    if (!contato?.idContato) {
+      return;
+    }
+
+    definirContatosCriadosLocalmente((estadoAtual) => combinarContatosUnicos(estadoAtual, [contato]));
   }
 
   function abrirModalPrazosPagamento() {
@@ -847,7 +857,9 @@ export function ModalPedido({
 
         <ModalBuscaContatos
           aberto={modalBuscaContatoAberto}
+          idCliente={formulario.idCliente}
           contatos={contatosDoCliente}
+          aoCriarContato={registrarContatoCriado}
           aoSelecionar={selecionarContato}
           aoFechar={fecharModalBuscaContato}
         />
@@ -1063,4 +1075,30 @@ function obterIniciaisItemPedido(item) {
   const partes = String(descricao).trim().split(/\s+/).filter(Boolean);
   const iniciais = partes.slice(0, 2).map((parte) => parte[0]).join('');
   return (iniciais || 'IT').toUpperCase();
+}
+
+function combinarContatosDoCliente(contatosBase, contatosLocais, idCliente) {
+  return combinarContatosUnicos(
+    (Array.isArray(contatosBase) ? contatosBase : []).filter(
+      (contato) => String(contato.idCliente) === String(idCliente)
+    ),
+    (Array.isArray(contatosLocais) ? contatosLocais : []).filter(
+      (contato) => String(contato.idCliente) === String(idCliente)
+    )
+  );
+}
+
+function combinarContatosUnicos(contatosBase, contatosExtras) {
+  const mapa = new Map();
+
+  [...(Array.isArray(contatosBase) ? contatosBase : []), ...(Array.isArray(contatosExtras) ? contatosExtras : [])]
+    .forEach((contato) => {
+      if (!contato?.idContato) {
+        return;
+      }
+
+      mapa.set(String(contato.idContato), contato);
+    });
+
+  return Array.from(mapa.values());
 }

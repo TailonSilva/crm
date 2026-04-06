@@ -2149,7 +2149,7 @@ function orcamentoEstaAberto(orcamento) {
     || 0
   );
 
-  return ![1, 2, 3].includes(idEtapa);
+  return ![1, 2, 3, 4].includes(idEtapa);
 }
 
 const ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO = 2;

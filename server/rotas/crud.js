@@ -26,7 +26,7 @@ function validarCamposObrigatorios(entidade, corpo) {
 
 const etapasCriticasProtegidas = {
   etapaPedido: new Set([ID_ETAPA_PEDIDO_ENTREGUE]),
-  etapaOrcamento: new Set([1, 2, 3]),
+  etapaOrcamento: new Set([1, 2, 3, 4]),
   statusVisita: new Set([1, 2, 3, 4, 5])
 };
 

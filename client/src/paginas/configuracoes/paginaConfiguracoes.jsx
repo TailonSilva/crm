@@ -318,7 +318,7 @@ const secoesConfiguracao = [
 ];
 const IDS_STATUS_VISITA_CRITICOS = new Set([1, 2, 3, 4, 5]);
 const IDS_ETAPAS_PEDIDO_OBRIGATORIAS = new Set([5]);
-const IDS_ETAPAS_ORCAMENTO_OBRIGATORIAS = new Set([1, 2, 3]);
+const IDS_ETAPAS_ORCAMENTO_OBRIGATORIAS = new Set([1, 2, 3, 4]);
 
 function statusVisitaEhCritico(registro) {
   const idStatusVisita = Number(registro?.idStatusVisita);

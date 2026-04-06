@@ -95,6 +95,7 @@ export function ModalManualOrcamentos({
           titulo: 'Campos e vinculos do modal',
           itens: [
             'Cliente e contato entram no mesmo fluxo do orcamento e abastecem a proposta comercial.',
+            'Ao abrir a busca de contatos com um cliente ja definido, o proprio modal permite cadastrar um novo contato e devolver esse contato ja selecionado no orcamento.',
             'Itens e valores seguem o mesmo padrao visual do pedido, com descricao e imagem preservadas no proprio item.',
             'A imagem do item pode herdar a foto principal do produto, mas quando o usuario trocar essa imagem no orcamento ela passa a ser exclusiva daquele item e e recortada em 1024 x 1024 px.',
             'Prazos de pagamento podem ser mantidos dentro do modal, respeitando o perfil do usuario.',
@@ -129,9 +130,15 @@ export function ModalManualOrcamentos({
         },
         {
           titulo: 'Data de fechamento',
-          descricao: 'Ao entrar nas etapas Fechado, Fechado sem pedido ou Recusado, o orcamento passa a usar uma data de fechamento propria e obrigatoria.',
+          descricao: 'Ao entrar nas etapas Fechado, Fechado sem pedido, Pedido Excluido ou Recusado, o orcamento passa a usar uma data de fechamento propria e obrigatoria.',
           detalhe: 'No modal, a data pode ser ajustada antes do salvamento; no grid, a troca usa a data atual automaticamente.',
           icone: 'confirmar'
+        },
+        {
+          titulo: 'Etapas automaticas',
+          descricao: 'Fechado sem pedido e Pedido Excluido existem como etapas tecnicas do sistema e nao aparecem para escolha manual nos inputs do usuario.',
+          detalhe: 'Essas etapas continuam sendo usadas automaticamente pelas regras internas do funil e do vinculo com pedidos.',
+          icone: 'selo'
         },
         {
           titulo: 'Prazos protegidos',
@@ -142,9 +149,9 @@ export function ModalManualOrcamentos({
         {
           titulo: 'Consulta em etapas finais',
           descricao: usuarioLogado?.tipo === 'Usuario padrao'
-            ? 'Quando o orcamento entra em Fechado, Fechado sem pedido ou Recusado, Usuario padrao passa a consultar sem editar.'
+            ? 'Quando o orcamento entra em Fechado, Fechado sem pedido, Pedido Excluido ou Recusado, Usuario padrao passa a consultar sem editar.'
             : 'As etapas finais do orcamento mantem o bloqueio de edicao apenas para Usuario padrao.',
-          detalhe: 'A validacao usa sempre os IDs fixos 1, 2 e 3 das etapas obrigatorias do sistema.',
+          detalhe: 'A validacao usa sempre os IDs fixos 1, 2, 3 e 4 das etapas obrigatorias do sistema.',
           icone: 'usuarios'
         }
       ]}

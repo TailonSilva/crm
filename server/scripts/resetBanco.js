@@ -1,6 +1,6 @@
 const { banco, executar, consultarTodos, caminhoBanco } = require('../configuracoes/banco');
 
-const IDS_ETAPAS_ORCAMENTO_OBRIGATORIAS = [1, 2, 3];
+const IDS_ETAPAS_ORCAMENTO_OBRIGATORIAS = [1, 2, 3, 4];
 const ID_ETAPA_PEDIDO_ENTREGUE = 5;
 const STATUS_VISITA_OBRIGATORIOS = ['agendado', 'confirmado', 'realizado', 'cancelado', 'nao compareceu'];
 const TIPOS_AGENDA_OBRIGATORIOS = ['visita', 'reuniao', 'ligacao', 'apresentacao'];

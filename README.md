@@ -99,7 +99,8 @@ Padroes centralizados no frontend:
 - `CampoSelecaoMultiplaModal`: selecao multipla com botao-resumo e modal com checkbox
 - `ModalBuscaTabela`: base reutilizavel para modais de busca em grade
 - `ModalBuscaClientes`: busca reutilizavel de clientes
-- `ModalBuscaContatos`: busca reutilizavel de contatos
+- `ModalBuscaContatos`: busca reutilizavel de contatos, com inclusao rapida quando o formulario ja tiver cliente definido
+- `ModalBuscaProdutos`: busca reutilizavel de produtos
 - `ModalHistoricoGrade`: base reutilizavel para modais amplos de historico em grade, com cabecalho, abas opcionais e acao de filtro
 - `ModalRelatorioGrade`: base reutilizavel para modais amplos de relatorio, com cards de resumo no topo e filtro no cabecalho
 - `ModalImportacaoCadastro`: modal reutilizavel para importacao por planilha, com download de modelo e tabela de linhas rejeitadas
@@ -114,13 +115,14 @@ Padroes centralizados no frontend:
 Padroes aplicados recentemente:
 
 - Busca de clientes foi unificada para atendimento e orcamento
-- Busca de contatos foi unificada para atendimento e orcamento
+- Busca de contatos foi unificada para atendimento, orcamento e pedido
+- Quando a busca de contatos for aberta com um cliente ja definido, o proprio modal permite incluir um novo contato e devolve esse contato ja selecionado no formulario atual
 - O cadastro de cliente reaproveita o mesmo fluxo de `Ramo de Atividade` usado em configuracoes
 - No modal de cliente, as abas `Atendimento` e `Vendas` possuem grade propria com botao de filtro; os filtros de data abrem por padrao no mes corrente e o ultimo filtro aplicado fica salvo entre aberturas do modal, independentemente do cliente aberto
 - O cadastro de produto reaproveita os mesmos fluxos de configuracao para `Grupo de Produto`, `Marca` e `Unidade`
 - Modais com abas usam cabecalho e faixa de abas fixos, com rolagem apenas no corpo
 - Modais empilhados possuem camadas de z-index separadas para evitar abertura por tras do modal pai
-- O relatorio de Conversao exibe cards de orcamentos gerados, fechados, conversao, cancelados, % perca e em aberto; cancelados e % perca usam a etapa obrigatoria Recusado
+- O relatorio de Conversao exibe cards de orcamentos gerados, fechados, conversao, cancelados, % perca e em aberto; cancelados e % perca usam a etapa obrigatoria `Recusado`, enquanto `Pedido Excluido` fica separado como etapa tecnica obrigatoria para orcamentos cujo pedido vinculado foi removido
 
 Utilitarios importantes:
 
@@ -197,13 +199,13 @@ Observacao:
 - Abas principais do cadastro: `Dados gerais`, `Endereco`, `Observacoes` e `Contato`
 - Os antigos grids de `Atendimento` e `Vendas` agora abrem em modais amplos separados, quase em tela cheia, para facilitar leitura operacional
 - No historico de `Atendimentos`, a grade mostra `Data`, `Inicio`, `Fim`, `Assunto`, `Contato`, `Canal`, `Usuario` e `Acoes`
-- O historico de `Atendimentos` tambem oferece busca por digitacao no cabecalho e filtros para data, assunto, contato, horario, canal e usuario
+- O historico de `Atendimentos` tambem oferece busca por digitacao no cabecalho e filtros por `Data e horario`, um ou mais `Usuarios` e um ou mais `Canais`
 - Dentro do modal amplo de `Vendas`, continuam duas visoes: `Pedidos` e `Itens do pedido`, agora no mesmo componente reutilizavel usado tambem em produtos
 - O grid de `Pedidos` da aba Vendas nao exibe mais o nome do contato
 - O grid de `Pedidos` mostra `Inclusao`, `Entrega`, `Pedido`, `Cliente` quando aplicavel, `Etapa`, `Vendedor`, `Prazo de pagamento`, `Total` e `Acoes`
 - Os grids de `Pedidos` e `Itens do pedido` mostram colunas separadas de `Inclusao` e `Entrega`, e o filtro desse historico tambem separa os dois periodos
-- O grid de `Itens do pedido` mostra `Inclusao`, `Entrega`, `Pedido`, `Referencia`, `Descricao`, `Valor`, `Quantidade` e `Valor total`
-- O historico de `Vendas` tambem oferece busca por digitacao no cabecalho e filtros para prazo de pagamento, referencia e descricao, alem dos filtros por data, etapa, vendedor e codigo do pedido
+- O grid de `Itens do pedido` mostra `Inclusao`, `Entrega`, `Pedido`, `Referencia`, `Descricao`, `VALOR UN`, `QTD` e `Valor total`
+- O historico de `Vendas` tambem oferece busca por digitacao no cabecalho e filtros por `Datas`, um ou mais `Pedidos`, um ou mais `Vendedores`, uma ou mais `Etapas` e `Produto` via modal de busca em grade; as opcoes de pedido consideram apenas pedidos do cliente consultado
 - Thumbnail com codigo do cliente
 - O cadastro de cliente aceita um `Codigo alternativo` numerico e opcional
 - A empresa pode definir se o CRM exibe como principal o codigo padrao do cliente ou o `Codigo alternativo`; quando o alternativo estiver vazio, o sistema volta automaticamente ao codigo padrao
@@ -314,7 +316,7 @@ Filtros da agenda:
 - O atalho geral `Colunas do grid` abre um seletor por modulo; hoje `Atendimentos`, `Clientes`, `Produtos`, `Orcamentos` e `Pedidos` ja permitem configurar visibilidade, ordem e espaco das colunas por empresa
 - Campos de cliente, contato e orcamento no mesmo fluxo comercial
 - Busca de cliente por modal reutilizavel
-- Busca de contato por modal reutilizavel
+- Busca de contato por modal reutilizavel com inclusao rapida de novo contato quando o cliente ja estiver definido; o contato criado volta selecionado automaticamente no atendimento
 - Inclusao de cliente dentro da busca de clientes
 - Campo de status do orcamento no proprio atendimento
 - Integracao com abertura de orcamento e pedido a partir do atendimento
@@ -330,17 +332,19 @@ Filtros da agenda:
 - A logica de estado e manipulacao desses itens tambem foi centralizada em um hook compartilhado para reduzir duplicacao entre fluxos comerciais
 - A imagem principal do produto continua sendo a origem padrao; quando o item do orcamento recebe uma imagem propria, ela fica exclusiva daquele item e e recortada em 1024 x 1024 px
 - Busca reutilizavel de cliente e contato
+- A busca de contato dentro do orcamento tambem permite incluir um novo contato do cliente ja selecionado e assumir esse contato automaticamente no formulario
 - Itens com selecao direta de produto no proprio modal, com atalho de busca para abrir o grid de produtos sem sair do item
 - Controle de etapa do orcamento
-- Ao entrar nas etapas `Fechado`, `Fechado sem pedido` ou `Recusado`, o orcamento passa a registrar `Data de fechamento` em campo proprio
-- A `Data de fechamento` e obrigatoria nas etapas `Fechado`, `Fechado sem pedido` e `Recusado`
+- Ao entrar nas etapas `Fechado`, `Fechado sem pedido`, `Pedido Excluido` ou `Recusado`, o orcamento passa a registrar `Data de fechamento` em campo proprio
+- A `Data de fechamento` e obrigatoria nas etapas `Fechado`, `Fechado sem pedido`, `Pedido Excluido` e `Recusado`
+- As etapas `Fechado sem pedido` e `Pedido Excluido` sao etapas tecnicas de uso automatico e nao aparecem nos selects manuais do usuario
 - Motivo da perda obrigatorio quando a etapa exigir
 - Integracao com abertura de pedido ao fechar o orcamento
 - A troca rapida da etapa para `Fechado` no grid tambem oferece a geracao imediata do pedido
 - Quando a troca para uma etapa final acontece pelo grid, a `Data de fechamento` usa automaticamente a data atual
 - Dentro do modal do orcamento, a `Data de fechamento` pode ser ajustada manualmente antes de salvar
 - O filtro da pagina de orcamentos tem um botao unico de `Datas` que abre um modal com os intervalos de `Data de inclusao` e `Data de fechamento`
-- Quando o orcamento esta nas etapas `Fechado`, `Fechado sem pedido` ou `Recusado`, o perfil `Usuario padrao` passa a consultar sem editar
+- Quando o orcamento esta nas etapas `Fechado`, `Fechado sem pedido`, `Pedido Excluido` ou `Recusado`, o perfil `Usuario padrao` passa a consultar sem editar
 - Modais de confirmacao do fluxo comercial abrem como sobreposicao fixa acima da pagina, inclusive no lancamento de pedido a partir do grid
 - Campos configuraveis extras para o orcamento
 - Os campos `Prazo de pagamento` nos modais de orcamento e pedido reutilizam o mesmo grid de `Prazos de pagamento` da area de Configuracoes, permitindo cadastrar, editar, inativar e selecionar o prazo sem sair do fluxo
@@ -359,6 +363,7 @@ Filtros da agenda:
 - Manual visual da pagina de pedidos acessado por `F1`, com acompanhamento operacional, etapas, pagamento e permissoes
 - Integracao com pedido originado de orcamento
 - No modal de inclusao do pedido, os campos `Cliente` e `Contato` tambem possuem atalho de pesquisa para abrir os grids reutilizaveis sem sair do formulario
+- A busca de contato dentro do pedido tambem permite incluir um novo contato do cliente atual e assumir esse contato automaticamente no formulario
 - O modal de filtros da pagina de pedidos permite selecionar multiplas etapas ao mesmo tempo e salva esse recorte por usuario
 - A etapa do pedido pode ser alterada direto no grid, no mesmo padrao visual adotado em Orcamentos
 - O filtro da pagina de pedidos tem um botao unico de `Datas` que abre um modal com os intervalos de `Data de inclusao` e `Data de entrega`
@@ -406,7 +411,7 @@ A tela de configuracoes usa cards grandes e modais padrao. Hoje ela cobre:
 - secao inicial de `Relatorios`, com atalhos para `Vendas`, `Conversao` e `Atendimentos`
 - os relatorios seguem o mesmo padrao visual: modal amplo, cards de resumo no topo, grade principal e botao de filtro no cabecalho
 - `Vendas` ja esta funcional e lista pedidos pelas datas de `Inclusao` e `Entrega`, com cards de consolidado, chips de filtros ativos, botao de exportacao em PDF e grade de pedidos sem botoes de acao
-- `Conversao` ja esta funcional e lista orcamentos em grade propria mais simples, com colunas separadas de inclusao, fechamento, cliente e contato, cards de gerados, fechados, conversao e abertos, filtros por cliente, usuario, vendedores, etapas e datas, alem de exportacao em PDF
+- `Conversao` ja esta funcional e lista orcamentos em grade propria mais simples, com colunas separadas de inclusao, fechamento, cliente e contato, cards de gerados, fechados, conversao e abertos, filtros por cliente, usuario, vendedores, etapas, grupo de empresa, grupo de produto, marca e datas, alem de exportacao em PDF
 - `Atendimentos` ja esta funcional e reaproveita a grade do historico por cliente com a coluna de `Cliente` adicionada, alem de cards com total atendido, clientes distintos, canal lider, origem lider, filtro no cabecalho e exportacao em PDF
 - A secao `Atendimentos` tambem possui atalho para configurar por empresa quais colunas persistidas do cadastro aparecem na grade principal da pagina operacional
 - `Pedidos Entregues` e `Atendimentos` ja usam a mesma base visual e ficam preparados para evolucao das regras especificas
@@ -418,12 +423,12 @@ Regras importantes:
 - O card de `Atualizacao do sistema` fica apenas na aba `Gerais`
 - O card de `Atualizacao do sistema` fica visivel para todos os perfis, mas permanece desabilitado apenas para `Usuario padrao`; `Administrador` e `Gestor` podem abrir o modal
 - A secao inicial de `Relatorios` fica visivel na pagina de `Configuracoes`, mas seus atalhos permanecem desabilitados para `Usuario padrao`
-- O relatorio `Vendas` usa filtros por `Cliente`, um ou mais `Vendedores`, uma ou mais `Etapas`, `Data de inclusao` e `Data de entrega`; o filtro de cliente tambem oferece botao de busca em grade para agilizar a selecao, e o periodo padrao do filtro ja abre no mes corrente
+- O relatorio `Vendas` usa filtros por `Cliente`, um ou mais `Vendedores`, uma ou mais `Etapas`, `Grupo de empresa`, `Grupo de produto`, `Marca`, `Data de inclusao` e `Data de entrega`; o filtro de cliente tambem oferece botao de busca em grade para agilizar a selecao, e o periodo padrao do filtro ja abre no mes corrente
 - O cabecalho do relatorio `Vendas` exibe chips com os filtros ativos ao lado do botao de filtro e um botao dedicado para gerar o PDF do relatorio
 - O PDF do relatorio `Vendas` preserva as cores do cabecalho na impressao e organiza `Gerado em` e `Usuario` em uma coluna alinhada a direita no topo
 - O resumo do relatorio `Vendas` consolida `Pedidos no recorte`, `Valor total`, `Quantidade` somando unidades dos itens e `Positivacao` por clientes distintos
 - O relatorio `Vendas` reaproveita a mesma grade base de pedidos usada no historico comercial, mas sem acoes de linha
-- O relatorio `Conversao` usa uma grade simples de orcamentos sem acoes de linha, com colunas separadas de `Inclusao`, `Fechamento`, `Cliente` e `Contato`, e considera como fechados os orcamentos em etapas de fechamento, fechado sem pedido e recusado para calcular a conversao
+- O relatorio `Conversao` usa uma grade simples de orcamentos sem acoes de linha, com colunas separadas de `Inclusao`, `Fechamento`, `Cliente` e `Contato`, filtros por `Cliente`, `Usuario`, `Vendedores`, `Etapas`, `Grupo de empresa`, `Grupo de produto`, `Marca` e datas, e considera como fechados os orcamentos em etapas de fechamento, fechado sem pedido e recusado para calcular a conversao
 - O resumo do relatorio `Conversao` destaca `Orcamentos gerados`, `Orcamentos fechados`, `Conversao` e `Orcamentos em aberto`
 - O relatorio `Atendimentos` reaproveita a grade base do historico de atendimentos do cliente, adicionando a coluna `Cliente` e removendo as acoes de linha no contexto gerencial
 - O resumo do relatorio `Atendimentos` destaca `Total de atendimentos`, `Clientes atendidos`, `Canal lider` e `Origem lider` a partir da distribuicao atual carregada
@@ -435,7 +440,7 @@ Regras importantes:
 - A logica operacional de pedidos valida a etapa critica `Entregue` por `idEtapa` fixo (`5`), sem depender da descricao cadastrada
 - A etapa critica de pedido usada pela logica do sistema nao pode ser inativada nem excluida (bloqueio no backend e no modal de Configuracoes)
 - Etapas obrigatorias de orcamento nao podem ser inativadas nem excluidas (regra aplicada no backend e refletida no modal de Configuracoes)
-- Regras obrigatorias das etapas de orcamento sao avaliadas por `idEtapaOrcamento` fixo (`1` Fechado, `2` Fechado sem pedido, `3` Recusado)
+- Regras obrigatorias das etapas de orcamento sao avaliadas por `idEtapaOrcamento` fixo (`1` Fechado, `2` Fechado sem pedido, `3` Pedido Excluido, `4` Recusado)
 - A data de fechamento do orcamento tambem segue a validacao por `idEtapaOrcamento` fixo (`1`, `2` e `3`), sem depender da descricao da etapa
 - Regras criticas de `Status da visita` sao avaliadas por `idStatusVisita` fixo (`1` Agendado, `2` Confirmado, `3` Realizado, `4` Cancelado, `5` Nao compareceu)
 - Status criticos da agenda podem ser editados, mas nao podem ser inativados nem excluidos (bloqueio no modal de Configuracoes e no backend)
@@ -663,19 +668,20 @@ Essas integracoes sao usadas no cadastro de clientes para preencher dados automa
 
 ## Seeds e dados de teste
 
-O script `npm run popular:banco` recria dados de teste e hoje gera principalmente:
+O comando `npm run reset:banco` reseta o banco local para a base minima obrigatoria do sistema. O alias `npm run popular:banco` continua disponivel e aponta para o mesmo fluxo.
 
-- cadastros base comerciais
-- etapas padrao de orcamento em formato de funil
-- clientes e contatos de exemplo
-- produtos de exemplo
-- grupos, marcas, unidades e demais configuracoes auxiliares
+Depois do reset, a base fica somente com os registros obrigatorios:
 
-Os dados de teste usam:
-
-- links publicos para imagens
-- cidades reais do Brasil
-- dados coerentes para validacao visual da interface
+- usuario administrador padrao
+- configuracao de atualizacao do sistema
+- status obrigatorios da agenda
+- tipos obrigatorios da agenda
+- etapa obrigatoria do pedido `Entregue`
+- etapas obrigatorias do orcamento:
+  `1 Fechado`
+  `2 Fechado sem pedido`
+  `3 Pedido Excluido`
+  `4 Recusado`
 
 ## Como rodar
 
@@ -719,9 +725,10 @@ Observacao sobre empacotamento Electron:
 - Ao final de `npm run build:electron` e `npm run release`, `win-unpacked` nao permanece em `dist/electron`
 - Quando o release conclui com sucesso, o arquivo de atualizacao `latest.yml` deve aparecer junto dos artefatos finais
 
-### Popular banco
+### Reset do banco
 
-- `npm run popular:banco`: limpa e popula o banco com dados de teste
+- `npm run reset:banco`: reseta o banco local para a base minima obrigatoria
+- `npm run popular:banco`: alias compativel que executa o mesmo reset
 
 ## Empacotamento desktop
 

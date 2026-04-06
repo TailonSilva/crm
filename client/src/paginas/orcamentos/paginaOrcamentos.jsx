@@ -36,6 +36,7 @@ import {
   TOTAL_COLUNAS_GRID_ORCAMENTOS
 } from '../../utilitarios/colunasGridOrcamentos';
 import { normalizarPreco } from '../../utilitarios/normalizarPreco';
+import { obterEtapasOrcamentoParaInputManual } from '../../utilitarios/etapasOrcamento';
 import { obterValorGrid } from '../../utilitarios/valorPadraoGrid';
 import {
   normalizarFiltrosPorPadrao,
@@ -63,6 +64,7 @@ function criarFiltrosIniciaisOrcamentos(usuarioLogado, empresa = null) {
   const ID_ETAPA_ORCAMENTO_FECHAMENTO = 1;
   const ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO = 2;
   const ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO = 3;
+  const ID_ETAPA_ORCAMENTO_RECUSADO = 4;
 
 function criarFiltrosLimposOrcamentos(usuarioLogado, empresa = null) {
   return {
@@ -1231,6 +1233,11 @@ function renderizarCelulaOrcamento({
   }
 
   if (coluna.id === 'etapa') {
+    const etapasDisponiveisEscolhaManual = obterEtapasOrcamentoParaInputManual(
+      etapasOrcamento,
+      orcamento.idEtapaOrcamento
+    );
+
     return (
       <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
         <div className="campoEtapaGridOrcamento">
@@ -1243,7 +1250,7 @@ function renderizarCelulaOrcamento({
             disabled={!permitirAlteracaoEtapa}
           >
             <option value="">Sem etapa</option>
-            {etapasOrcamento.map((etapa) => (
+            {etapasDisponiveisEscolhaManual.map((etapa) => (
               <option key={etapa.idEtapaOrcamento} value={etapa.idEtapaOrcamento}>
                 {etapa.descricao}
               </option>
@@ -1764,7 +1771,8 @@ function etapaOrcamentoEhFechadoPorId(idEtapaOrcamento) {
   return [
     ID_ETAPA_ORCAMENTO_FECHAMENTO,
     ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO,
-    ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO
+    ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO,
+    ID_ETAPA_ORCAMENTO_RECUSADO
   ].includes(Number(idEtapaOrcamento));
 }
 

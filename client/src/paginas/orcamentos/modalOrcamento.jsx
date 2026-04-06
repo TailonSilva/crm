@@ -19,6 +19,7 @@ import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTe
 import { desktopTemExportacaoPdf } from '../../servicos/desktop';
 import { exportarOrcamentoPdf } from './utilitarios/exportarOrcamentoPdf';
 import { formatarCodigoCliente } from '../../utilitarios/codigoCliente';
+import { obterEtapasOrcamentoParaInputManual } from '../../utilitarios/etapasOrcamento';
 
 const abasModalOrcamento = [
   { id: 'dadosGerais', label: 'Dados gerais' },
@@ -27,7 +28,7 @@ const abasModalOrcamento = [
 ];
 
 const ID_ETAPA_ORCAMENTO_FECHAMENTO = 1;
-const IDS_ETAPAS_ORCAMENTO_FECHADAS = new Set([1, 2, 3]);
+const IDS_ETAPAS_ORCAMENTO_FECHADAS = new Set([1, 2, 3, 4]);
 
 const estadoInicialFormulario = {
   dataInclusao: '',
@@ -97,6 +98,7 @@ export function ModalOrcamento({
   const [modalMotivoPerdaAberto, definirModalMotivoPerdaAberto] = useState(false);
   const [modalBuscaClienteAberto, definirModalBuscaClienteAberto] = useState(false);
   const [modalBuscaContatoAberto, definirModalBuscaContatoAberto] = useState(false);
+  const [contatosCriadosLocalmente, definirContatosCriadosLocalmente] = useState([]);
   const [modalPrazosPagamentoAberto, definirModalPrazosPagamentoAberto] = useState(false);
   const somenteLeitura = modo === 'consulta';
   const modoInclusao = modo === 'novo';
@@ -110,10 +112,17 @@ export function ModalOrcamento({
     () => ordenarEtapasPorOrdem(etapasOrcamento.filter((etapa) => etapa.status !== 0), 'idEtapaOrcamento'),
     [etapasOrcamento]
   );
+  const etapasDisponiveisEscolhaManual = useMemo(
+    () => obterEtapasOrcamentoParaInputManual(etapasAtivas, formulario.idEtapaOrcamento),
+    [etapasAtivas, formulario.idEtapaOrcamento]
+  );
   const motivosAtivos = motivosPerda.filter((motivo) => motivo.status !== 0);
   const produtosAtivos = produtos.filter((produto) => produto.status !== 0);
   const exportacaoPdfDisponivel = desktopTemExportacaoPdf();
-  const contatosDoCliente = contatosAtivos.filter((contato) => String(contato.idCliente) === String(formulario.idCliente));
+  const contatosDoCliente = useMemo(
+    () => combinarContatosDoCliente(contatosAtivos, contatosCriadosLocalmente, formulario.idCliente),
+    [contatosAtivos, contatosCriadosLocalmente, formulario.idCliente]
+  );
   const etapaSelecionada = etapasAtivas.find((etapa) => String(etapa.idEtapaOrcamento) === String(formulario.idEtapaOrcamento));
   const etapaAtualEhFechada = etapaOrcamentoEhFechadoPorId(formulario.idEtapaOrcamento);
   const totalOrcamento = useMemo(
@@ -173,6 +182,7 @@ export function ModalOrcamento({
     definirModalMotivoPerdaAberto(false);
     definirModalBuscaClienteAberto(false);
     definirModalBuscaContatoAberto(false);
+    definirContatosCriadosLocalmente([]);
     definirModalPrazosPagamentoAberto(false);
     redefinirItemModal();
   }, [aberto, orcamento, usuarioLogado, camposOrcamento, empresa]);
@@ -335,33 +345,37 @@ export function ModalOrcamento({
     await salvarFormulario();
   }
 
-  async function salvarFormulario() {
+  async function salvarFormulario(formularioAtual = formulario) {
+    const etapaSelecionadaAtual = etapasAtivas.find(
+      (etapa) => String(etapa.idEtapaOrcamento) === String(formularioAtual.idEtapaOrcamento)
+    );
+    const etapaAtualEhFechadaAtual = etapaOrcamentoEhFechadoPorId(formularioAtual.idEtapaOrcamento);
 
     if (somenteLeitura) {
       return;
     }
 
-    if (!String(formulario.idCliente || '').trim()) {
+    if (!String(formularioAtual.idCliente || '').trim()) {
       definirMensagemErro('Selecione o cliente do orcamento.');
       return;
     }
 
-    if (!String(formulario.idVendedor || '').trim()) {
+    if (!String(formularioAtual.idVendedor || '').trim()) {
       definirMensagemErro('Selecione o vendedor.');
       return;
     }
 
-    if (formulario.itens.length === 0) {
+    if (formularioAtual.itens.length === 0) {
       definirMensagemErro('Inclua ao menos um item no orcamento.');
       return;
     }
 
-    if (etapaAtualEhFechada && !String(formulario.dataFechamento || '').trim()) {
+    if (etapaAtualEhFechadaAtual && !String(formularioAtual.dataFechamento || '').trim()) {
       definirMensagemErro('Informe a data de fechamento para esta etapa do orcamento.');
       return;
     }
 
-    if (etapaSelecionada?.obrigarMotivoPerda && !String(formulario.idMotivoPerda || '').trim()) {
+    if (etapaSelecionadaAtual?.obrigarMotivoPerda && !String(formularioAtual.idMotivoPerda || '').trim()) {
       definirModalMotivoPerdaAberto(true);
       return;
     }
@@ -370,7 +384,7 @@ export function ModalOrcamento({
     definirMensagemErro('');
 
     try {
-      await aoSalvar(formulario);
+      await aoSalvar(formularioAtual);
     } catch (erro) {
       definirMensagemErro(erro.message || 'Nao foi possivel salvar o orcamento.');
       definirSalvando(false);
@@ -452,15 +466,19 @@ export function ModalOrcamento({
   }
 
   function confirmarFechamento() {
-    definirFormulario((estadoAtual) => ({
-      ...estadoAtual,
+    const proximoFormulario = {
+      ...formulario,
       idEtapaOrcamento: idEtapaPendenteFechamento,
-      dataFechamento: estadoAtual.dataFechamento || obterDataAtualFormatoInput(),
+      dataFechamento: formulario.dataFechamento || obterDataAtualFormatoInput(),
       solicitarPedidoAoSalvar: true
-    }));
+    };
+
+    definirFormulario(proximoFormulario);
     definirConfirmandoFechamento(false);
     definirIdEtapaAnteriorFechamento('');
     definirIdEtapaPendenteFechamento('');
+
+    salvarFormulario(proximoFormulario);
   }
 
   function cancelarConfirmacaoFechamento() {
@@ -563,6 +581,14 @@ export function ModalOrcamento({
     }));
 
     fecharModalBuscaContato();
+  }
+
+  function registrarContatoCriado(contato) {
+    if (!contato?.idContato) {
+      return;
+    }
+
+    definirContatosCriadosLocalmente((estadoAtual) => combinarContatosUnicos(estadoAtual, [contato]));
   }
 
   return (
@@ -752,7 +778,7 @@ export function ModalOrcamento({
                   name="idEtapaOrcamento"
                   value={formulario.idEtapaOrcamento}
                   onChange={alterarCampo}
-                  options={etapasAtivas.map((etapa) => ({
+                  options={etapasDisponiveisEscolhaManual.map((etapa) => ({
                     valor: String(etapa.idEtapaOrcamento),
                     label: etapa.descricao
                   }))}
@@ -953,9 +979,11 @@ export function ModalOrcamento({
 
         <ModalBuscaContatos
           aberto={modalBuscaContatoAberto}
+          idCliente={formulario.idCliente}
           contatos={contatosDoCliente}
           placeholder="Pesquisar contatos do cliente"
           ariaLabelPesquisa="Pesquisar contatos do cliente"
+          aoCriarContato={registrarContatoCriado}
           aoSelecionar={selecionarContato}
           aoFechar={fecharModalBuscaContato}
         />
@@ -1313,4 +1341,30 @@ function obterIniciaisItemOrcamento(item) {
   const partes = String(descricao).trim().split(/\s+/).filter(Boolean);
   const iniciais = partes.slice(0, 2).map((parte) => parte[0]).join('');
   return (iniciais || 'IT').toUpperCase();
+}
+
+function combinarContatosDoCliente(contatosBase, contatosLocais, idCliente) {
+  return combinarContatosUnicos(
+    (Array.isArray(contatosBase) ? contatosBase : []).filter(
+      (contato) => String(contato.idCliente) === String(idCliente)
+    ),
+    (Array.isArray(contatosLocais) ? contatosLocais : []).filter(
+      (contato) => String(contato.idCliente) === String(idCliente)
+    )
+  );
+}
+
+function combinarContatosUnicos(contatosBase, contatosExtras) {
+  const mapa = new Map();
+
+  [...(Array.isArray(contatosBase) ? contatosBase : []), ...(Array.isArray(contatosExtras) ? contatosExtras : [])]
+    .forEach((contato) => {
+      if (!contato?.idContato) {
+        return;
+      }
+
+      mapa.set(String(contato.idContato), contato);
+    });
+
+  return Array.from(mapa.values());
 }

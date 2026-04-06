@@ -16,7 +16,7 @@ import { CabecalhoInicio } from './componentes/cabecalhoInicio';
 import { IndicadorResumoInicio } from './componentes/indicadorResumoInicio';
 import { criarResumoFunilVendas } from './utilitarios/criarResumoFunilVendas';
 
-const IDS_ETAPAS_ORCAMENTO_FECHADAS = new Set([1, 2, 3]);
+const IDS_ETAPAS_ORCAMENTO_FECHADAS = new Set([1, 2, 3, 4]);
 const ID_ETAPA_PEDIDO_ENTREGUE = 5;
 
 export function PaginaInicio({ usuarioLogado }) {

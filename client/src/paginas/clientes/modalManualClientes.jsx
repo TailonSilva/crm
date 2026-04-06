@@ -103,6 +103,7 @@ export function ModalManualClientes({
             'O vendedor pode vir bloqueado para Usuario padrao quando a carteira e restrita ao proprio vendedor.',
             'O cliente pode ser vinculado a um Grupo de empresa, herdando os contatos cadastrados nesse grupo.',
             'O cadastro de contatos diretos e salvo junto com o cliente, mantendo o vinculo por idCliente.',
+            'Quando o usuario abrir a busca de contatos a partir de Atendimento, Orcamento ou Pedido com um cliente ja definido, esse mesmo formulario de contato pode ser aberto de dentro da busca e o novo contato volta selecionado automaticamente no registro comercial.',
             'Ramos de atividade e grupos de empresa podem ser mantidos sem sair do modal, sem perder o preenchimento ja feito no cliente.',
             'Ao concluir um novo ramo ou grupo pelo atalho do campo, o registro criado volta selecionado automaticamente no formulario do cliente.',
             'O modelo de importacao traz uma aba de instrucoes com campos obrigatorios, tipo esperado e limite de caracteres para facilitar o preenchimento.',
@@ -122,7 +123,7 @@ export function ModalManualClientes({
             'Quando um texto passa de duas linhas, a propria celula aplica reticencias para manter a altura da listagem mais previsivel.',
             'O contato principal e enriquecido para aparecer diretamente na grade.',
             'A listagem ja considera a carteira do vendedor quando o perfil e restrito.',
-            'Atendimento e Vendas sairam do corpo principal do cliente e agora abrem modais quase em tela cheia; ambos ganharam busca por digitacao no cabecalho e filtros mais completos. Em Atendimento, a grade separa Data, Inicio, Fim, Assunto e Contato; em Vendas, continuam as duas visoes de Pedidos e Itens do pedido com colunas separadas de Inclusao e Entrega e filtros pelos dois periodos.'
+            'Atendimento e Vendas sairam do corpo principal do cliente e agora abrem modais quase em tela cheia; ambos ganharam busca por digitacao no cabecalho e filtros mais completos. Em Atendimento, a grade separa Data, Inicio, Fim, Assunto e Contato, e o filtro usa um botao unico de Data e horario mais selecao multipla de Usuario e Canal. Em Vendas, continuam as duas visoes de Pedidos e Itens do pedido com colunas separadas de Inclusao e Entrega e filtros por Datas, um ou mais Pedidos, um ou mais Vendedores, uma ou mais Etapas e Produto via busca em grade.'
           ]
         }
       ]}

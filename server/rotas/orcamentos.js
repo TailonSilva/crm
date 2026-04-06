@@ -17,7 +17,7 @@ const {
 } = require('../utilitarios/filtrosSql');
 
 const rotaOrcamentos = express.Router();
-const IDS_ETAPAS_ORCAMENTO_FECHADAS = new Set([1, 2, 3]);
+const IDS_ETAPAS_ORCAMENTO_FECHADAS = new Set([1, 2, 3, 4]);
 
 rotaOrcamentos.get('/', async (requisicao, resposta) => {
   try {
@@ -401,7 +401,7 @@ function validarPayloadOrcamento(payload, etapaOrcamento) {
   }
 
   if (etapaOrcamentoEhFechada(payload.idEtapaOrcamento) && !payload.dataFechamento) {
-    return 'Informe a data de fechamento para orcamentos nas etapas Fechado, Fechado sem pedido ou Recusado.';
+    return 'Informe a data de fechamento para orcamentos nas etapas Fechado, Fechado sem pedido, Pedido Excluido ou Recusado.';
   }
 
   if (etapaOrcamento?.obrigarMotivoPerda && !payload.idMotivoPerda) {

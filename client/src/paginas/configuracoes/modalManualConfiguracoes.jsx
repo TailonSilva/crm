@@ -82,8 +82,8 @@ export function ModalManualConfiguracoes({
             'Empresa, usuarios e layout do orcamento ficam protegidos para Usuario padrao.',
             'A atualizacao do sistema aparece para todos os perfis, mas fica desabilitada apenas para Usuario padrao.',
             'A nova secao de Relatorios fica disponivel com atalhos para Vendas, Conversao e Atendimentos, mas esses atalhos tambem ficam desabilitados para Usuario padrao.',
-            'Vendas ja abre um relatorio funcional com cards de resumo, grade de pedidos, filtro por cliente, um ou mais vendedores, uma ou mais etapas, data de inclusao e data de entrega, alem de busca dedicada para cliente; por padrao, o periodo inicia no mes corrente.',
-            'Conversao usa uma grade simples de orcamentos com colunas separadas de inclusao, fechamento, cliente e contato, filtros no mesmo padrao dos outros relatorios, exportacao em PDF e cards com orcamentos gerados, fechados, percentual de conversao, cancelados na etapa Recusado, percentual de perca e quantidade ainda em aberto.',
+            'Vendas ja abre um relatorio funcional com cards de resumo, grade de pedidos, filtro por cliente, um ou mais vendedores, uma ou mais etapas, grupo de empresa, grupo de produto, marca, data de inclusao e data de entrega, alem de busca dedicada para cliente; por padrao, o periodo inicia no mes corrente.',
+            'Conversao usa uma grade simples de orcamentos com colunas separadas de inclusao, fechamento, cliente e contato, filtros por cliente, usuario, vendedores, etapas, grupo de empresa, grupo de produto, marca e datas, exportacao em PDF e cards com orcamentos gerados, fechados, percentual de conversao, cancelados na etapa Recusado, percentual de perca e quantidade ainda em aberto; Pedido Excluido fica separado como etapa obrigatoria de controle tecnico quando um pedido vinculado e removido.',
             'Atendimentos tambem ja abre um relatorio funcional com a mesma base visual, cards de total, clientes atendidos, canal lider e origem lider, alem da grade de historico com o cliente exibido junto nas linhas, botao de filtros e exportacao em PDF; os filtros de usuario, canal e origem aceitam selecao multipla.',
             'Os cadastros de Ramo de atividade e Grupo de empresa seguem liberados tambem na propria pagina de Configuracoes para alimentar o fluxo comercial.',
             'Cadastros auxiliares sensiveis seguem o mesmo principio quando abertos por atalhos internos em outros modais.',
@@ -99,6 +99,7 @@ export function ModalManualConfiguracoes({
             'Grupos de empresa e seus contatos abastecem o cadastro de clientes com heranca de contatos.',
             'A empresa define se o CRM usa o codigo padrao do cliente ou o Codigo alternativo como identificador principal nos grids que exibem codigo.',
             'A empresa tambem pode escolher quais colunas do cadastro de Atendimentos aparecem no grid principal, incluindo codigo, agendamento, horarios e relacionamentos exibidos com nomes legiveis.',
+            'As etapas obrigatorias Fechado sem pedido e Pedido Excluido continuam cadastradas em Configuracoes, mas sao de uso automatico e nao aparecem nos selects manuais do fluxo comercial.',
             'As grades de configuracao, historico e relatorio priorizam leitura sem rolagem horizontal, com colunas curtas mais contidas e colunas textuais mais flexiveis.',
             'Metodos, prazos, etapas e campos personalizados abastecem Orcamentos e Pedidos.',
             'Parametros da empresa influenciam layout de PDF, expediente, pagina inicial simplificada e regras operacionais do cadastro.'

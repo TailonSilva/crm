@@ -5,6 +5,7 @@ const sqlite3 = require('sqlite3').verbose();
 const ID_ETAPA_ORCAMENTO_FECHAMENTO = 1;
 const ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO = 2;
 const ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO = 3;
+const ID_ETAPA_ORCAMENTO_RECUSADO = 4;
 const ID_ETAPA_PEDIDO_ENTREGUE = 5;
 const ID_STATUS_VISITA_AGENDADO = 1;
 const ID_STATUS_VISITA_CONFIRMADO = 2;
@@ -1787,15 +1788,39 @@ async function garantirEtapasOrcamentoObrigatorias() {
   const etapasObrigatorias = [
     { idEtapaOrcamento: ID_ETAPA_ORCAMENTO_FECHAMENTO, descricao: 'Fechado', cor: '#A7E1B8', obrigarMotivoPerda: 0, consideraFunilVendas: 1, ordem: 1, status: 1 },
     { idEtapaOrcamento: ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO, descricao: 'Fechado sem pedido', cor: '#FDE68A', obrigarMotivoPerda: 0, consideraFunilVendas: 1, ordem: 2, status: 1 },
-    { idEtapaOrcamento: ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO, descricao: 'Recusado', cor: '#E5E7EB', obrigarMotivoPerda: 1, consideraFunilVendas: 0, ordem: 3, status: 1 }
+    { idEtapaOrcamento: ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO, descricao: 'Pedido Excluido', cor: '#E5E7EB', obrigarMotivoPerda: 0, consideraFunilVendas: 0, ordem: 3, status: 1 },
+    { idEtapaOrcamento: ID_ETAPA_ORCAMENTO_RECUSADO, descricao: 'Recusado', cor: '#E5E7EB', obrigarMotivoPerda: 1, consideraFunilVendas: 0, ordem: 4, status: 1 }
   ];
 
   await executar(
     `UPDATE etapaOrcamento
-    SET descricao = 'Recusado', cor = '#E5E7EB', obrigarMotivoPerda = 1, consideraFunilVendas = 0, ordem = 3, status = 1
-    WHERE idEtapaOrcamento = ? OR LOWER(TRIM(descricao)) = 'pedido excluido'`,
+    SET descricao = 'Pedido Excluido', cor = '#E5E7EB', obrigarMotivoPerda = 0, consideraFunilVendas = 0, ordem = 3, status = 1
+    WHERE idEtapaOrcamento = ?`,
     [ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO]
   );
+
+  const etapaRecusadoPorDescricao = await consultarUm(
+    `SELECT idEtapaOrcamento
+    FROM etapaOrcamento
+    WHERE LOWER(TRIM(descricao)) = 'recusado'
+    ORDER BY CASE WHEN idEtapaOrcamento = ? THEN 0 ELSE 1 END, idEtapaOrcamento
+    LIMIT 1`,
+    [ID_ETAPA_ORCAMENTO_RECUSADO]
+  );
+
+  if (etapaRecusadoPorDescricao && Number(etapaRecusadoPorDescricao.idEtapaOrcamento) !== ID_ETAPA_ORCAMENTO_RECUSADO) {
+    await executar(
+      'UPDATE orcamento SET idEtapaOrcamento = ? WHERE idEtapaOrcamento = ?',
+      [ID_ETAPA_ORCAMENTO_RECUSADO, Number(etapaRecusadoPorDescricao.idEtapaOrcamento)]
+    );
+
+    await executar(
+      `UPDATE etapaOrcamento
+      SET descricao = 'Recusado (legado)', status = 0, obrigarMotivoPerda = 0, consideraFunilVendas = 0
+      WHERE idEtapaOrcamento = ?`,
+      [Number(etapaRecusadoPorDescricao.idEtapaOrcamento)]
+    );
+  }
 
   for (const etapa of etapasObrigatorias) {
     const existente = await consultarUm(
@@ -1820,9 +1845,9 @@ async function garantirEtapasOrcamentoObrigatorias() {
   const etapasCancelamentoLegadas = await consultarTodos(
     `SELECT idEtapaOrcamento
     FROM etapaOrcamento
-    WHERE idEtapaOrcamento <> ?
+    WHERE idEtapaOrcamento NOT IN (?, ?)
       AND LOWER(TRIM(descricao)) IN ('recusado', 'pedido excluido')`,
-    [ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO]
+    [ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO, ID_ETAPA_ORCAMENTO_RECUSADO]
   );
 
   const idsEtapasLegadas = etapasCancelamentoLegadas
@@ -1836,12 +1861,12 @@ async function garantirEtapasOrcamentoObrigatorias() {
       `UPDATE orcamento
       SET idEtapaOrcamento = ?
       WHERE idEtapaOrcamento IN (${marcadores})`,
-      [ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO, ...idsEtapasLegadas]
+      [ID_ETAPA_ORCAMENTO_RECUSADO, ...idsEtapasLegadas]
     );
 
     await executar(
       `UPDATE etapaOrcamento
-      SET descricao = 'Recusado (legado)', status = 0, obrigarMotivoPerda = 0, consideraFunilVendas = 0
+      SET descricao = 'Etapa de cancelamento legada', status = 0, obrigarMotivoPerda = 0, consideraFunilVendas = 0
       WHERE idEtapaOrcamento IN (${marcadores})`,
       idsEtapasLegadas
     );
@@ -2400,6 +2425,7 @@ module.exports = {
   banco,
   caminhoBanco,
   ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO,
+  ID_ETAPA_ORCAMENTO_RECUSADO,
   ID_ETAPA_PEDIDO_ENTREGUE,
   consultarUm,
   consultarTodos,

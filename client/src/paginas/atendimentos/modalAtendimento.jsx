@@ -7,6 +7,7 @@ import { ModalOrcamento } from '../orcamentos/modalOrcamento';
 import { formatarCodigoCliente } from '../../utilitarios/codigoCliente';
 import { formatarNomeContato } from '../../utilitarios/formatarNomeContato';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
+import { obterEtapasOrcamentoParaInputManual } from '../../utilitarios/etapasOrcamento';
 
 const estadoInicialFormulario = {
   idCliente: '',
@@ -76,6 +77,7 @@ export function ModalAtendimento({
   const [modalClienteAberto, definirModalClienteAberto] = useState(false);
   const [modalBuscaClienteAberto, definirModalBuscaClienteAberto] = useState(false);
   const [modalBuscaContatoAberto, definirModalBuscaContatoAberto] = useState(false);
+  const [contatosCriadosLocalmente, definirContatosCriadosLocalmente] = useState([]);
   const [modalOrcamentoAberto, definirModalOrcamentoAberto] = useState(false);
   const [modoModalOrcamento, definirModoModalOrcamento] = useState('novo');
   const [orcamentoSelecionado, definirOrcamentoSelecionado] = useState(null);
@@ -91,6 +93,10 @@ export function ModalAtendimento({
     () => ordenarEtapasPorOrdem(etapasOrcamento.filter((etapa) => etapa.status !== 0), 'idEtapaOrcamento'),
     [etapasOrcamento]
   );
+  const etapasOrcamentoDisponiveisEscolhaManual = useMemo(
+    () => obterEtapasOrcamentoParaInputManual(etapasOrcamentoAtivas, formulario.idEtapaOrcamento),
+    [etapasOrcamentoAtivas, formulario.idEtapaOrcamento]
+  );
 
   useEffect(() => {
     if (!aberto) {
@@ -105,6 +111,7 @@ export function ModalAtendimento({
     definirModalClienteAberto(false);
     definirModalBuscaClienteAberto(false);
     definirModalBuscaContatoAberto(false);
+    definirContatosCriadosLocalmente([]);
     definirModalOrcamentoAberto(false);
     definirModoModalOrcamento('novo');
     definirOrcamentoSelecionado(null);
@@ -181,8 +188,10 @@ export function ModalAtendimento({
     return null;
   }
 
-  const contatosDoCliente = contatosAtivos.filter(
-    (contato) => String(contato.idCliente) === String(formulario.idCliente)
+  const contatosDoCliente = combinarContatosDoCliente(
+    contatosAtivos,
+    contatosCriadosLocalmente,
+    formulario.idCliente
   );
   const orcamentosAbertosDoCliente = orcamentos.filter(
     (orcamento) => String(orcamento.idCliente) === String(formulario.idCliente)
@@ -425,6 +434,14 @@ export function ModalAtendimento({
       idContato: String(contato.idContato)
     }));
     fecharModalBuscaContato();
+  }
+
+  function registrarContatoCriado(contato) {
+    if (!contato?.idContato) {
+      return;
+    }
+
+    definirContatosCriadosLocalmente((estadoAtual) => combinarContatosUnicos(estadoAtual, [contato]));
   }
 
   async function salvarNovoCliente(dadosCliente) {
@@ -836,7 +853,7 @@ export function ModalAtendimento({
                   name="idEtapaOrcamento"
                   value={formulario.idEtapaOrcamento}
                   onChange={alterarStatusOrcamento}
-                  options={etapasOrcamentoAtivas.map((etapa) => ({
+                  options={etapasOrcamentoDisponiveisEscolhaManual.map((etapa) => ({
                     valor: String(etapa.idEtapaOrcamento),
                     label: etapa.descricao
                   }))}
@@ -1028,9 +1045,11 @@ export function ModalAtendimento({
 
     <ModalBuscaContatos
       aberto={modalBuscaContatoAberto}
+      idCliente={formulario.idCliente}
       contatos={contatosDoCliente}
       placeholder="Pesquisar contatos do cliente"
       ariaLabelPesquisa="Pesquisar contatos do cliente"
+      aoCriarContato={registrarContatoCriado}
       aoSelecionar={selecionarContato}
       aoFechar={fecharModalBuscaContato}
     />
@@ -1227,6 +1246,32 @@ function etapaOrcamentoEhFechamento(etapa) {
 
 function obterEtapaFechadoSemPedido(etapasOrcamento) {
   return etapasOrcamento.find((etapa) => Number(etapa?.idEtapaOrcamento) === ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO) || null;
+}
+
+function combinarContatosDoCliente(contatosBase, contatosLocais, idCliente) {
+  return combinarContatosUnicos(
+    (Array.isArray(contatosBase) ? contatosBase : []).filter(
+      (contato) => String(contato.idCliente) === String(idCliente)
+    ),
+    (Array.isArray(contatosLocais) ? contatosLocais : []).filter(
+      (contato) => String(contato.idCliente) === String(idCliente)
+    )
+  );
+}
+
+function combinarContatosUnicos(contatosBase, contatosExtras) {
+  const mapa = new Map();
+
+  [...(Array.isArray(contatosBase) ? contatosBase : []), ...(Array.isArray(contatosExtras) ? contatosExtras : [])]
+    .forEach((contato) => {
+      if (!contato?.idContato) {
+        return;
+      }
+
+      mapa.set(String(contato.idContato), contato);
+    });
+
+  return Array.from(mapa.values());
 }
 
 function enriquecerOrcamentoParaPedidoAtendimento(orcamento, prazosPagamento, produtos) {

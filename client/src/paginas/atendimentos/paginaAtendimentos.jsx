@@ -90,6 +90,7 @@ function criarFiltrosLimposAtendimentos() {
 const ID_ETAPA_ORCAMENTO_FECHAMENTO = 1;
 const ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO = 2;
 const ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO = 3;
+const ID_ETAPA_ORCAMENTO_RECUSADO = 4;
 
 export function PaginaAtendimentos({ usuarioLogado }) {
   const [pesquisa, definirPesquisa] = useState('');
@@ -764,6 +765,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
         empresa={empresa}
         usuarioLogado={usuarioLogado}
         modo="novo"
+        camadaSecundaria={modalAberto}
         somenteConsultaPrazos={usuarioSomenteConsultaConfiguracao}
         aoFechar={fecharModalPedido}
         aoSalvar={salvarPedidoPeloAtendimento}
@@ -1204,7 +1206,8 @@ function orcamentoEstaAberto(orcamento) {
   return ![
     ID_ETAPA_ORCAMENTO_FECHAMENTO,
     ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO,
-    ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO
+    ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO,
+    ID_ETAPA_ORCAMENTO_RECUSADO
   ].includes(idEtapa);
 }
 

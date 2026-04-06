@@ -118,6 +118,7 @@ export function ModalManualAtendimento({
           itens: [
             'Cliente, assunto, data e horario de inicio sao obrigatorios para salvar o atendimento.',
             'Contato depende do cliente escolhido e so lista contatos ativos daquele cliente.',
+            'Ao abrir a busca de contatos com um cliente ja definido, o proprio modal permite cadastrar um novo contato e devolver esse contato ja selecionado no atendimento.',
             'Orcamento so pode ser vinculado ou criado quando ja existe cliente definido no formulario.',
             'Canal e origem sao classificacoes auxiliares: ajudam na leitura comercial, mas nao bloqueiam o salvamento.',
             'O usuario do registro e preenchido automaticamente conforme a sessao atual.'

@@ -126,8 +126,12 @@ export function PaginaPedidos({ usuarioLogado }) {
   }, []);
 
   useEffect(() => {
+    if (carregandoContexto) {
+      return;
+    }
+
     carregarGradePedidos();
-  }, [pesquisa, JSON.stringify(filtros)]);
+  }, [carregandoContexto, pesquisa, JSON.stringify(filtros)]);
 
   useEffect(() => {
     function tratarGrupoEmpresaAtualizado() {
@@ -229,14 +233,32 @@ export function PaginaPedidos({ usuarioLogado }) {
       definirProdutos(produtosCarregados);
       definirCamposPedido(camposCarregados);
       definirEmpresa(empresasCarregadas[0] || null);
+
+      return {
+        etapasPedido: etapasNormalizadas,
+        clientes: clientesCarregados,
+        contatos: contatosCarregados,
+        usuarios: usuariosCarregados,
+        vendedores: vendedoresCarregados,
+        metodosPagamento: metodosCarregados,
+        prazosPagamento: prazosCarregados,
+        produtos: produtosCarregados,
+        camposPedido: camposCarregados,
+        empresa: empresasCarregadas[0] || null
+      };
     } catch (_erro) {
       definirMensagemErro('Nao foi possivel carregar os pedidos.');
+      return null;
     } finally {
       definirCarregandoContexto(false);
     }
   }
 
-  async function carregarGradePedidos() {
+  async function carregarGradePedidos(contextoAtual = null) {
+    if (!contextoAtual && carregandoContexto) {
+      return;
+    }
+
     definirCarregandoGrade(true);
     definirMensagemErro('');
 
@@ -246,7 +268,10 @@ export function PaginaPedidos({ usuarioLogado }) {
         ...filtros
       });
 
-      definirPedidos(enriquecerPedidos(pedidosCarregados, etapasPedido));
+      definirPedidos(enriquecerPedidos(
+        pedidosCarregados,
+        contextoAtual?.etapasPedido || etapasPedido
+      ));
     } catch (_erro) {
       definirMensagemErro('Nao foi possivel carregar os pedidos.');
     } finally {
@@ -255,7 +280,8 @@ export function PaginaPedidos({ usuarioLogado }) {
   }
 
   async function recarregarPagina() {
-    await Promise.all([carregarContexto(), carregarGradePedidos()]);
+    const contextoAtualizado = await carregarContexto();
+    await carregarGradePedidos(contextoAtualizado);
   }
 
   function abrirNovoPedido() {
