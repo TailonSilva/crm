@@ -729,6 +729,7 @@ Observacao sobre empacotamento Electron:
 - O projeto agora empacota primeiro em uma pasta temporaria fora do OneDrive e copia de volta apenas os artefatos finais para `dist/electron`
 - Ao final de `npm run build:electron` e `npm run release`, `win-unpacked` nao permanece em `dist/electron`
 - Quando o release conclui com sucesso, o arquivo de atualizacao `latest.yml` deve aparecer junto dos artefatos finais
+- O fluxo de release nao depende da branch atual; ele depende da `version` do `package.json`, de uma tag compativel (`vx.y.z`) e do `GH_TOKEN`
 
 ### Reset do banco
 
@@ -785,6 +786,12 @@ Fluxo para publicar uma nova versao:
 4. Garanta que `latest.yml` e os artefatos estejam anexados
 5. No terminal, defina `GH_TOKEN`
 6. Execute `npm run release`
+
+Antes de empacotar ou publicar:
+
+- `npm run build:electron` e `npm run release` agora validam automaticamente se existe uma tag local compativel com a versao atual
+- Tags aceitas: `1.4.4` ou `v1.4.4`
+- Se a versao do `package.json` estiver divergente da tag, o comando interrompe antes do empacotamento
 
 Exemplo no PowerShell:
 
