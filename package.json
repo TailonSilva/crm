@@ -1,6 +1,6 @@
 {
   "name": "connecta-crm",
-  "version": "1.4.7",
+  "version": "1.4.8",
   "private": true,
   "description": "Connecta CRM com Electron, React, Express e SQLite.",
   "main": "electron/main.js",
