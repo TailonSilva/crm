@@ -128,12 +128,16 @@ export function reposicionarConfiguracaoCardsPaginaInicial(configuracoes, idCard
 
   visiveis.splice(indiceDestino, 0, {
     ...cardAlvo,
-    visivel: true,
-    ordem: indiceDestino + 1
+    visivel: true
   });
 
+  const visiveisReindexados = visiveis.map((item, indice) => ({
+    ...item,
+    ordem: indice + 1
+  }));
+
   return reordenarConfiguracoesCardsPaginaInicial([
-    ...visiveis,
+    ...visiveisReindexados,
     ...lista.filter((item) => !item.visivel)
   ]);
 }

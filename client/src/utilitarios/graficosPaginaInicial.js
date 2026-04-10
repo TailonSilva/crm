@@ -234,12 +234,16 @@ function reposicionarConfiguracaoGraficosPaginaInicial(configuracoes, idGrafico,
 
   visiveis.splice(indiceDestino, 0, {
     ...graficoAlvo,
-    visivel: true,
-    ordem: indiceDestino + 1
+    visivel: true
   });
 
+  const visiveisReindexados = visiveis.map((grafico, indice) => ({
+    ...grafico,
+    ordem: indice + 1
+  }));
+
   return reordenarConfiguracoesGraficosPaginaInicial([
-    ...visiveis,
+    ...visiveisReindexados,
     ...lista.filter((grafico) => !grafico.visivel)
   ], definicoes);
 }

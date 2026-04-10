@@ -693,10 +693,9 @@ function filtrarOrcamentosVisiveis(orcamentos, idsClientes, usuarioLogado) {
     return Array.isArray(orcamentos) ? orcamentos : [];
   }
 
-  return (orcamentos || []).filter((item) => (
-    idsClientes.has(String(item.idCliente))
-    || String(item.idUsuario) === String(usuarioLogado.idUsuario)
-  ));
+  return (orcamentos || []).filter(
+    (item) => String(item.idVendedor) === String(usuarioLogado.idVendedor)
+  );
 }
 
 function filtrarPedidosVisiveis(pedidos, idsClientes, usuarioLogado) {
@@ -704,11 +703,9 @@ function filtrarPedidosVisiveis(pedidos, idsClientes, usuarioLogado) {
     return Array.isArray(pedidos) ? pedidos : [];
   }
 
-  return (pedidos || []).filter((item) => (
-    idsClientes.has(String(item.idCliente))
-    || String(item.idUsuario) === String(usuarioLogado.idUsuario)
-    || String(item.idVendedor) === String(usuarioLogado.idVendedor)
-  ));
+  return (pedidos || []).filter(
+    (item) => String(item.idVendedor) === String(usuarioLogado.idVendedor)
+  );
 }
 
 function filtrarAtendimentosVisiveis(atendimentos, idsClientes, usuarioLogado) {
