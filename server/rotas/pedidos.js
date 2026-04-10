@@ -110,6 +110,7 @@ rotaPedidos.post('/', async (requisicao, resposta) => {
         idUsuario,
         idVendedor,
         comissao,
+        valorComissao,
         idPrazoPagamento,
         idTipoPedido,
         idEtapaPedido,
@@ -127,7 +128,7 @@ rotaPedidos.post('/', async (requisicao, resposta) => {
         nomePrazoPagamentoSnapshot,
         nomeTipoPedidoSnapshot,
         nomeEtapaPedidoSnapshot
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.idOrcamento,
         payload.idCliente,
@@ -135,6 +136,7 @@ rotaPedidos.post('/', async (requisicao, resposta) => {
         payload.idUsuario,
         payload.idVendedor,
         payload.comissao,
+        payload.valorComissao,
         payload.idPrazoPagamento,
         payload.idTipoPedido,
         payload.idEtapaPedido,
@@ -208,6 +210,7 @@ rotaPedidos.put('/:id', async (requisicao, resposta) => {
         idUsuario = ?,
         idVendedor = ?,
         comissao = ?,
+        valorComissao = ?,
         idPrazoPagamento = ?,
         idTipoPedido = ?,
         idEtapaPedido = ?,
@@ -233,6 +236,7 @@ rotaPedidos.put('/:id', async (requisicao, resposta) => {
         payload.idUsuario,
         payload.idVendedor,
         payload.comissao,
+        payload.valorComissao,
         payload.idPrazoPagamento,
         payload.idTipoPedido,
         payload.idEtapaPedido,
@@ -345,9 +349,8 @@ function normalizarPayloadPedido(payload = {}) {
     idContato: payload.idContato ? Number(payload.idContato) : null,
     idUsuario: payload.idUsuario ? Number(payload.idUsuario) : null,
     idVendedor: payload.idVendedor ? Number(payload.idVendedor) : null,
-    comissao: payload.comissao === '' || payload.comissao === null || payload.comissao === undefined
-      ? 0
-      : Number(payload.comissao),
+    comissao: normalizarNumeroDecimal(payload.comissao, 0),
+    valorComissao: normalizarNumeroDecimal(payload.valorComissao, 0),
     idPrazoPagamento: payload.idPrazoPagamento ? Number(payload.idPrazoPagamento) : null,
     idTipoPedido: payload.idTipoPedido ? Number(payload.idTipoPedido) : null,
     idEtapaPedido: payload.idEtapaPedido ? Number(payload.idEtapaPedido) : null,
@@ -393,6 +396,7 @@ function aplicarAutomacoesPedido(payload, pedidoAtual = null) {
   }
 
   proximoPayload.itens = normalizarSinalItensPedido(proximoPayload.itens, proximoPayload.idTipoPedido);
+  proximoPayload.valorComissao = calcularValorComissaoPedido(proximoPayload.comissao, proximoPayload.itens);
 
   return proximoPayload;
 }
@@ -854,6 +858,24 @@ function ehImagemItemPedidoLocal(valorImagem) {
 function limparTexto(valor) {
   const texto = String(valor || '').trim();
   return texto || null;
+}
+
+function normalizarNumeroDecimal(valor, fallback = 0) {
+  if (valor === '' || valor === null || valor === undefined) {
+    return fallback;
+  }
+
+  const numero = Number(valor);
+  return Number.isFinite(numero) ? numero : fallback;
+}
+
+function calcularValorComissaoPedido(comissao, itens) {
+  const percentual = normalizarNumeroDecimal(comissao, 0);
+  const valorTotalLiquido = Array.isArray(itens)
+    ? itens.reduce((acumulado, item) => acumulado + normalizarNumeroDecimal(item?.valorTotal, 0), 0)
+    : 0;
+
+  return Number(((valorTotalLiquido * percentual) / 100).toFixed(2));
 }
 
 async function tentarRollback() {

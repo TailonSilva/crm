@@ -6,27 +6,48 @@ export const cardsPaginaInicial = [
     id: 'orcamentosAbertos',
     rotulo: 'Orcamentos em aberto',
     ordemPadrao: 1,
-    spanPadrao: 3,
+    spanPadrao: 2,
     visivelPadrao: true
   },
   {
     id: 'pedidosMes',
     rotulo: 'Pedidos no mes',
     ordemPadrao: 2,
-    spanPadrao: 3,
+    spanPadrao: 2,
+    visivelPadrao: true
+  },
+  {
+    id: 'comissaoMes',
+    rotulo: 'Comissao no mes',
+    ordemPadrao: 3,
+    spanPadrao: 2,
+    visivelPadrao: true
+  },
+  {
+    id: 'positivacaoMes',
+    rotulo: 'Positivacao no mes',
+    ordemPadrao: 4,
+    spanPadrao: 2,
+    visivelPadrao: true
+  },
+  {
+    id: 'percentualPositivacaoCarteiraMes',
+    rotulo: '% Positivacao da carteira',
+    ordemPadrao: 5,
+    spanPadrao: 2,
     visivelPadrao: true
   },
   {
     id: 'catalogo',
     rotulo: 'Catalogo',
-    ordemPadrao: 3,
+    ordemPadrao: 6,
     spanPadrao: 2,
     visivelPadrao: true
   },
   {
     id: 'carteira',
     rotulo: 'Carteira',
-    ordemPadrao: 4,
+    ordemPadrao: 7,
     spanPadrao: 2,
     visivelPadrao: true
   }

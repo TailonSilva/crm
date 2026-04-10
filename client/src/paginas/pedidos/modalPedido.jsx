@@ -171,6 +171,10 @@ export function ModalPedido({
     () => formulario.itens.reduce((total, item) => total + (converterPrecoParaNumero(item.valorTotal) || 0), 0),
     [formulario.itens]
   );
+  const valorComissaoPedido = useMemo(() => {
+    const percentualComissao = converterPrecoParaNumero(formulario.comissao) || 0;
+    return Number(((totalPedido * percentualComissao) / 100).toFixed(2));
+  }, [formulario.comissao, totalPedido]);
   const contatosDoCliente = useMemo(
     () => combinarContatosDoCliente(contatosAtivos, contatosCriadosLocalmente, formulario.idCliente),
     [contatosAtivos, contatosCriadosLocalmente, formulario.idCliente]
@@ -797,7 +801,6 @@ export function ModalPedido({
                     <CampoFormulario label="Tipo de pedido" name="nomeTipoPedidoSnapshot" value={formulario.nomeTipoPedidoSnapshot} disabled />
                   </>
                 )}
-                <CampoFormulario label="Comissao (%)" name="comissao" value={formulario.comissao} onChange={alterarCampo} disabled={somenteLeitura} />
               </div>
 
               <div className="linhaOrcamentoFechamento">
@@ -895,7 +898,7 @@ export function ModalPedido({
 
           {abaAtiva === 'outros' ? (
             <section className="layoutModalOrcamentoAba">
-              <div className="linhaOrcamentoFechamento">
+              <div className="linhaOrcamentoComercial">
                 <CampoFormulario
                   label="Orcamento vinculado"
                   name="orcamentoOrigemPedido"
@@ -905,6 +908,22 @@ export function ModalPedido({
                   placeholder="Sem orcamento vinculado"
                   disabled
                 />
+                <CampoFormulario
+                  label="Comissao (%)"
+                  name="comissao"
+                  value={formulario.comissao}
+                  onChange={alterarCampo}
+                  disabled={somenteLeitura}
+                />
+                <CampoFormulario
+                  label="Valor da comissao"
+                  name="valorComissaoPedido"
+                  value={normalizarPreco(valorComissaoPedido)}
+                  disabled
+                />
+              </div>
+
+              <div className="linhaOrcamentoFechamento">
                 <CampoFormularioComAcao
                   label="Motivo do cancelamento"
                   name="motivoDevolucaoPedido"

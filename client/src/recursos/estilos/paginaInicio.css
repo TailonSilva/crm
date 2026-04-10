@@ -3,8 +3,7 @@
   gap: 18px;
   margin-top: 18px;
   align-content: start;
-  overflow-x: clip;
-  overflow-y: visible;
+  overflow: visible;
 }
 
 .paginaInicioPainelHeroiCarteira .paginaInicioHeroiMetricas,
@@ -23,8 +22,7 @@
   grid-template-columns: repeat(10, minmax(0, 1fr));
   gap: 18px;
   align-content: start;
-  overflow-x: clip;
-  overflow-y: visible;
+  overflow: visible;
 }
 
 .paginaInicioGradeIndicadores > * {

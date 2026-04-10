@@ -1358,6 +1358,7 @@ banco.serialize(() => {
       idUsuario INTEGER NOT NULL,
       idVendedor INTEGER NOT NULL,
       comissao DECIMAL(7, 2) NOT NULL DEFAULT 0,
+      valorComissao DECIMAL(12, 2) NOT NULL DEFAULT 0,
       idPrazoPagamento INTEGER,
       idTipoPedido INTEGER,
       idEtapaPedido INTEGER,
@@ -1537,6 +1538,33 @@ banco.serialize(() => {
   `, (erro) => {
     if (erro && !String(erro.message || '').includes('duplicate column name')) {
       console.error('Nao foi possivel garantir a coluna idMotivoDevolucao do pedido.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE pedido ADD COLUMN valorComissao DECIMAL(12, 2) NOT NULL DEFAULT 0
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna valorComissao do pedido.', erro);
+    }
+  });
+
+  banco.run(`
+    UPDATE pedido
+    SET valorComissao = COALESCE(
+      (
+        SELECT ROUND(
+          COALESCE(SUM(COALESCE(itemPedido.valorTotal, 0)), 0) * COALESCE(pedido.comissao, 0) / 100,
+          2
+        )
+        FROM itemPedido
+        WHERE itemPedido.idPedido = pedido.idPedido
+      ),
+      0
+    )
+  `, (erro) => {
+    if (erro) {
+      console.error('Nao foi possivel recalcular a coluna valorComissao dos pedidos.', erro);
     }
   });
 

@@ -5,7 +5,8 @@ export function SecaoDevolucoesInicio({ itens, titulo = 'Devolucoes do mes' }) {
     <SecaoResumoRelacionamentoComModalInicio
       titulo={titulo}
       colunasPainel={2}
-      conceito="Quantidade de devolucoes e valor total por motivo nos pedidos com data de entrada no mes atual, com valores convertidos para leitura positiva."
+      composicao="Quantidade de devolucoes e valor total por motivo (valor exibido em positivo)."
+      periodo="Mes corrente pela data de entrada do pedido de devolucao."
       itens={itens}
       mensagemVazia="Nenhuma devolucao registrada no mes atual."
       modalTitulo={titulo}

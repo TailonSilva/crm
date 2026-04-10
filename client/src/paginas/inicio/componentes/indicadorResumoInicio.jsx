@@ -12,6 +12,8 @@ export function IndicadorResumoInicio({
 }) {
   const valorTexto = carregando ? '...' : String(valor || '');
   const valorMonetarioCompacto = !carregando && valorTexto.startsWith('R$') && valorTexto.length >= 10;
+  const composicao = ajuda?.composicao || ajuda?.conceito || '';
+  const periodo = ajuda?.periodo || ajuda?.calculo || '';
 
   return (
     <section className="inicioIndicadorResumo" aria-label={ariaLabel} tabIndex={0}>
@@ -22,21 +24,30 @@ export function IndicadorResumoInicio({
             {valorTexto}
           </strong>
         </div>
-        <span className="inicioIndicadorResumoIcone" aria-hidden="true">
-          <Icone nome={icone} />
-        </span>
+        <div className="inicioIndicadorResumoAcoes">
+          <span className="inicioIndicadorResumoIcone" aria-hidden="true">
+            <Icone nome={icone} />
+          </span>
+          {ajuda ? (
+            <span className="inicioIndicadorResumoAjuda">
+              <button
+                type="button"
+                className="inicioIndicadorResumoBotaoAjuda"
+                aria-label={`Informacoes sobre ${titulo}`}
+              >
+                <Icone nome="informacao" />
+              </button>
+              <span className="inicioIndicadorResumoTooltip" role="tooltip">
+                <strong>{ajuda.titulo || titulo}</strong>
+                {composicao ? <span>{`Composicao: ${composicao}`}</span> : null}
+                {periodo ? <span>{`Periodo: ${periodo}`}</span> : null}
+              </span>
+            </span>
+          ) : null}
+        </div>
       </div>
 
       {descricao ? <p className="inicioIndicadorResumoDescricao">{descricao}</p> : null}
-
-      {ajuda ? (
-        <span className="inicioIndicadorResumoTooltip" role="tooltip">
-          <strong>{ajuda.titulo || titulo}</strong>
-          {ajuda.conceito ? <span>{`Conceito: ${ajuda.conceito}`}</span> : null}
-          {ajuda.calculo ? <span>{`Calculo: ${ajuda.calculo}`}</span> : null}
-          {ajuda.observacao ? <span>{`Leitura: ${ajuda.observacao}`}</span> : null}
-        </span>
-      ) : null}
     </section>
   );
 }

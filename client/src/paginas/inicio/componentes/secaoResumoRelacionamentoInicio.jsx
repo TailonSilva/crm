@@ -2,7 +2,8 @@ import { SecaoGraficosDuplosInicio } from './secaoGraficosDuplosInicio';
 
 export function SecaoResumoRelacionamentoInicio({
   titulo,
-  conceito,
+  composicao,
+  periodo,
   itens,
   mensagemVazia,
   acoesCabecalho = null
@@ -14,7 +15,8 @@ export function SecaoResumoRelacionamentoInicio({
       colunasPainel={1}
       modoExibicao="lista"
       ajudaSecao={{
-        conceito
+        composicao,
+        periodo
       }}
       acoesCabecalho={acoesCabecalho}
       itens={itens}

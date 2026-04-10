@@ -6,7 +6,9 @@ import { SecaoGraficosDuplosInicio } from './secaoGraficosDuplosInicio';
 
 export function SecaoResumoRelacionamentoComModalInicio({
   titulo,
-  conceito,
+  composicao,
+  periodo,
+  classNamePainel = '',
   itens = [],
   mensagemVazia,
   modalTitulo,
@@ -32,10 +34,12 @@ export function SecaoResumoRelacionamentoComModalInicio({
       <SecaoGraficosDuplosInicio
         titulo={titulo}
         subtitulo=""
+        classNamePainel={classNamePainel}
         colunasPainel={colunasPainel}
         modoExibicao="lista"
         ajudaSecao={{
-          conceito
+          composicao,
+          periodo
         }}
         itens={itensExibidos}
         mensagemVazia={mensagemVazia}

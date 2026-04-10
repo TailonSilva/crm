@@ -443,6 +443,7 @@ const entidades = [
       'idUsuario',
       'idVendedor',
       'comissao',
+      'valorComissao',
       'idPrazoPagamento',
       'idTipoPedido',
       'idEtapaPedido',

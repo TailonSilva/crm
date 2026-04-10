@@ -5,6 +5,7 @@ import { TooltipExplicacaoInicio } from './tooltipExplicacaoInicio';
 export function SecaoGraficosDuplosInicio({
   titulo,
   subtitulo,
+  classNamePainel = '',
   itens = [],
   mensagemVazia = 'Nenhum dado disponivel.',
   tituloValor = 'Valor',
@@ -24,8 +25,12 @@ export function SecaoGraficosDuplosInicio({
   colunasPainel = 4,
   modoExibicao = 'duplo'
 }) {
+  const classesPainel = ['paginaInicioPainel', `paginaInicioPainelSpan${colunasPainel}`, classNamePainel]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <section className={`paginaInicioPainel paginaInicioPainelSpan${colunasPainel}`}>
+    <section className={classesPainel}>
       <div className="paginaInicioPainelCabecalho">
         <div>
           <h3>{titulo}</h3>
@@ -35,7 +40,7 @@ export function SecaoGraficosDuplosInicio({
           {acoesCabecalho}
           <IconeAjudaSessaoInicio
             titulo={titulo}
-            ajuda={ajudaSecao || { conceito: subtitulo }}
+            ajuda={ajudaSecao || { composicao: subtitulo }}
           />
         </div>
       </div>

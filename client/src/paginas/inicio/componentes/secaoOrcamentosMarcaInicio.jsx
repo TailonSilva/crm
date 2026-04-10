@@ -4,7 +4,8 @@ export function SecaoOrcamentosMarcaInicio({ itens, titulo = 'Orcamentos em aber
   return (
     <SecaoResumoRelacionamentoComModalInicio
       titulo={titulo}
-      conceito="Quantidade de itens e valor total por marca nos orcamentos em aberto, desconsiderando etapas obrigatorias de encerramento."
+      composicao="Valor total e quantidade de itens por marca nos orcamentos em aberto."
+      periodo="Posicao atual da carteira de orcamentos em aberto."
       itens={itens}
       colunasPainel={2}
       mensagemVazia="Nenhum orcamento em aberto registrado para marcas."

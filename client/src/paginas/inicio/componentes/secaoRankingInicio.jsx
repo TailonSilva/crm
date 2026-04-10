@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Botao } from '../../../componentes/comuns/botao';
+import '../../../recursos/estilos/secaoRankingInicio.css';
 import { IconeAjudaSessaoInicio } from './iconeAjudaSessaoInicio';
 import { ModalResumoRelacionamentoInicio } from './modalResumoRelacionamentoInicio';
 import { TooltipExplicacaoInicio } from './tooltipExplicacaoInicio';
@@ -31,7 +32,8 @@ export function SecaoRankingInicio({ titulo, descricao, itens }) {
             <IconeAjudaSessaoInicio
               titulo={titulo}
               ajuda={{
-                conceito: descricao
+                composicao: 'Ranking por valor liquido dos pedidos.',
+                periodo: 'Mes corrente pela data de entrada do pedido.'
               }}
             />
           </div>

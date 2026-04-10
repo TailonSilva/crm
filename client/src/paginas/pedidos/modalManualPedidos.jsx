@@ -97,7 +97,7 @@ export function ModalManualPedidos({
             'O campo Tipo de pedido usa uma tabela auxiliar propria para classificar o registro sem depender da etapa comercial.',
             'Quando o tipo escolhido for Devolucao, o sistema transforma automaticamente a quantidade, os valores dos itens e o total do pedido para negativo.',
             'Pedidos de Devolucao usam automaticamente a etapa Entregue e esse campo fica travado no modal.',
-            'A aba Outros concentra o Orcamento vinculado e o Motivo do cancelamento, trazendo o motivo preenchido quando existir e vazio quando ainda nao houver selecao.',
+            'A aba Outros concentra o Orcamento vinculado, a Comissao (%) e o Valor da comissao, alem do campo visual do Motivo do cancelamento.',
             'Quando o pedido estiver como Devolucao e na etapa Entregue, o sistema abre um modal externo para selecionar o Motivo da devolucao cadastrado em Configuracoes.',
             'Itens, valores e pagamento sao herdados do fluxo comercial e podem ser ajustados no modal.',
             'A imagem do item pode herdar o que veio do orcamento; quando o usuario trocar essa imagem no pedido, ela passa a ser exclusiva daquele item e e recortada em 1024 x 1024 px.',

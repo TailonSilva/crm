@@ -1,0 +1,40 @@
+.paginaInicioTooltipExplicacao {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  z-index: 20;
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  width: max-content;
+  max-width: min(360px, calc(100vw - 48px));
+  border: 1px solid rgba(23, 145, 226, 0.12);
+  border-radius: 14px;
+  background: rgba(15, 24, 34, 0.96);
+  color: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 14px 28px rgba(8, 20, 31, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.paginaInicioTooltipExplicacao strong {
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: #ffffff;
+}
+
+.paginaInicioTooltipExplicacao span {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.paginaInicioGraficoBarraItem:hover .paginaInicioTooltipExplicacao,
+.paginaInicioGraficoBarraItem:focus-visible .paginaInicioTooltipExplicacao,
+.paginaInicioAjudaSessao:hover .paginaInicioTooltipExplicacao,
+.paginaInicioAjudaSessao:focus-visible .paginaInicioTooltipExplicacao {
+  opacity: 1;
+  transform: translateY(0);
+}

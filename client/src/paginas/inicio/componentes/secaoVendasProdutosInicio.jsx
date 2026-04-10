@@ -4,7 +4,8 @@ export function SecaoVendasProdutosInicio({ itens, titulo = 'Vendas do mes por p
   return (
     <SecaoResumoRelacionamentoComModalInicio
       titulo={titulo}
-      conceito="Quantidade de itens vendidos e valor total por produto nos pedidos com data de entrada no mes atual."
+      composicao="Valor liquido e quantidade de itens por produto."
+      periodo="Mes corrente pela data de entrada do pedido."
       itens={itens}
       colunasPainel={2}
       mensagemVazia="Nenhuma venda registrada no mes atual para produtos."

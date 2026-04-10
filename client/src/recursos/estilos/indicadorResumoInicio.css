@@ -19,22 +19,60 @@
   display: grid;
   gap: 8px;
   min-width: 0;
-  padding-right: 44px;
+  padding-right: 96px;
+}
+
+.inicioIndicadorResumoAcoes {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .inicioIndicadorResumoIcone {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  position: absolute;
-  top: 26px;
-  right: 24px;
   color: var(--corPrimariaForte);
 }
 
 .inicioIndicadorResumoIcone .iconeBase {
   width: 24px;
   height: 24px;
+}
+
+.inicioIndicadorResumoAjuda {
+  position: relative;
+  display: inline-flex;
+}
+
+.inicioIndicadorResumoBotaoAjuda {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(23, 145, 226, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--corPrimariaForte);
+  cursor: pointer;
+}
+
+.inicioIndicadorResumoBotaoAjuda .iconeBase {
+  width: 16px;
+  height: 16px;
+}
+
+.inicioIndicadorResumoBotaoAjuda:hover,
+.inicioIndicadorResumoBotaoAjuda:focus-visible {
+  border-color: rgba(23, 145, 226, 0.45);
+  background: #ffffff;
+  outline: none;
 }
 
 .inicioIndicadorResumoRotulo {
@@ -65,9 +103,9 @@
 
 .inicioIndicadorResumoTooltip {
   position: absolute;
-  left: 18px;
-  right: 18px;
+  right: 0;
   bottom: calc(100% + 10px);
+  width: min(330px, calc(100vw - 56px));
   z-index: 12;
   display: grid;
   gap: 4px;
@@ -95,8 +133,8 @@
   color: rgba(255, 255, 255, 0.84);
 }
 
-.inicioIndicadorResumo:hover .inicioIndicadorResumoTooltip,
-.inicioIndicadorResumo:focus-visible .inicioIndicadorResumoTooltip {
+.inicioIndicadorResumoBotaoAjuda:hover + .inicioIndicadorResumoTooltip,
+.inicioIndicadorResumoBotaoAjuda:focus-visible + .inicioIndicadorResumoTooltip {
   opacity: 1;
   transform: translateY(0);
 }

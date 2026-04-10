@@ -14,22 +14,25 @@ import { listarEmpresas } from '../../servicos/empresa';
 import { listarOrcamentos } from '../../servicos/orcamentos';
 import { listarPedidos } from '../../servicos/pedidos';
 import { listarGruposProduto, listarMarcas, listarProdutos } from '../../servicos/produtos';
+import { formatarCodigoCliente } from '../../utilitarios/codigoCliente';
 import { normalizarPreco } from '../../utilitarios/normalizarPreco';
 import { registroEstaAtivo } from '../../utilitarios/statusRegistro';
 import { normalizarConfiguracoesCardsPaginaInicial } from '../../utilitarios/cardsPaginaInicial';
 import { CabecalhoInicio } from './componentes/cabecalhoInicio';
 import { IndicadorConfiguravelInicio } from './componentes/indicadorConfiguravelInicio';
 import { IndicadorResumoInicio } from './componentes/indicadorResumoInicio';
-import { PainelHeroiInicio } from './componentes/painelHeroiInicio';
 import { SecaoDevolucoesInicio } from './componentes/secaoDevolucoesInicio';
 import { SecaoFunilOrcamentosInicio } from './componentes/secaoFunilOrcamentosInicio';
 import { SecaoMotivosPerdaInicio } from './componentes/secaoMotivosPerdaInicio';
 import { SecaoOrcamentosGrupoProdutosInicio } from './componentes/secaoOrcamentosGrupoProdutosInicio';
 import { SecaoOrcamentosMarcaInicio } from './componentes/secaoOrcamentosMarcaInicio';
+import { SecaoOrcamentosProdutosInicio } from './componentes/secaoOrcamentosProdutosInicio';
 import { SecaoRankingInicio } from './componentes/secaoRankingInicio';
 import { SecaoVendasGrupoProdutosInicio } from './componentes/secaoVendasGrupoProdutosInicio';
 import { SecaoVendasMarcaInicio } from './componentes/secaoVendasMarcaInicio';
+import { SecaoVendasClientesInicio } from './componentes/secaoVendasClientesInicio';
 import { SecaoVendasProdutosInicio } from './componentes/secaoVendasProdutosInicio';
+import { SecaoVendasUfInicio } from './componentes/secaoVendasUfInicio';
 import { SecaoConfiguravelInicio } from './componentes/secaoConfiguravelInicio';
 import { ModalManualInicio } from './modalManualInicio';
 import { criarResumoFunilVendas } from './utilitarios/criarResumoFunilVendas';
@@ -227,23 +230,6 @@ export function PaginaInicio({ usuarioLogado }) {
             </div>
 
             <div className="paginaInicioSecoes">
-              {usuarioLogado?.tipo === 'Usuario padrao' ? (
-                <PainelHeroiInicio
-                  tag={painel.tag}
-                  titulo={painel.titulo}
-                  subtitulo={painel.subtitulo}
-                  metricas={painel.metricas}
-                  faixas={painel.faixas}
-                  carregando={carregando}
-                  className="paginaInicioPainelHeroiCarteira"
-                  ajuda={{
-                    conceito: painel.subtitulo,
-                    calculo: 'As metricas desta sessao consideram apenas clientes da carteira, registros proprios e pedidos ou orcamentos dentro do escopo do usuario.',
-                    observacao: 'Serve como painel de acompanhamento operacional da carteira.'
-                  }}
-                />
-              ) : null}
-
               {abaAtiva === 'orcamentos' ? (
                 secoesOrcamentosConfiguradas.map((secao) => (
                   <SecaoConfiguravelInicio key={secao.id} colunas={secao.span}>
@@ -298,6 +284,24 @@ function montarPainel(dados, usuarioLogado) {
   const orcamentosAbertos = orcamentos.filter((item) => !orcamentoEhFechado(item));
   const orcamentosMes = orcamentos.filter((item) => dataNoPeriodo(item.dataInclusao, inicioMes, fimMes));
   const pedidosMes = pedidos.filter((item) => dataNoPeriodo(item.dataInclusao, inicioMes, fimMes));
+  const positivacaoMes = new Set(
+    pedidosMes
+      .map((item) => Number(item?.idCliente))
+      .filter((idCliente) => Number.isFinite(idCliente) && idCliente > 0)
+  ).size;
+  const idsClientesAtivos = new Set(
+    clientesAtivos
+      .map((cliente) => Number(cliente?.idCliente))
+      .filter((idCliente) => Number.isFinite(idCliente) && idCliente > 0)
+  );
+  const positivacaoCarteiraMes = new Set(
+    pedidosMes
+      .map((item) => Number(item?.idCliente))
+      .filter((idCliente) => idsClientesAtivos.has(idCliente))
+  ).size;
+  const percentualPositivacaoCarteiraMes = clientesAtivos.length > 0
+    ? (positivacaoCarteiraMes / clientesAtivos.length) * 100
+    : 0;
   const pedidosEntregaMes = pedidos.filter((item) => dataNoPeriodo(item.dataEntrega, inicioMes, fimMes));
   const devolucoesMes = pedidos.filter((item) => (
     Number(item.idTipoPedido) === ID_TIPO_PEDIDO_DEVOLUCAO
@@ -306,6 +310,7 @@ function montarPainel(dados, usuarioLogado) {
   const atendimentosMes = atendimentos.filter((item) => dataNoPeriodo(item.data, inicioMes, fimMes));
   const valorAberto = somarTotais(orcamentosAbertos);
   const faturamentoMes = somarTotais(pedidosEntregaMes);
+  const comissaoMes = somarComissoes(pedidosMes);
   const ticketMedio = pedidosEntregaMes.length ? faturamentoMes / pedidosEntregaMes.length : 0;
   const convertidosMes = orcamentosMes.filter((item) => Boolean(item.idPedidoVinculado)).length;
   const taxaConversaoMes = orcamentosMes.length ? (convertidosMes / orcamentosMes.length) * 100 : 0;
@@ -346,10 +351,7 @@ function montarPainel(dados, usuarioLogado) {
     'Sem grupo',
     {
       chaveRegistroId: 'idOrcamento',
-      sufixoQuantidadeRegistros: 'orc.',
-      conceitoBase: 'Resumo dos orcamentos em aberto',
-      calculoBase: 'orcamentos em aberto, somando',
-      observacao: 'A barra representa a participacao desse item no valor total dos orcamentos em aberto.'
+      sufixoQuantidadeRegistros: 'orc.'
     }
   );
   const orcamentosPorMarca = montarResumoPorRelacionamento(
@@ -362,10 +364,20 @@ function montarPainel(dados, usuarioLogado) {
     'Sem marca',
     {
       chaveRegistroId: 'idOrcamento',
-      sufixoQuantidadeRegistros: 'orc.',
-      conceitoBase: 'Resumo dos orcamentos em aberto',
-      calculoBase: 'orcamentos em aberto, somando',
-      observacao: 'A barra representa a participacao desse item no valor total dos orcamentos em aberto.'
+      sufixoQuantidadeRegistros: 'orc.'
+    }
+  );
+  const orcamentosPorProduto = montarResumoPorRelacionamento(
+    orcamentosAbertos,
+    dados.produtos,
+    dados.produtos,
+    'idProduto',
+    'idProduto',
+    'descricao',
+    'Sem produto',
+    {
+      chaveRegistroId: 'idOrcamento',
+      sufixoQuantidadeRegistros: 'orc.'
     }
   );
   const vendasPorGrupo = montarResumoPorRelacionamento(
@@ -395,6 +407,8 @@ function montarPainel(dados, usuarioLogado) {
     'descricao',
     'Sem produto'
   );
+  const vendasPorUf = montarResumoPorUf(pedidosMes, clientesVisiveis);
+  const vendasPorCliente = montarResumoPorCliente(pedidosMes, clientesVisiveis, dados.empresa);
 
   return {
     ...base,
@@ -411,9 +425,8 @@ function montarPainel(dados, usuarioLogado) {
         descricao: 'Negociacoes ainda ativas no funil.',
         destaque: normalizarPreco(valorAberto),
         ajuda: {
-          conceito: 'Quantidade de orcamentos que ainda nao chegaram nas etapas finais.',
-          calculo: 'Conta os orcamentos visiveis fora das etapas Fechado, Fechado sem pedido e Pedido excluido.',
-          observacao: `O valor total somado nesses orcamentos e ${normalizarPreco(valorAberto)}.`
+          composicao: 'Quantidade de orcamentos em aberto e valor total desses orcamentos.',
+          periodo: 'Posicao atual da carteira visivel na data de hoje.'
         }
       },
       {
@@ -424,9 +437,41 @@ function montarPainel(dados, usuarioLogado) {
         descricao: 'Pedidos gerados no mes atual.',
         destaque: normalizarPreco(faturamentoMes),
         ajuda: {
-          conceito: 'Quantidade de pedidos incluidos no mes atual.',
-          calculo: 'Conta pedidos visiveis com data de inclusao dentro do mes atual.',
-          observacao: `O valor total somado desses pedidos e ${normalizarPreco(faturamentoMes)}.`
+          composicao: 'Quantidade de pedidos e valor liquido dos itens.',
+          periodo: 'Mes corrente pela data de inclusao do pedido.'
+        }
+      },
+      {
+        id: 'comissaoMes',
+        icone: 'pagamento',
+        titulo: 'Comissao no mes',
+        valor: normalizarPreco(comissaoMes),
+        descricao: 'Comissao liquida dos pedidos do mes atual.',
+        ajuda: {
+          composicao: 'Soma da comissao de cada pedido (total liquido x % comissao).',
+          periodo: 'Mes corrente pela data de inclusao do pedido.'
+        }
+      },
+      {
+        id: 'positivacaoMes',
+        icone: 'clientes',
+        titulo: 'Positivacao no mes',
+        valor: String(positivacaoMes),
+        descricao: 'Clientes unicos que geraram pedido no mes.',
+        ajuda: {
+          composicao: 'Quantidade de clientes diferentes com pelo menos um pedido.',
+          periodo: 'Mes corrente pela data de inclusao do pedido.'
+        }
+      },
+      {
+        id: 'percentualPositivacaoCarteiraMes',
+        icone: 'selo',
+        titulo: '% Positivacao da carteira',
+        valor: formatarPercentualTaxa(percentualPositivacaoCarteiraMes),
+        descricao: 'Percentual da carteira ativa que comprou no mes.',
+        ajuda: {
+          composicao: `${positivacaoCarteiraMes} clientes que compraram / ${clientesAtivos.length} clientes ativos da carteira.`,
+          periodo: 'Mes corrente pela data de inclusao do pedido.'
         }
       },
       {
@@ -437,9 +482,8 @@ function montarPainel(dados, usuarioLogado) {
         descricao: 'Produtos ativos para comercializacao.',
         destaque: `${dados.gruposProduto?.length || 0} grupos cadastrados`,
         ajuda: {
-          conceito: 'Quantidade de produtos ativos disponiveis no catalogo visivel.',
-          calculo: 'Conta os produtos visiveis com status ativo.',
-          observacao: `O destaque mostra ${dados.gruposProduto?.length || 0} grupos de produto cadastrados.`
+          composicao: 'Quantidade de produtos ativos.',
+          periodo: 'Base cadastral atual (sem recorte mensal).'
         }
       },
       {
@@ -450,9 +494,8 @@ function montarPainel(dados, usuarioLogado) {
         descricao: 'Clientes ativos em acompanhamento.',
         destaque: `${clientesVisiveis.length} visiveis`,
         ajuda: {
-          conceito: 'Quantidade de clientes ativos dentro do escopo visivel da dashboard.',
-          calculo: 'Conta os clientes visiveis com status ativo.',
-          observacao: `O destaque mostra ${clientesVisiveis.length} clientes considerados no acompanhamento atual.`
+          composicao: 'Quantidade de clientes ativos no escopo visivel.',
+          periodo: 'Base cadastral atual (sem recorte mensal).'
         }
       }
     ],
@@ -530,9 +573,12 @@ function montarPainel(dados, usuarioLogado) {
     motivosPerda,
     orcamentosPorGrupo,
     orcamentosPorMarca,
+    orcamentosPorProduto,
     devolucoes,
     vendasPorGrupo,
     vendasPorMarca,
+    vendasPorUf,
+    vendasPorCliente,
     vendasPorProduto,
     alertas: montarAlertas(orcamentosVencidos, orcamentosVencendo, pedidosEntregaProxima, clientesSemAtendimento),
     tituloRanking: usuarioLogado?.tipo === 'Usuario padrao' ? 'Clientes em destaque' : 'Vendedores em destaque',
@@ -559,6 +605,9 @@ function montarSecoesOrcamentos(painel) {
     }],
     ['orcamentosMarca', {
       renderizar: (configuracao) => <SecaoOrcamentosMarcaInicio itens={painel.orcamentosPorMarca} titulo={configuracao.rotulo} />
+    }],
+    ['orcamentosProdutos', {
+      renderizar: (configuracao) => <SecaoOrcamentosProdutosInicio itens={painel.orcamentosPorProduto} titulo={configuracao.rotulo} />
     }],
     ['motivosPerda', {
       renderizar: (configuracao) => <SecaoMotivosPerdaInicio itens={painel.motivosPerda} titulo={configuracao.rotulo} />
@@ -616,6 +665,12 @@ function montarSecoesVendas(painel) {
     ['vendasMarca', {
       renderizar: (configuracao) => <SecaoVendasMarcaInicio itens={painel.vendasPorMarca} titulo={configuracao.rotulo} />
     }],
+    ['vendasUf', {
+      renderizar: (configuracao) => <SecaoVendasUfInicio itens={painel.vendasPorUf} titulo={configuracao.rotulo} />
+    }],
+    ['vendasClientes', {
+      renderizar: (configuracao) => <SecaoVendasClientesInicio itens={painel.vendasPorCliente} titulo={configuracao.rotulo} />
+    }],
     ['vendasProdutos', {
       renderizar: (configuracao) => <SecaoVendasProdutosInicio itens={painel.vendasPorProduto} titulo={configuracao.rotulo} />
     }],
@@ -655,10 +710,83 @@ function criarPainelBase(usuarioLogado) {
       ? 'Os dados exibidos aqui consideram somente seus clientes e seus registros.'
       : 'Leitura consolidada do funil, das vendas e das proximas acoes comerciais.',
     indicadores: [
-      { id: 'orcamentosAbertos', icone: 'orcamento', titulo: 'Orcamentos em aberto', valor: '0', descricao: '' },
-      { id: 'pedidosMes', icone: 'pedido', titulo: 'Pedidos no mes', valor: '0', descricao: '' },
-      { id: 'catalogo', icone: 'atendimentos', titulo: 'Catalogo', valor: '0', descricao: '' },
-      { id: 'carteira', icone: 'selo', titulo: 'Carteira', valor: '0', descricao: '' }
+      {
+        id: 'orcamentosAbertos',
+        icone: 'orcamento',
+        titulo: 'Orcamentos em aberto',
+        valor: '0',
+        descricao: '',
+        ajuda: {
+          composicao: 'Quantidade e valor dos orcamentos em aberto.',
+          periodo: 'Carteira visivel atual na data de hoje.'
+        }
+      },
+      {
+        id: 'pedidosMes',
+        icone: 'pedido',
+        titulo: 'Pedidos no mes',
+        valor: '0',
+        descricao: '',
+        ajuda: {
+          composicao: 'Quantidade de pedidos e valor liquido dos itens.',
+          periodo: 'Mes corrente pela data de inclusao do pedido.'
+        }
+      },
+      {
+        id: 'comissaoMes',
+        icone: 'pagamento',
+        titulo: 'Comissao no mes',
+        valor: normalizarPreco(0),
+        descricao: '',
+        ajuda: {
+          composicao: 'Soma da comissao de cada pedido (total liquido x % comissao).',
+          periodo: 'Mes corrente pela data de inclusao do pedido.'
+        }
+      },
+      {
+        id: 'positivacaoMes',
+        icone: 'clientes',
+        titulo: 'Positivacao no mes',
+        valor: '0',
+        descricao: '',
+        ajuda: {
+          composicao: 'Quantidade de clientes diferentes com pelo menos um pedido.',
+          periodo: 'Mes corrente pela data de inclusao do pedido.'
+        }
+      },
+      {
+        id: 'percentualPositivacaoCarteiraMes',
+        icone: 'selo',
+        titulo: '% Positivacao da carteira',
+        valor: formatarPercentualTaxa(0),
+        descricao: '',
+        ajuda: {
+          composicao: 'Clientes da carteira ativa que compraram / total de clientes ativos da carteira.',
+          periodo: 'Mes corrente pela data de inclusao do pedido.'
+        }
+      },
+      {
+        id: 'catalogo',
+        icone: 'atendimentos',
+        titulo: 'Catalogo',
+        valor: '0',
+        descricao: '',
+        ajuda: {
+          composicao: 'Quantidade de produtos ativos.',
+          periodo: 'Base cadastral atual.'
+        }
+      },
+      {
+        id: 'carteira',
+        icone: 'selo',
+        titulo: 'Carteira',
+        valor: '0',
+        descricao: '',
+        ajuda: {
+          composicao: 'Quantidade de clientes ativos no escopo da home.',
+          periodo: 'Base cadastral atual.'
+        }
+      }
     ],
     metricas: [],
     faixas: [],
@@ -668,9 +796,12 @@ function criarPainelBase(usuarioLogado) {
     motivosPerda: [],
     orcamentosPorGrupo: [],
     orcamentosPorMarca: [],
+    orcamentosPorProduto: [],
     devolucoes: [],
     vendasPorGrupo: [],
     vendasPorMarca: [],
+    vendasPorUf: [],
+    vendasPorCliente: [],
     vendasPorProduto: [],
     alertas: [],
     tituloRanking: 'Ranking',
@@ -749,9 +880,8 @@ function montarFunil(funil) {
     percentualProdutos: calcularPercentualParteDoTotal(Number(item.quantidadeItens || 0), totalQuantidadeItens),
     percentualValor: calcularPercentualParteDoTotal(Number(item.valorTotal || 0), totalValor),
     ajuda: {
-      conceito: `Resumo da etapa ${item.descricao} dentro do funil do orçamento.`,
-      calculo: `${item.quantidadeOrcamentos} orcamentos, soma de ${Number(item.quantidadeItens || 0)} nas quantidades dos itens e ${normalizarPreco(item.valorTotal)} em valor total nessa etapa.`,
-      observacao: 'A barra representa a participacao dessa etapa no valor total somado do funil.'
+      composicao: `${item.quantidadeOrcamentos} orcamentos, ${Number(item.quantidadeItens || 0)} itens e ${normalizarPreco(item.valorTotal)} nessa etapa.`,
+      periodo: 'Posicao atual do funil de orcamentos em aberto.'
     }
   }));
 }
@@ -852,9 +982,8 @@ function montarResumoDevolucoes(pedidos, motivosDevolucao) {
     percentualQuantidade: totalQuantidade > 0 ? Math.round((item.quantidade / totalQuantidade) * 100) : 0,
     percentualValor: totalValor > 0 ? Math.round((item.valorTotal / totalValor) * 100) : 0,
     ajuda: {
-      conceito: `Resumo das devolucoes do mes atual para o motivo ${item.descricao}.`,
-      calculo: `${item.quantidade} pedido(s) de devolucao com data de entrada no mes atual, somando ${normalizarPreco(item.valorTotal)} em valor absoluto.`,
-      observacao: 'A barra representa a participacao desse motivo no valor total de devolucoes do mes pela data de entrada. O grafico converte os valores negativos para positivo apenas para leitura.'
+      composicao: `${item.quantidade} devolucoes e ${normalizarPreco(item.valorTotal)} para o motivo ${item.descricao}.`,
+      periodo: 'Mes corrente pela data de entrada dos pedidos de devolucao.'
     }
   }));
 }
@@ -896,9 +1025,8 @@ function montarResumoMotivosPerda(orcamentos, motivosPerda) {
     percentualQuantidade: calcularPercentualParteDoTotal(Number(item.quantidadeOrcamentos || 0), totalQuantidade),
     percentualValor: calcularPercentualParteDoTotal(Number(item.valorTotal || 0), totalValor),
     ajuda: {
-      conceito: `Resumo dos motivos de perda para ${item.descricao}.`,
-      calculo: `${item.quantidadeOrcamentos} orc. recusados no mes atual, somando ${normalizarPreco(item.valorTotal)} em valor total.`,
-      observacao: 'A barra representa a participacao desse motivo no valor total dos orcamentos recusados no mes atual.'
+      composicao: `${item.quantidadeOrcamentos} orcamentos recusados e ${normalizarPreco(item.valorTotal)} no motivo ${item.descricao}.`,
+      periodo: 'Mes corrente dos orcamentos recusados.'
     }
   }));
 }
@@ -915,10 +1043,7 @@ function montarResumoPorRelacionamento(
 ) {
   const {
     chaveRegistroId = 'idPedido',
-    sufixoQuantidadeRegistros = 'ped.',
-    conceitoBase = 'Resumo das vendas do mes atual',
-    calculoBase = 'pedidos com data de entrada no mes atual, somando',
-    observacao = 'A barra representa a participacao desse item no saldo total da secao, considerando vendas e devolucoes cuja data de entrada pertence ao mes atual.'
+    sufixoQuantidadeRegistros = 'ped.'
   } = opcoes;
   const produtosPorId = new Map((produtos || []).map((produto) => [
     String(produto.idProduto),
@@ -974,9 +1099,128 @@ function montarResumoPorRelacionamento(
     percentualQuantidade: calcularPercentualParteDoTotal(Number(item.quantidadeItens || 0), totalQuantidade),
     percentualValor: calcularPercentualParteDoTotal(Number(item.valorTotal || 0), totalValor),
     ajuda: {
-      conceito: `${conceitoBase} para ${item.descricao}.`,
-      calculo: `${item.quantidadePedidos} ${calculoBase} ${item.quantidadeItens} nas quantidades dos itens e ${normalizarPreco(item.valorTotal)} em valor total liquido.`,
-      observacao
+      composicao: `${item.quantidadePedidos}, ${item.quantidadeItens} itens e ${normalizarPreco(item.valorTotal)} para ${item.descricao}.`,
+      periodo: 'Mes corrente pela data de entrada do pedido.'
+    }
+  }));
+}
+
+function montarResumoPorUf(pedidos, clientes) {
+  const clientesPorId = new Map((clientes || []).map((cliente) => [
+    String(cliente.idCliente),
+    cliente
+  ]));
+  const resumoPorUf = new Map();
+
+  (pedidos || []).forEach((pedido) => {
+    const cliente = clientesPorId.get(String(pedido?.idCliente || ''));
+    const ufNormalizada = String(cliente?.estado || '').trim().toUpperCase();
+    const uf = ufNormalizada || 'Sem UF';
+    const atual = resumoPorUf.get(uf) || {
+      id: uf,
+      descricao: uf,
+      quantidadeItens: 0,
+      valorTotal: 0,
+      pedidos: new Set()
+    };
+
+    (pedido?.itens || []).forEach((item) => {
+      atual.quantidadeItens += Number(item.quantidade) || 0;
+      atual.valorTotal += Number(item.valorTotal) || 0;
+    });
+
+    atual.pedidos.add(String(pedido.idPedido || ''));
+    resumoPorUf.set(uf, atual);
+  });
+
+  const lista = [...resumoPorUf.values()]
+    .map((item) => ({
+      ...item,
+      quantidadePedidos: `${item.pedidos.size} ped.`,
+      pedidos: undefined
+    }))
+    .filter((item) => item.quantidadeItens !== 0 || item.valorTotal !== 0)
+    .sort((a, b) => b.valorTotal - a.valorTotal)
+    .slice(0, 8);
+
+  const totalQuantidade = lista.reduce(
+    (acumulado, item) => acumulado + Math.max(Number(item.quantidadeItens) || 0, 0),
+    0
+  );
+  const totalValor = lista.reduce(
+    (acumulado, item) => acumulado + Math.max(Number(item.valorTotal) || 0, 0),
+    0
+  );
+
+  return lista.map((item) => ({
+    ...item,
+    valor: normalizarPreco(item.valorTotal),
+    percentualQuantidade: calcularPercentualParteDoTotal(Number(item.quantidadeItens || 0), totalQuantidade),
+    percentualValor: calcularPercentualParteDoTotal(Number(item.valorTotal || 0), totalValor),
+    ajuda: {
+      composicao: `${item.quantidadePedidos}, ${item.quantidadeItens} itens e ${normalizarPreco(item.valorTotal)} na UF ${item.descricao}.`,
+      periodo: 'Mes corrente pela data de entrada do pedido.'
+    }
+  }));
+}
+
+function montarResumoPorCliente(pedidos, clientes, empresa) {
+  const clientesPorId = new Map((clientes || []).map((cliente) => [
+    String(cliente.idCliente),
+    cliente
+  ]));
+  const resumoPorCliente = new Map();
+
+  (pedidos || []).forEach((pedido) => {
+    const idCliente = String(pedido?.idCliente || '');
+    const cliente = clientesPorId.get(idCliente);
+    const nomeFantasiaCliente = cliente?.nomeFantasia || cliente?.razaoSocial || 'Cliente sem nome';
+    const codigoCliente = formatarCodigoCliente(cliente || { idCliente: pedido?.idCliente }, empresa);
+    const descricaoCliente = `${codigoCliente} - ${nomeFantasiaCliente}`;
+    const atual = resumoPorCliente.get(idCliente) || {
+      id: idCliente || 'sem-cliente',
+      descricao: descricaoCliente,
+      quantidadeItens: 0,
+      valorTotal: 0,
+      pedidos: new Set()
+    };
+
+    (pedido?.itens || []).forEach((item) => {
+      atual.quantidadeItens += Number(item.quantidade) || 0;
+      atual.valorTotal += Number(item.valorTotal) || 0;
+    });
+
+    atual.pedidos.add(String(pedido.idPedido || ''));
+    resumoPorCliente.set(idCliente, atual);
+  });
+
+  const lista = [...resumoPorCliente.values()]
+    .map((item) => ({
+      ...item,
+      quantidadePedidos: `${item.pedidos.size} ped.`,
+      pedidos: undefined
+    }))
+    .filter((item) => item.quantidadeItens !== 0 || item.valorTotal !== 0)
+    .sort((a, b) => b.valorTotal - a.valorTotal)
+    .slice(0, 8);
+
+  const totalQuantidade = lista.reduce(
+    (acumulado, item) => acumulado + Math.max(Number(item.quantidadeItens) || 0, 0),
+    0
+  );
+  const totalValor = lista.reduce(
+    (acumulado, item) => acumulado + Math.max(Number(item.valorTotal) || 0, 0),
+    0
+  );
+
+  return lista.map((item) => ({
+    ...item,
+    valor: normalizarPreco(item.valorTotal),
+    percentualQuantidade: calcularPercentualParteDoTotal(Number(item.quantidadeItens || 0), totalQuantidade),
+    percentualValor: calcularPercentualParteDoTotal(Number(item.valorTotal || 0), totalValor),
+    ajuda: {
+      composicao: `${item.quantidadePedidos}, ${item.quantidadeItens} itens e ${normalizarPreco(item.valorTotal)} para ${item.descricao}.`,
+      periodo: 'Mes corrente pela data de entrada do pedido.'
     }
   }));
 }
@@ -1017,9 +1261,8 @@ function montarRanking(pedidos, obterChave, obterNome) {
     valor: normalizarPreco(item.total),
     percentual: maior > 0 ? Math.max(12, Math.round((item.total / maior) * 100)) : 0,
     ajuda: {
-      conceito: 'Posicao no ranking de vendas do mes atual pela data de entrada do pedido.',
-      calculo: `${item.quantidade} pedidos com data de entrada no mes atual somando ${normalizarPreco(item.total)}.`,
-      observacao: 'A barra compara esse resultado com o maior volume liquido do ranking no mes atual.'
+      composicao: `${item.quantidade} pedidos somando ${normalizarPreco(item.total)}.`,
+      periodo: 'Mes corrente pela data de entrada do pedido.'
     }
   }));
 }
@@ -1048,10 +1291,25 @@ function somarTotais(registros) {
   return (registros || []).reduce((total, item) => total + totalRegistro(item), 0);
 }
 
+function somarComissoes(registros) {
+  return (registros || []).reduce((total, item) => total + valorComissaoRegistro(item), 0);
+}
+
 function totalRegistro(registro) {
   return Array.isArray(registro?.itens)
     ? registro.itens.reduce((total, item) => total + (Number(item?.valorTotal) || 0), 0)
     : 0;
+}
+
+function valorComissaoRegistro(registro) {
+  const comissaoPersistida = Number(registro?.valorComissao);
+
+  if (Number.isFinite(comissaoPersistida)) {
+    return comissaoPersistida;
+  }
+
+  const percentualComissao = Number(registro?.comissao) || 0;
+  return Number((((totalRegistro(registro) || 0) * percentualComissao) / 100).toFixed(2));
 }
 
 function orcamentoEhFechado(orcamento) {
@@ -1139,4 +1397,10 @@ function dataInput(data) {
   const mes = String(data.getMonth() + 1).padStart(2, '0');
   const dia = String(data.getDate()).padStart(2, '0');
   return `${ano}-${mes}-${dia}`;
+}
+
+function formatarPercentualTaxa(valor) {
+  const numero = Number(valor);
+  const percentual = Number.isFinite(numero) ? numero : 0;
+  return `${percentual.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
 }

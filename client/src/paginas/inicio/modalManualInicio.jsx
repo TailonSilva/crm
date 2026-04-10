@@ -23,18 +23,18 @@ export function ModalManualInicio({
         {
           titulo: 'Indicadores iniciais',
           descricao: 'A home abre com cards compactos de leitura rapida.',
-          detalhe: 'Hoje incluem Orcamentos em aberto, Pedidos no mes, Catalogo e Carteira.',
+          detalhe: 'Hoje incluem Orcamentos em aberto, Pedidos no mes, Comissao no mes, Positivacao no mes, % Positivacao da carteira, Catalogo e Carteira.',
           icone: 'inicio'
         },
         {
           titulo: 'Aba Orcamentos',
           descricao: 'Reune o funil e os resumos de orcamentos em aberto.',
-          detalhe: 'As secoes usam apenas etapas em aberto, sempre validando as etapas obrigatorias por ID.',
+          detalhe: 'As secoes usam apenas etapas em aberto, com visoes por grupo, marca e produto, sempre validando etapas obrigatorias por ID.',
           icone: 'orcamento'
         },
         {
           titulo: 'Aba Vendas',
-          descricao: 'Reune devolucoes, vendas por grupo, marca, produto e ranking.',
+          descricao: 'Reune devolucoes, vendas por grupo, marca, UF, cliente, produto e ranking.',
           detalhe: 'As leituras usam pedidos do mes corrente conforme a regra definida em cada sessao.',
           icone: 'pedido'
         },
@@ -58,7 +58,7 @@ export function ModalManualInicio({
         },
         {
           titulo: 'Entender os calculos',
-          descricao: 'O icone de `Informacao` explica conceito, calculo e leitura de cada sessao.',
+          descricao: 'O icone de `Informacao` explica cada sessao com texto curto.',
           icone: 'informacao'
         },
         {
@@ -73,6 +73,8 @@ export function ModalManualInicio({
           titulo: 'Padrao atual dos graficos',
           itens: [
             'Graficos compactos da home usam o padrao `maximo de 5 itens + modal com lista completa`.',
+            'Todo novo card ou grafico criado para a home deve entrar tambem na lista de configuracao da empresa (aba Pagina inicial).',
+            'Cards e graficos usam tooltip padrao curto no icone de Informacao, com duas linhas: Composicao e Periodo.',
             'As secoes de resumo por relacionamento ocupam 2 colunas no grid principal da home.',
             'O tooltip da sessao fica no icone de informacao e o modal completo abre pelo icone lateral.',
             'Os calculos respeitam sempre as regras do recorte do mes corrente definidas para cada aba.'
@@ -84,7 +86,7 @@ export function ModalManualInicio({
           items: undefined,
           itens: [
             usuarioLogado?.tipo === 'Usuario padrao'
-              ? 'Usuario padrao ve a home com recorte da propria carteira e dos proprios registros.'
+              ? 'Usuario padrao ve cards e graficos da home apenas com `orcamentos` e `pedidos` do vendedor vinculado ao proprio usuario (`idVendedor`).'
               : 'Perfis administrativos veem a home com leitura geral da operacao.',
             'O mesmo padrao visual das secoes e mantido independentemente do perfil.',
             'As explicacoes das secoes ajudam a identificar o periodo e a logica de calculo usada em cada bloco.'

@@ -24,9 +24,16 @@ export const graficosPaginaInicialOrcamentos = [
     visivelPadrao: true
   },
   {
+    id: 'orcamentosProdutos',
+    rotulo: 'Orcamentos em aberto por produto',
+    ordemPadrao: 4,
+    spanPadrao: 5,
+    visivelPadrao: true
+  },
+  {
     id: 'motivosPerda',
     rotulo: 'Motivos de perda do mes',
-    ordemPadrao: 4,
+    ordemPadrao: 5,
     spanPadrao: 5,
     visivelPadrao: true
   }
@@ -55,16 +62,30 @@ export const graficosPaginaInicialVendas = [
     visivelPadrao: true
   },
   {
+    id: 'vendasUf',
+    rotulo: 'Vendas do mes por UF',
+    ordemPadrao: 4,
+    spanPadrao: 5,
+    visivelPadrao: true
+  },
+  {
+    id: 'vendasClientes',
+    rotulo: 'Vendas do mes por cliente',
+    ordemPadrao: 5,
+    spanPadrao: 5,
+    visivelPadrao: true
+  },
+  {
     id: 'vendasProdutos',
     rotulo: 'Vendas do mes por produto',
-    ordemPadrao: 4,
+    ordemPadrao: 6,
     spanPadrao: 5,
     visivelPadrao: true
   },
   {
     id: 'rankingVendas',
     rotulo: 'Vendedores em destaque',
-    ordemPadrao: 5,
+    ordemPadrao: 7,
     spanPadrao: 5,
     visivelPadrao: true
   }

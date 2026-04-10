@@ -5,8 +5,10 @@ export function SecaoMotivosPerdaInicio({ itens, titulo = 'Motivos de perda do m
     <SecaoResumoRelacionamentoComModalInicio
       titulo={titulo}
       colunasPainel={2}
-      conceito="Quantidade e valor total dos orcamentos recusados no mes atual, agrupados por motivo de perda."
+      composicao="Quantidade e valor total dos orcamentos recusados por motivo."
+      periodo="Mes corrente pelos orcamentos recusados no periodo."
       itens={itens}
+      varianteValor="Devolucao"
       mensagemVazia="Nenhum orcamento recusado no mes atual com motivo de perda."
       modalTitulo={titulo}
       modalSubtitulo="Lista completa de motivos de perda dos orcamentos recusados no mes corrente."

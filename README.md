@@ -73,6 +73,7 @@ Observacao importante:
 - CSS de pagina deve ficar restrito a layout/composicao da pagina e tambem salvo em `client/src/recursos/estilos/`
 - Classes CSS devem ser prefixadas pelo nome do componente para reduzir acoplamento visual e colisao de seletores
 - Mesmo componentes de pagina devem seguir a mesma regra: `paginaInicio.jsx` usa `client/src/recursos/estilos/paginaInicio.css`, `funilVendas.jsx` usa `client/src/recursos/estilos/funilVendas.css`, e assim por diante
+- Para `Usuario padrao`, cards e graficos da pagina inicial devem sempre filtrar por `idVendedor` do usuario logado; `Administrador` e `Gestor` veem leitura geral sem esse recorte
 
 ## Arquitetura atual das grades
 
@@ -149,17 +150,23 @@ Utilitarios importantes:
 - Cada aba da home pode ser configurada por lista, com `visivel`, `ordem`, `colunas` e `rotulo`, usando malha de `10 colunas`
 - Os `Cards resumo` usam `visivel`, `ordem`, `colunas` e `rotulo`, e a composicao precisa caber em no maximo duas linhas de `10 colunas` cada
 - A ordem das sessoes da home segue leitura visual: de cima para baixo e da esquerda para a direita
-- Sempre que uma nova sessao for criada para a pagina inicial, ela tambem deve ser cadastrada na configuracao da empresa, dentro da aba `Pagina inicial`, para que o usuario possa controlar exibicao, ordem e largura
-- Os cards iniciais atuais mostram `Orcamentos em aberto`, `Pedidos no mes`, `Catalogo` e `Carteira`
+- Regra obrigatoria: sempre que um novo card ou uma nova sessao de grafico for criado na pagina inicial, ele tambem deve ser incluido na configuracao da empresa (aba `Pagina inicial`) para permitir controle de exibicao, ordem, largura e rotulo
+- Os cards iniciais atuais mostram `Orcamentos em aberto`, `Pedidos no mes`, `Comissao no mes`, `Positivacao no mes`, `% Positivacao da carteira`, `Catalogo` e `Carteira`
+- Todo card da home deve ter tooltip no icone de `Informacao`
+- O texto do tooltip de card deve ser simples e direto, sempre com `composicao do valor` e `periodo considerado`, no mesmo padrao dos tooltips dos graficos
+- Padrao de conteudo dos tooltips de card: no maximo duas linhas curtas (`Composicao` e `Periodo`), sem textos longos
 - Os graficos compactos da home seguem o padrao `maximo de 5 itens + modal com lista completa`
 - O modal com a lista completa deve ser reutilizavel para qualquer sessao da home que precise resumir muitos itens
-- Os icones de `Informacao` mostram tooltip com conceito, calculo e leitura de cada sessao
+- Os icones de `Informacao` de cards e graficos usam tooltip padrao curto com apenas `Composicao` e `Periodo`
 - O icone lateral ao lado do `Informacao` abre o modal com a lista completa quando houver mais de 5 resultados
 - As secoes graficas compactas da home ocupam `2 colunas` no grid principal, salvo quando uma sessao explicitar outro span
-- A aba `Orcamentos` concentra `Funil de orcamentos`, `Orcamentos em aberto por grupo de produtos`, `Orcamentos em aberto por marca` e `Motivos de perda do mes`
-- A aba `Vendas` concentra `Devolucoes do mes`, `Vendas do mes por grupo de produtos`, `Vendas do mes por marca`, `Vendas do mes por produto` e `Vendedores/Clientes em destaque`
+- A aba `Orcamentos` concentra `Funil de orcamentos`, `Orcamentos em aberto por grupo de produtos`, `Orcamentos em aberto por marca`, `Orcamentos em aberto por produto` e `Motivos de perda do mes`
+- A sessao `Orcamentos em aberto por grupo de produtos` e componente reutilizavel proprio e aparece na configuracao da empresa em `Pagina inicial > Graficos Orcamentos`
+- A aba `Vendas` concentra `Devolucoes do mes`, `Vendas do mes por grupo de produtos`, `Vendas do mes por marca`, `Vendas do mes por UF`, `Vendas do mes por cliente`, `Vendas do mes por produto` e `Vendedores/Clientes em destaque`
 - `Devolucoes do mes` usa valores convertidos para positivo apenas para leitura do grafico
-- Os calculos das sessoes devem sempre explicitar o periodo e a regra usada no tooltip da propria sessao
+- O texto do tooltip de card e grafico deve ser simples e direto, com no maximo duas linhas curtas (`Composicao` e `Periodo`)
+- Para `Usuario padrao`, toda a aba da home (`cards` e `graficos`) usa apenas registros de `orcamentos` e `pedidos` do vendedor vinculado ao usuario (`idVendedor`)
+- Para `Administrador` e `Gestor`, a home mantem leitura consolidada da operacao sem recorte por vendedor
 - A pagina inicial segue em evolucao e a composicao atual da home deve ser lida pelos blocos documentados acima
 - As barras exibem novamente a descricao da etapa diretamente sobre a propria barra, junto do valor
 - A descricao dentro da barra usa a paleta do projeto com variacao baseada na cor da etapa, e o valor aparece em negrito
@@ -175,6 +182,7 @@ Utilitarios importantes:
 - A altura total das barras passa a respeitar o card lateral como limite visual no desktop
 - Ao clicar em outra barra do funil, o card lateral troca para a etapa correspondente
 - A pagina inicial foi separada em componentes proprios e usa arquivos CSS dedicados para indicadores e funil
+- Todo novo card/componente da pagina inicial deve ser reutilizavel e possuir arquivo CSS proprio em `client/src/recursos/estilos/`
 - O cabecalho e cada card de indicador da pagina inicial seguem o padrao de CSS separado por componente
 - O funil da pagina inicial foi dividido em subcomponentes com classes prefixadas por componente (`funilVendas...`, `inicioIndicadorResumo...`, `inicioCabecalho...`)
 - Todos os CSS desses componentes ficam centralizados em `client/src/recursos/estilos/`
@@ -198,6 +206,7 @@ Regras atualmente aplicadas no frontend:
 - `Usuario padrao` nao acessa `Empresa` nem `Usuarios` na tela de configuracoes
 - `Usuario padrao` consulta produtos, sem incluir, editar, importar ou inativar
 - `Usuario padrao` enxerga apenas clientes da carteira do vendedor vinculado
+- Na pagina inicial, `Usuario padrao` enxerga cards e graficos comerciais apenas de `orcamentos` e `pedidos` do proprio vendedor vinculado
 - Ao incluir cliente, `Usuario padrao` recebe o vendedor fixado e bloqueado
 - Na agenda, `Usuario padrao` nao pode excluir agendamentos
 - Em configuracoes reutilizadas dentro de cadastros, usuarios sem permissao entram em modo de consulta
@@ -390,6 +399,8 @@ Filtros da agenda:
 - Quando um pedido de `Devolucao` estiver em `Entregue`, o sistema exige um `Motivo da devolucao` em modal externo, vindo da tabela auxiliar de configuracao e validado sempre por `id`
 - A mesma exigencia do `Motivo da devolucao` tambem vale para a troca rapida de etapa direto no grid de pedidos
 - O modal de `Pedidos` agora possui a aba `Outros`, que concentra `Orcamento vinculado` e o campo visual do motivo, trazendo o valor preenchido quando existir ou vazio quando ainda nao houver motivo
+- A aba `Outros` do pedido tambem concentra `% de comissao` e `Valor da comissao`, mantendo o percentual editavel no proprio pedido e o valor calculado sobre o total liquido dos itens
+- O backend persiste `pedido.valorComissao` automaticamente em inclusao e edicao, calculando `total liquido dos itens x comissao (%)`; pedidos de devolucao debitam esse total por manterem valores negativos
 - A pagina inicial agora exibe a secao `Devolucoes do mes`, agrupando pedidos do tipo `Devolucao` por `Motivo da devolucao`, com quantidade por motivo e valor total convertido para positivo apenas para leitura do grafico
 - A pagina inicial agora exibe tambem `Vendas do mes por grupo de produtos`, com quantidade total dos itens vendidos, quantidade de pedidos e valor total por grupo nos pedidos com entrega no mes atual
 - A pagina inicial agora exibe tambem `Vendas do mes por marca`, com quantidade total dos itens vendidos, quantidade de pedidos e valor total por marca nos pedidos com entrega no mes atual

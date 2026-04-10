@@ -1,0 +1,21 @@
+.paginaInicioAjudaSessao {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(23, 145, 226, 0.16);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--corPrimariaForte);
+  cursor: help;
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+.paginaInicioAjudaSessaoIcone {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.9;
+}

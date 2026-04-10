@@ -5,7 +5,8 @@ export function SecaoFunilOrcamentosInicio({ itens, titulo = 'Funil de orcamento
     <SecaoResumoRelacionamentoComModalInicio
       titulo={titulo}
       colunasPainel={2}
-      conceito="Quantidade de produtos e valor total por etapa do funil, respeitando ordem e etapas consideradas."
+      composicao="Valor total e quantidade de itens por etapa do funil."
+      periodo="Posicao atual dos orcamentos em aberto nas etapas consideradas."
       itens={itens}
       mensagemVazia="Nenhuma etapa marcada para considerar no funil ou nenhum orcamento em aberto nessas etapas."
       modalTitulo={titulo}
