@@ -122,7 +122,7 @@ Padroes aplicados recentemente:
 - Todo modal aberto tenta focar automaticamente o primeiro campo editavel
 - Modais de confirmacao focam por padrao a acao principal de confirmacao, mantendo `Sim` ou `Confirmar` prontos para teclado
 - Quando um modal de busca de `Cliente` ou `Contato` devolve um registro ao formulario principal, o foco retorna para o campo que acabou de ser preenchido
-- O atalho global `PageDown` aciona o botao `Salvar` do modal de edicao que estiver no topo da pilha
+- O atalho global `PageDown` aciona a acao principal de edicao do contexto atual: prioriza `Salvar` no modal ativo; quando nao houver salvamento disponivel, dispara `Adicionar`, `Incluir` ou `Novo` no modal ou na pagina operacional
 - Em modais com abas, `Alt + Seta para a esquerda` navega para a aba anterior e `Alt + Seta para a direita` navega para a proxima aba visivel; ao trocar de aba, o foco vai para o primeiro campo da nova secao
 - Quando a busca de contatos for aberta com um cliente ja definido, o proprio modal permite incluir um novo contato e devolve esse contato ja selecionado no formulario atual
 - O cadastro de cliente reaproveita o mesmo fluxo de `Ramo de Atividade` usado em configuracoes
@@ -211,9 +211,9 @@ Regras atualmente aplicadas no frontend:
 - `Usuario padrao` nao pode alterar configuracoes administrativas
 - `Usuario padrao` nao acessa `Empresa` nem `Usuarios` na tela de configuracoes
 - `Usuario padrao` consulta produtos, sem incluir, editar, importar ou inativar
-- `Usuario padrao` enxerga apenas clientes da carteira do vendedor vinculado
+- `Usuario padrao` consulta a propria carteira na pagina de clientes
 - Na pagina inicial, `Usuario padrao` enxerga cards e graficos comerciais apenas de `orcamentos` e `pedidos` do proprio vendedor vinculado
-- Ao incluir cliente, `Usuario padrao` recebe o vendedor fixado e bloqueado
+- No grid de busca de cliente para incluir `Orcamentos` e `Pedidos`, `Usuario padrao` pode selecionar clientes de outros vendedores quando precisar abrir um novo registro comercial
 - Na agenda, `Usuario padrao` nao pode excluir agendamentos
 - Em configuracoes reutilizadas dentro de cadastros, usuarios sem permissao entram em modo de consulta
 
@@ -328,7 +328,7 @@ Campos atuais do agendamento:
 - Ao incluir um agendamento, o campo `Status da visita` passa a vir preenchido automaticamente com o status ativo de menor ordem
 - Os campos `Cliente` e `Contato do cliente` usam os mesmos modais reutilizaveis de busca do fluxo comercial
 - Ao voltar da busca de cliente ou contato para o agendamento, o foco retorna para o campo preenchido
-- Em modais da agenda, `PageDown` salva o formulario ativo
+- Em modais e telas operacionais da agenda, `PageDown` prioriza `Salvar`; se nao houver salvamento disponivel no contexto atual, aciona `Adicionar`, `Incluir` ou `Novo`
 
 Filtros da agenda:
 
@@ -354,11 +354,11 @@ Filtros da agenda:
 - Busca de contato por modal reutilizavel com inclusao rapida de novo contato quando o cliente ja estiver definido; o contato criado volta selecionado automaticamente no atendimento
 - Inclusao de cliente dentro da busca de clientes
 - Ao confirmar a busca de cliente ou contato, o foco retorna para o campo preenchido no modal principal
-- O modal de atendimento abre com foco no primeiro campo editavel e `PageDown` salva o formulario ativo
+- O modal de atendimento abre com foco no primeiro campo editavel e `PageDown` prioriza `Salvar`; se nao houver salvamento disponivel no contexto atual, aciona `Adicionar`, `Incluir` ou `Novo`
 - Quando o modal tiver abas, `Alt + Seta para a esquerda` e `Alt + Seta para a direita` alternam a secao ativa e reposicionam o foco no primeiro campo da nova aba
 - Campo de status do orcamento no proprio atendimento
 - Integracao com abertura de orcamento e pedido a partir do atendimento
-- Usuario administrador visualiza todos os clientes; `Usuario padrao` fica restrito a sua carteira
+- Usuario administrador visualiza todos os clientes; `Usuario padrao` fica restrito a sua carteira na pagina de clientes
 
 ### Orcamentos
 
@@ -389,7 +389,7 @@ Filtros da agenda:
 - A edicao do orcamento volta a ser permitida apenas quando o pedido vinculado e excluido, levando o registro para a etapa tecnica `Pedido Excluido`
 - Modais de confirmacao do fluxo comercial abrem como sobreposicao fixa acima da pagina, inclusive no lancamento de pedido a partir do grid
 - Os modais de orcamento abrem com foco no primeiro campo editavel; modais de confirmacao priorizam `Sim` ou `Confirmar`
-- O atalho `PageDown` salva o modal de orcamento que estiver no topo
+- O atalho `PageDown` prioriza `Salvar` no modal de orcamento; se nao houver salvamento disponivel no contexto atual, aciona `Adicionar`, `Incluir` ou `Novo`
 - Campos configuraveis extras para o orcamento
 - Os campos `Prazo de pagamento` nos modais de orcamento e pedido reutilizam o mesmo grid de `Prazos de pagamento` da area de Configuracoes, permitindo cadastrar, editar, inativar e selecionar o prazo sem sair do fluxo
 - Os atalhos que abrem tabelas configuraveis dentro dos modais tambem respeitam as permissoes do perfil; para `Usuario padrao`, os atalhos de configuracao sensiveis abrem em modo de consulta
@@ -427,7 +427,7 @@ Filtros da agenda:
 - A etapa do pedido pode ser alterada direto no grid, no mesmo padrao visual adotado em Orcamentos
 - O filtro da pagina de pedidos tem um botao unico de `Datas` que abre um modal com os intervalos de `Data de inclusao` e `Data de entrega`
 - Os modais de pedido abrem com foco no primeiro campo editavel; modais de confirmacao priorizam `Sim` ou `Confirmar`
-- O atalho `PageDown` salva o modal de pedido que estiver no topo
+- O atalho `PageDown` prioriza `Salvar` no modal de pedido; se nao houver salvamento disponivel no contexto atual, aciona `Adicionar`, `Incluir` ou `Novo`
 - Ao mover um pedido para a etapa `Entregue`, a `Data de entrega` passa automaticamente para a data atual; dentro do modal, essa data ainda pode ser ajustada antes de salvar
 - Quando um pedido chega em `Entregue`, o perfil `Usuario padrao` passa a consultar o registro sem edicao nem nova troca de etapa
 - O modal de pedido aberto a partir do fechamento de um orcamento permite fechar direto pelo botao, clique fora ou `Escape`, devolvendo o fluxo ao orcamento
@@ -570,11 +570,17 @@ Campos de destaque:
 - `Cor primaria do PDF do orcamento`
 - `Cor secundaria do PDF do orcamento`
 - `Cor de destaque do PDF do orcamento`
-- `Primeiro plano dos itens do PDF do orcamento` para priorizar `Descricao` ou `Referencia`
 
 Esses dados sao usados em:
 
 - Identidade visual usada na exportacao em PDF do orcamento
+
+Na aba `Orcamentos/Pedidos` do cadastro da `Empresa`, ficam as regras comerciais ligadas ao documento e ao fluxo:
+
+- `Validade padrao do orcamento`
+- `Prazo padrao de entrega do pedido`
+- `Codigo principal do cliente`
+- `Primeiro plano dos itens` para priorizar `Descricao` ou `Referencia` nos grids de itens e no PDF do orcamento
 
 ### Usuarios
 

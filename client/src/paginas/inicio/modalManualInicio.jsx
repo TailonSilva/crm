@@ -23,7 +23,7 @@ export function ModalManualInicio({
         {
           titulo: 'Indicadores iniciais',
           descricao: 'A home abre com cards compactos de leitura rapida.',
-          detalhe: 'Hoje incluem Orcamentos em aberto, Pedidos no mes, Comissao no mes, Positivacao no mes, % Positivacao da carteira, Catalogo e Carteira.',
+          detalhe: 'Hoje incluem Orcamentos em aberto, Pedidos no mes, Media de dias para conversao, Comissao no mes, Positivacao no mes, % Positivacao da carteira, Catalogo e Carteira.',
           icone: 'inicio'
         },
         {

@@ -1,4 +1,5 @@
 import { ModalBuscaTabela } from './modalBuscaTabela';
+import { normalizarPreco } from '../../utilitarios/normalizarPreco';
 
 export function ModalBuscaProdutos({
   aberto,
@@ -30,7 +31,7 @@ export function ModalBuscaProdutos({
         },
         { key: 'referencia', label: 'Referencia', render: (produto) => produto.referencia || '-' },
         { key: 'descricao', label: 'Descricao', render: (produto) => produto.descricao || '-' },
-        { key: 'preco', label: 'Preco', render: (produto) => produto.preco || '-' }
+        { key: 'preco', label: 'Preco', render: (produto) => normalizarPreco(produto.preco || 0) }
       ]}
       registros={produtos}
       obterTextoBusca={(produto) => [

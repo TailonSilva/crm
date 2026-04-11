@@ -46,9 +46,9 @@ rotaOrcamentos.get('/', async (requisicao, resposta) => {
     adicionarFiltroPeriodo(clausulas, parametros, 'orcamento.dataInclusao', query.dataInclusaoInicio, query.dataInclusaoFim);
     adicionarFiltroPeriodo(clausulas, parametros, 'orcamento.dataFechamento', query.dataFechamentoInicio, query.dataFechamentoFim);
 
-    if (query.escopoIdVendedor && query.escopoIdUsuario) {
-      clausulas.push('(cliente.idVendedor = ? OR orcamento.idUsuario = ?)');
-      parametros.push(Number(query.escopoIdVendedor), Number(query.escopoIdUsuario));
+    if (query.escopoIdVendedor) {
+      clausulas.push('orcamento.idVendedor = ?');
+      parametros.push(Number(query.escopoIdVendedor));
     }
 
     const registros = await consultarTodos(`

@@ -784,7 +784,7 @@ export function ModalPedido({
                 )}
               </div>
 
-              <div className="linhaOrcamentoComercial linhaPedidoComercialEstendida">
+              <div className="linhaOrcamentoComercial">
                 {modoInclusao ? (
                   <>
                     <CampoSelect
@@ -880,6 +880,7 @@ export function ModalPedido({
                   cabecalho={(
                     <tr>
                       <th>Foto</th>
+                      <th>Codigo</th>
                       <th>Produto</th>
                       <th>Quantidade</th>
                       <th>Valor unitario</th>
@@ -893,6 +894,7 @@ export function ModalPedido({
                 >
                   {formulario.itens.map((item, indice) => {
                     const imagemItem = item.imagem || '';
+                    const apresentacaoProduto = montarApresentacaoProdutoPedido(item, empresa);
 
                     return (
                       <tr key={`${item.idItemPedido || indice}-${indice}`}>
@@ -905,7 +907,15 @@ export function ModalPedido({
                             </div>
                           )}
                         </td>
-                        <td>{item.descricaoProdutoSnapshot || 'Produto nao informado'}</td>
+                        <td><CodigoRegistro valor={item.idProduto || 0} /></td>
+                        <td>
+                          <div className="produtoGradeItemPedido">
+                            <strong>{apresentacaoProduto.principal}</strong>
+                            {apresentacaoProduto.secundario ? (
+                              <span>{apresentacaoProduto.secundario}</span>
+                            ) : null}
+                          </div>
+                        </td>
                         <td>{item.quantidade}</td>
                         <td>{normalizarPreco(item.valorUnitario)}</td>
                         <td>{normalizarPreco(item.valorTotal)}</td>
@@ -1025,8 +1035,9 @@ export function ModalPedido({
         </div>
 
         <MensagemErroPopup mensagem={mensagemErro} titulo="Nao foi possivel salvar o pedido." />
+      </form>
 
-        {confirmandoSaida ? (
+      {confirmandoSaida ? (
           <div className="camadaConfirmacaoModal" role="presentation" onMouseDown={() => definirConfirmandoSaida(false)}>
             <div
               className="modalConfirmacaoAgenda"
@@ -1049,7 +1060,7 @@ export function ModalPedido({
           </div>
         ) : null}
 
-        <ModalItemProduto
+      <ModalItemProduto
           aberto={modalItemAberto}
           titulo={somenteLeitura ? 'Consultar item do pedido' : 'Editar item do pedido'}
           somenteLeitura={somenteLeitura}
@@ -1065,9 +1076,9 @@ export function ModalPedido({
           onFecharBuscaProduto={fecharModalBuscaProduto}
           onSelecionarProduto={selecionarProdutoBusca}
           obterIniciais={obterIniciaisItemPedido}
-        />
+      />
 
-        <ModalCliente
+      <ModalCliente
           aberto={modalClienteAberto}
           cliente={null}
           empresa={empresa}
@@ -1080,9 +1091,9 @@ export function ModalPedido({
           idVendedorBloqueado={idVendedorBloqueado}
           aoFechar={fecharModalNovoCliente}
           aoSalvar={salvarNovoCliente}
-        />
+      />
 
-        <ModalBuscaClientes
+      <ModalBuscaClientes
           aberto={modalBuscaClienteAberto}
           empresa={empresa}
           clientes={clientesAtivos}
@@ -1097,18 +1108,18 @@ export function ModalPedido({
             : null}
           aoSelecionar={selecionarCliente}
           aoFechar={fecharModalBuscaCliente}
-        />
+      />
 
-        <ModalBuscaContatos
+      <ModalBuscaContatos
           aberto={modalBuscaContatoAberto}
           idCliente={formulario.idCliente}
           contatos={contatosDoCliente}
           aoCriarContato={registrarContatoCriado}
           aoSelecionar={selecionarContato}
           aoFechar={fecharModalBuscaContato}
-        />
+      />
 
-        <ModalPrazosPagamento
+      <ModalPrazosPagamento
           aberto={modalPrazosPagamentoAberto}
           prazosPagamento={prazosPagamento}
           metodosPagamento={metodosPagamento}
@@ -1120,9 +1131,9 @@ export function ModalPedido({
           aoSelecionarPrazo={async (prazo) => {
             selecionarPrazoPagamento(prazo);
           }}
-        />
+      />
 
-        {modalMotivoDevolucaoAberto ? (
+      {modalMotivoDevolucaoAberto ? (
           <div className="camadaConfirmacaoModal" role="presentation" onMouseDown={fecharModalMotivoDevolucao}>
             <div
               className="modalConfirmacaoAgenda modalEtapaRapidaOrcamento"
@@ -1172,7 +1183,7 @@ export function ModalPedido({
           </div>
         ) : null}
 
-        <ModalCadastroConfiguracao
+      <ModalCadastroConfiguracao
           aberto={modalCadastroMotivoDevolucaoAberto}
           titulo="Motivos da devolucao"
           rotuloIncluir="Incluir motivo"
@@ -1195,8 +1206,7 @@ export function ModalPedido({
           aoFechar={() => definirModalCadastroMotivoDevolucaoAberto(false)}
           aoSalvar={salvarMotivoDevolucaoRapido}
           aoInativar={async () => null}
-        />
-      </form>
+      />
     </div>
   );
 }
@@ -1208,6 +1218,28 @@ function CampoFormulario({ label, name, type = 'text', ...props }) {
       <input id={name} name={name} type={type} className="entradaFormulario" {...props} />
     </div>
   );
+}
+
+function montarApresentacaoProdutoPedido(item, empresa) {
+  const destaque = normalizarDestaqueItemOrcamentoPdf(empresa?.destaqueItemOrcamentoPdf);
+  const referencia = String(item?.referenciaProdutoSnapshot || '').trim();
+  const descricao = String(item?.descricaoProdutoSnapshot || '').trim() || 'Produto nao informado';
+
+  if (destaque === 'referencia' && referencia) {
+    return {
+      principal: referencia,
+      secundario: descricao
+    };
+  }
+
+  return {
+    principal: descricao,
+    secundario: referencia || ''
+  };
+}
+
+function normalizarDestaqueItemOrcamentoPdf(valor) {
+  return String(valor || '').trim() === 'referencia' ? 'referencia' : 'descricao';
 }
 
 function CampoFormularioComAcao({ label, name, acaoExtra = null, ...props }) {

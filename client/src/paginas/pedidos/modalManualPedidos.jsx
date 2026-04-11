@@ -35,7 +35,7 @@ export function ModalManualPedidos({
         {
           titulo: 'Grade operacional',
           descricao: `${pedidos.length} pedido(s) aparecem no recorte atual.`,
-          detalhe: 'A listagem cruza cliente, usuario, vendedor e etapa do pedido.',
+          detalhe: 'Para Usuario padrao, a listagem considera apenas os pedidos em que ele proprio e o vendedor do registro.',
           icone: 'pedido'
         },
         {
@@ -93,6 +93,7 @@ export function ModalManualPedidos({
           titulo: 'O que o modal concentra',
           itens: [
             'Cliente, contato, usuario do registro e vendedor compoem a base comercial do pedido, com atalhos de busca para cliente e contato no modo de inclusao.',
+            'Na busca de clientes do pedido, Usuario padrao tambem pode selecionar clientes vinculados a outros vendedores para abrir um novo pedido.',
             'A busca de clientes tambem permite incluir um novo cliente sem sair do fluxo.',
             'Ao abrir a busca de contatos com um cliente ja definido, o proprio modal permite cadastrar um novo contato e devolver esse contato ja selecionado no pedido.',
             'Ao confirmar a busca de cliente ou contato, o foco retorna para o campo preenchido no pedido.',
@@ -106,7 +107,7 @@ export function ModalManualPedidos({
             'Prazos de pagamento podem ser cadastrados no proprio fluxo, respeitando o perfil.',
             'Campos personalizados do pedido aparecem conforme a configuracao carregada no sistema.',
             'Nas abas do modal do pedido, `Alt + Seta para a esquerda` volta para a aba anterior e `Alt + Seta para a direita` avanca para a proxima, reposicionando o foco no primeiro campo da nova aba.',
-            'O modal abre no primeiro campo editavel, confirmacoes focam a acao principal e `PageDown` salva o formulario ativo.'
+            'O modal abre no primeiro campo editavel, confirmacoes focam a acao principal e `PageDown` prioriza Salvar; quando nao houver salvamento disponivel, ele aciona Adicionar, Incluir ou Novo no contexto atual.'
           ]
         },
         {

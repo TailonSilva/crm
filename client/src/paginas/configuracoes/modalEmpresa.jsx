@@ -383,6 +383,17 @@ export function ModalEmpresa({
                 ]}
                 disabled={somenteLeitura}
               />
+              <CampoSelect
+                label="Primeiro plano dos itens"
+                name="destaqueItemOrcamentoPdf"
+                value={formulario.destaqueItemOrcamentoPdf}
+                onChange={alterarCampo}
+                options={[
+                  { valor: 'descricao', label: 'Descricao em primeiro plano' },
+                  { valor: 'referencia', label: 'Referencia em primeiro plano' }
+                ]}
+                disabled={somenteLeitura}
+              />
               <CampoSelecaoMultiplaModal
                 className="campoFormularioIntegral"
                 label="Filtro padrao de status do orcamento"

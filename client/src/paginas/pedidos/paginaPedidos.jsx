@@ -49,11 +49,11 @@ import { ModalColunasGridPedidos } from '../configuracoes/modalColunasGridPedido
 const ID_ETAPA_PEDIDO_ENTREGUE = 5;
 const ID_TIPO_PEDIDO_DEVOLUCAO = 2;
 
-function criarFiltrosIniciaisPedidos() {
+function criarFiltrosIniciaisPedidos(usuarioLogado) {
   return {
     idCliente: '',
     idUsuario: '',
-    idVendedor: '',
+    idVendedor: usuarioLogado?.idVendedor ? [String(usuarioLogado.idVendedor)] : [],
     idEtapaPedido: [],
     dataInclusaoInicio: '',
     dataInclusaoFim: '',
@@ -92,6 +92,13 @@ function normalizarFiltrosPedidos(filtros, filtrosPadrao) {
     ...filtrosNormalizados,
     ...periodoInclusao,
     ...periodoEntrega,
+    idVendedor: Array.isArray(filtros?.idVendedor)
+      ? normalizarListaFiltroPersistido(filtros.idVendedor)
+      : normalizarListaFiltroPersistido(
+        filtros?.idVendedor
+          ? [filtros.idVendedor]
+          : []
+      ),
     idEtapaPedido: Array.isArray(filtros?.idEtapaPedido)
       ? normalizarListaFiltroPersistido(filtros.idEtapaPedido)
       : normalizarListaFiltroPersistido(
@@ -104,10 +111,14 @@ function normalizarFiltrosPedidos(filtros, filtrosPadrao) {
 
 export function PaginaPedidos({ usuarioLogado }) {
   const [pesquisa, definirPesquisa] = useState('');
+  const filtrosIniciais = useMemo(
+    () => criarFiltrosIniciaisPedidos(usuarioLogado),
+    [usuarioLogado?.idVendedor]
+  );
   const [filtros, definirFiltros] = useFiltrosPersistidos({
     chave: 'paginaPedidos',
     usuario: usuarioLogado,
-    filtrosPadrao: criarFiltrosIniciaisPedidos(),
+    filtrosPadrao: filtrosIniciais,
     normalizarFiltros: normalizarFiltrosPedidos
   });
   const [pedidos, definirPedidos] = useState([]);
@@ -299,7 +310,12 @@ export function PaginaPedidos({ usuarioLogado }) {
     try {
       const pedidosCarregados = await listarPedidos({
         search: pesquisa,
-        ...filtros
+        ...filtros,
+        ...(usuarioSomenteVendedor
+          ? {
+            escopoIdVendedor: usuarioLogado?.idVendedor
+          }
+          : {})
       });
 
       definirPedidos(enriquecerPedidos(
@@ -492,7 +508,7 @@ export function PaginaPedidos({ usuarioLogado }) {
     () => normalizarColunasGridPedidos(empresa?.colunasGridPedidos),
     [empresa?.colunasGridPedidos]
   );
-  const filtrosAtivos = JSON.stringify(filtros) !== JSON.stringify(criarFiltrosIniciaisPedidos());
+  const filtrosAtivos = JSON.stringify(filtros) !== JSON.stringify(filtrosIniciais);
 
   return (
     <>
@@ -592,6 +608,9 @@ export function PaginaPedidos({ usuarioLogado }) {
           {
             name: 'idVendedor',
             label: 'Vendedor',
+            multiple: true,
+            placeholder: 'Todos os vendedores',
+            disabled: Boolean(usuarioSomenteVendedor),
             options: vendedores.map((vendedor) => ({
               valor: String(vendedor.idVendedor),
               label: vendedor.nome
@@ -636,7 +655,7 @@ export function PaginaPedidos({ usuarioLogado }) {
           definirFiltros(proximosFiltros);
           definirModalFiltrosAberto(false);
         }}
-        aoLimpar={() => definirFiltros(criarFiltrosIniciaisPedidos())}
+        aoLimpar={() => definirFiltros(criarFiltrosIniciaisPedidos(usuarioLogado))}
       />
 
       <ModalPedido

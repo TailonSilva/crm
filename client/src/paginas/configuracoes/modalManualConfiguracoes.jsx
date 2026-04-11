@@ -105,6 +105,7 @@ export function ModalManualConfiguracoes({
             'As grades de configuracao, historico e relatorio priorizam leitura sem rolagem horizontal, com colunas curtas mais contidas e colunas textuais mais flexiveis.',
             'Metodos, prazos, etapas e campos personalizados abastecem Orcamentos e Pedidos.',
             'Parametros da empresa influenciam layout de PDF, expediente, regras operacionais do cadastro e agora tambem a composicao da pagina inicial nas abas Orcamentos e Vendas.',
+            'O campo Primeiro plano dos itens fica na aba Orcamentos/Pedidos do cadastro da Empresa e define se descricao ou referencia aparece primeiro nos itens do fluxo comercial e no PDF do orcamento.',
             'Nos modais com abas, `Alt + Seta para a esquerda` volta para a aba anterior e `Alt + Seta para a direita` avanca para a proxima, reposicionando o foco no primeiro campo da nova aba.'
           ]
         }

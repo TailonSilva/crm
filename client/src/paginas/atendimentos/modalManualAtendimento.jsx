@@ -96,7 +96,7 @@ export function ModalManualAtendimento({
     {
       titulo: 'Foco e atalho',
       descricao: 'O modal abre no primeiro campo editavel; confirmacoes deixam `Sim` ou `Confirmar` prontos para teclado.',
-      detalhe: '`PageDown` salva o formulario do atendimento que estiver aberto.',
+      detalhe: '`PageDown` prioriza Salvar e, quando nao houver salvamento disponivel, aciona Adicionar, Incluir ou Novo no contexto atual.',
       icone: 'manual'
     }
   ];

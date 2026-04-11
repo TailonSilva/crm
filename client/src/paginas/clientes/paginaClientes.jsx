@@ -68,11 +68,10 @@ export function PaginaClientes({ usuarioLogado }) {
   const [importando, definirImportando] = useState(false);
   const [clienteEmEdicao, definirClienteEmEdicao] = useState(null);
   const [modoModalCliente, definirModoModalCliente] = useState('novo');
-  const usuarioSomenteVendedor = usuarioLogado?.tipo === 'Usuario padrao' && usuarioLogado?.idVendedor;
   const filtrosIniciais = useMemo(() => ({
     ...filtrosIniciaisClientes,
-    idVendedor: usuarioSomenteVendedor ? [String(usuarioLogado.idVendedor)] : []
-  }), [usuarioSomenteVendedor, usuarioLogado?.idVendedor]);
+    idVendedor: []
+  }), []);
   const [filtros, definirFiltros] = useFiltrosPersistidos({
     chave: 'paginaClientes',
     usuario: usuarioLogado,
@@ -82,11 +81,11 @@ export function PaginaClientes({ usuarioLogado }) {
 
   useEffect(() => {
     carregarContexto();
-  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor]);
+  }, []);
 
   useEffect(() => {
     carregarGradeClientes();
-  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor, pesquisa, JSON.stringify(filtros)]);
+  }, [pesquisa, JSON.stringify(filtros)]);
 
   useEffect(() => {
     function tratarGrupoEmpresaAtualizado() {
@@ -99,7 +98,7 @@ export function PaginaClientes({ usuarioLogado }) {
     return () => {
       window.removeEventListener('grupo-empresa-atualizado', tratarGrupoEmpresaAtualizado);
     };
-  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor, pesquisa, JSON.stringify(filtros)]);
+  }, [pesquisa, JSON.stringify(filtros)]);
 
   useEffect(() => {
     function tratarEmpresaAtualizada() {
@@ -112,7 +111,7 @@ export function PaginaClientes({ usuarioLogado }) {
     return () => {
       window.removeEventListener('empresa-atualizada', tratarEmpresaAtualizada);
     };
-  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor, pesquisa, JSON.stringify(filtros)]);
+  }, [pesquisa, JSON.stringify(filtros)]);
 
   useEffect(() => {
     function tratarAtalhosClientes(evento) {
@@ -180,13 +179,9 @@ export function PaginaClientes({ usuarioLogado }) {
         filtros
       });
 
-      const clientesVisiveis = usuarioSomenteVendedor
-        ? clientesCarregados.filter((cliente) => cliente.idVendedor === usuarioLogado.idVendedor)
-        : clientesCarregados;
-
       definirClientes(
         enriquecerClientes(
-          clientesVisiveis,
+          clientesCarregados,
           contatos,
           vendedores,
           gruposEmpresa,
@@ -223,7 +218,7 @@ export function PaginaClientes({ usuarioLogado }) {
   async function salvarCliente(dadosCliente) {
     const payload = normalizarPayloadCliente({
       ...dadosCliente,
-      idVendedor: usuarioSomenteVendedor ? String(usuarioLogado.idVendedor) : dadosCliente.idVendedor,
+      idVendedor: dadosCliente.idVendedor,
       idCliente: clienteEmEdicao?.idCliente || proximoCodigoCliente
     });
     let clienteSalvo;
@@ -250,7 +245,7 @@ export function PaginaClientes({ usuarioLogado }) {
     try {
       const resultado = await importarClientesPlanilha({
         linhas,
-        idVendedorPadrao: usuarioSomenteVendedor ? usuarioLogado.idVendedor : null
+        idVendedorPadrao: null
       });
 
       definirResultadoImportacao(resultado);
@@ -369,9 +364,7 @@ export function PaginaClientes({ usuarioLogado }) {
   ));
   const opcoesEstado = obterOpcoesTexto(clientes, 'estado');
   const opcoesCidade = obterOpcoesTexto(clientes, 'cidade');
-  const vendedoresDisponiveis = usuarioSomenteVendedor
-    ? vendedores.filter((vendedor) => vendedor.idVendedor === usuarioLogado.idVendedor)
-    : vendedores;
+  const vendedoresDisponiveis = vendedores;
   const referenciasImportacaoClientes = useMemo(() => ({
     vendedor: {
       opcoes: vendedoresDisponiveis.map((vendedor) => ({
@@ -454,7 +447,6 @@ export function PaginaClientes({ usuarioLogado }) {
             name: 'idVendedor',
             label: 'Vendedor',
             multiple: true,
-            disabled: Boolean(usuarioSomenteVendedor),
             placeholder: 'Todos os vendedores',
             options: vendedoresDisponiveis.map((vendedor) => ({
               valor: String(vendedor.idVendedor),
@@ -504,7 +496,7 @@ export function PaginaClientes({ usuarioLogado }) {
         empresa={empresa}
         somenteConsultaRamos={false}
         somenteConsultaGrupos={false}
-        idVendedorBloqueado={usuarioSomenteVendedor ? usuarioLogado.idVendedor : null}
+        idVendedorBloqueado={null}
         aoFechar={fecharModalCliente}
         aoSalvarRamoAtividade={salvarRamoAtividade}
         aoInativarRamoAtividade={inativarRamoAtividadeCliente}

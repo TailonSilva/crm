@@ -1,7 +1,7 @@
 import { Botao } from './botao';
 import { MensagemErroPopup } from './mensagemErroPopup';
 import { CampoImagemPadrao } from './campoImagemPadrao';
-import { ModalBuscaTabela } from './modalBuscaTabela';
+import { ModalBuscaProdutos } from './modalBuscaProdutos';
 
 export function ModalItemProduto({
   aberto,
@@ -119,29 +119,11 @@ export function ModalItemProduto({
           <MensagemErroPopup mensagem={mensagemErro} titulo="Nao foi possivel salvar o item." />
         </div>
 
-        <ModalBuscaTabela
+        <ModalBuscaProdutos
           aberto={modalBuscaProdutoAberto}
-          titulo="Buscar produto"
           placeholder="Pesquisar produtos"
           ariaLabelPesquisa="Pesquisar produtos"
-          colunas={[
-            {
-              key: 'codigo',
-              label: 'Codigo',
-              render: (produto) => `#${String(produto.idProduto).padStart(4, '0')}`
-            },
-            { key: 'referencia', label: 'Referencia', render: (produto) => produto.referencia || '-' },
-            { key: 'descricao', label: 'Descricao', render: (produto) => produto.descricao || '-' },
-            { key: 'preco', label: 'Preco', render: (produto) => produto.preco || '-' }
-          ]}
-          registros={produtos}
-          obterTextoBusca={(produto) => [
-            produto.idProduto,
-            produto.referencia,
-            produto.descricao,
-            produto.preco
-          ].join(' ')}
-          obterChaveRegistro={(produto) => produto.idProduto}
+          produtos={produtos}
           aoSelecionar={onSelecionarProduto}
           aoFechar={onFecharBuscaProduto}
         />

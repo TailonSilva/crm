@@ -19,10 +19,18 @@ export const cardsPaginaInicial = [
     visivelPadrao: true
   },
   {
+    id: 'mediaDiasConversaoMes',
+    rotulo: 'Media de dias para conversao',
+    ajudaConfiguracao: 'Mostra a media de dias entre inclusao e fechamento dos orcamentos que chegaram na etapa Fechado no mes corrente.',
+    ordemPadrao: 3,
+    spanPadrao: 2,
+    visivelPadrao: true
+  },
+  {
     id: 'atendimentosMes',
     rotulo: 'Atendimentos no mes',
     ajudaConfiguracao: 'Mostra a quantidade total de atendimentos registrados no mes corrente.',
-    ordemPadrao: 3,
+    ordemPadrao: 4,
     spanPadrao: 2,
     visivelPadrao: true
   },
@@ -30,7 +38,7 @@ export const cardsPaginaInicial = [
     id: 'quantidadeVendidaMes',
     rotulo: 'Quantidade vendida no mes',
     ajudaConfiguracao: 'Mostra a quantidade bruta de itens vendidos no mes corrente, sem debitar devolucoes.',
-    ordemPadrao: 4,
+    ordemPadrao: 5,
     spanPadrao: 2,
     visivelPadrao: true
   },
@@ -38,7 +46,7 @@ export const cardsPaginaInicial = [
     id: 'comissaoMes',
     rotulo: 'Comissao no mes',
     ajudaConfiguracao: 'Mostra a comissao liquida do mes corrente com base na comissao dos pedidos.',
-    ordemPadrao: 5,
+    ordemPadrao: 6,
     spanPadrao: 2,
     visivelPadrao: true
   },
@@ -46,7 +54,7 @@ export const cardsPaginaInicial = [
     id: 'positivacaoMes',
     rotulo: 'Positivacao no mes',
     ajudaConfiguracao: 'Mostra quantos clientes diferentes fizeram pedidos no mes corrente.',
-    ordemPadrao: 6,
+    ordemPadrao: 7,
     spanPadrao: 2,
     visivelPadrao: true
   },
@@ -54,7 +62,7 @@ export const cardsPaginaInicial = [
     id: 'percentualPositivacaoCarteiraMes',
     rotulo: '% Positivacao da carteira',
     ajudaConfiguracao: 'Mostra o percentual da carteira ativa que comprou no mes corrente.',
-    ordemPadrao: 7,
+    ordemPadrao: 8,
     spanPadrao: 2,
     visivelPadrao: true
   },
@@ -62,7 +70,7 @@ export const cardsPaginaInicial = [
     id: 'catalogo',
     rotulo: 'Catalogo',
     ajudaConfiguracao: 'Mostra a quantidade de produtos ativos no cadastro.',
-    ordemPadrao: 8,
+    ordemPadrao: 9,
     spanPadrao: 2,
     visivelPadrao: true
   },
@@ -70,7 +78,7 @@ export const cardsPaginaInicial = [
     id: 'carteira',
     rotulo: 'Carteira',
     ajudaConfiguracao: 'Mostra a quantidade de clientes ativos no cadastro.',
-    ordemPadrao: 9,
+    ordemPadrao: 10,
     spanPadrao: 2,
     visivelPadrao: true
   }

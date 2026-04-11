@@ -44,6 +44,7 @@ import { SecaoConfiguravelInicio } from './componentes/secaoConfiguravelInicio';
 import { ModalManualInicio } from './modalManualInicio';
 import { criarResumoFunilVendas } from './utilitarios/criarResumoFunilVendas';
 
+const ID_ETAPA_ORCAMENTO_FECHADO = 1;
 const IDS_ETAPAS_ORCAMENTO_FECHADAS = new Set([1, 2, 3, 4]);
 const ID_ETAPA_PEDIDO_ENTREGUE = 5;
 const ID_TIPO_PEDIDO_DEVOLUCAO = 2;
@@ -313,6 +314,13 @@ function montarPainel(dados, usuarioLogado) {
   const hoje = dataInput(new Date());
   const orcamentosAbertos = orcamentos.filter((item) => !orcamentoEhFechado(item));
   const orcamentosMes = orcamentos.filter((item) => dataNoPeriodo(item.dataInclusao, inicioMes, fimMes));
+  const orcamentosFechadosMes = orcamentos.filter((item) => (
+    Number(item.idEtapaOrcamento) === ID_ETAPA_ORCAMENTO_FECHADO
+    && dataNoPeriodo(item.dataFechamento, inicioMes, fimMes)
+  ));
+  const orcamentosFechadosMesConversao = usuarioLogado?.tipo === 'Usuario padrao'
+    ? orcamentosFechadosMes.filter((item) => String(item.idUsuario) === String(usuarioLogado?.idUsuario || ''))
+    : orcamentosFechadosMes;
   const pedidosMes = pedidos.filter((item) => dataNoPeriodo(item.dataInclusao, inicioMes, fimMes));
   const positivacaoMes = new Set(
     pedidosMes
@@ -343,6 +351,7 @@ function montarPainel(dados, usuarioLogado) {
     : atendimentosMes;
   const valorAberto = somarTotais(orcamentosAbertos);
   const faturamentoMes = somarTotais(pedidosEntregaMes);
+  const mediaDiasConversaoMes = calcularMediaDiasConversao(orcamentosFechadosMesConversao);
   const quantidadeVendidaMesBruta = somarQuantidadeItensBruta(pedidosMes);
   const comissaoMes = somarComissoes(pedidosMes);
   const ticketMedio = pedidosEntregaMes.length ? faturamentoMes / pedidosEntregaMes.length : 0;
@@ -498,6 +507,18 @@ function montarPainel(dados, usuarioLogado) {
         ajuda: {
           composicao: 'Quantidade de pedidos e valor liquido dos itens.',
           periodo: 'Mes corrente pela data de inclusao do pedido.'
+        }
+      },
+      {
+        id: 'mediaDiasConversaoMes',
+        icone: 'agenda',
+        titulo: 'Media de dias para conversao',
+        valor: formatarNumeroInteiro(mediaDiasConversaoMes),
+        valorComplemento: 'dias',
+        descricao: 'Tempo medio para fechar no mes atual.',
+        ajuda: {
+          composicao: `${orcamentosFechadosMesConversao.length} orcamentos na etapa Fechado, medindo da inclusao ate o fechamento.`,
+          periodo: 'Mes corrente pela data de fechamento do orcamento.'
         }
       },
       {
@@ -845,6 +866,18 @@ function criarPainelBase(usuarioLogado) {
         ajuda: {
           composicao: 'Quantidade de pedidos e valor liquido dos itens.',
           periodo: 'Mes corrente pela data de inclusao do pedido.'
+        }
+      },
+      {
+        id: 'mediaDiasConversaoMes',
+        icone: 'agenda',
+        titulo: 'Media de dias para conversao',
+        valor: formatarNumeroInteiro(0),
+        valorComplemento: 'dias',
+        descricao: '',
+        ajuda: {
+          composicao: 'Media entre a data de inclusao e a data de fechamento dos orcamentos na etapa Fechado.',
+          periodo: 'Mes corrente pela data de fechamento do orcamento.'
         }
       },
       {
@@ -1588,6 +1621,19 @@ function somarComissoes(registros) {
   return (registros || []).reduce((total, item) => total + valorComissaoRegistro(item), 0);
 }
 
+function calcularMediaDiasConversao(registros) {
+  const diferencas = (registros || [])
+    .map((registro) => diferencaDias(registro?.dataInclusao, registro?.dataFechamento))
+    .filter((valor) => Number.isFinite(valor) && valor >= 0);
+
+  if (diferencas.length === 0) {
+    return 0;
+  }
+
+  const total = diferencas.reduce((acumulado, valor) => acumulado + valor, 0);
+  return total / diferencas.length;
+}
+
 function totalRegistro(registro) {
   return Array.isArray(registro?.itens)
     ? registro.itens.reduce((total, item) => total + (Number(item?.valorTotal) || 0), 0)
@@ -1696,4 +1742,10 @@ function formatarPercentualTaxa(valor) {
   const numero = Number(valor);
   const percentual = Number.isFinite(numero) ? numero : 0;
   return `${percentual.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+}
+
+function formatarNumeroInteiro(valor) {
+  const numero = Number(valor);
+  const inteiro = Number.isFinite(numero) ? Math.round(numero) : 0;
+  return inteiro.toLocaleString('pt-BR');
 }

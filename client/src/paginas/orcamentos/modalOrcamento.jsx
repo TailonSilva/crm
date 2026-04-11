@@ -877,6 +877,7 @@ export function ModalOrcamento({
                   cabecalho={(
                     <tr>
                       <th>Foto</th>
+                      <th>Codigo</th>
                       <th>Produto</th>
                       <th>Quantidade</th>
                       <th>Valor unitario</th>
@@ -890,6 +891,7 @@ export function ModalOrcamento({
                 >
                   {formulario.itens.map((item, indice) => {
                     const imagemItem = item.imagem || '';
+                    const apresentacaoProduto = montarApresentacaoProdutoOrcamento(item, empresa);
 
                     return (
                       <tr key={`${item.idItemOrcamento || indice}-${indice}`}>
@@ -902,7 +904,15 @@ export function ModalOrcamento({
                             </div>
                           )}
                         </td>
-                        <td>{item.descricaoProdutoSnapshot || 'Produto nao informado'}</td>
+                        <td><CodigoRegistro valor={item.idProduto || 0} /></td>
+                        <td>
+                          <div className="produtoGradeItemPedido">
+                            <strong>{apresentacaoProduto.principal}</strong>
+                            {apresentacaoProduto.secundario ? (
+                              <span>{apresentacaoProduto.secundario}</span>
+                            ) : null}
+                          </div>
+                        </td>
                         <td>{item.quantidade}</td>
                         <td>{normalizarPreco(item.valorUnitario)}</td>
                         <td>{normalizarPreco(item.valorTotal)}</td>
@@ -983,8 +993,9 @@ export function ModalOrcamento({
         </div>
 
         <MensagemErroPopup mensagem={mensagemErro} titulo="Nao foi possivel salvar o orcamento." />
+      </form>
 
-        {confirmandoSaida ? (
+      {confirmandoSaida ? (
           <div className="camadaConfirmacaoModal" role="presentation" onMouseDown={() => definirConfirmandoSaida(false)}>
             <div
               className="modalConfirmacaoAgenda"
@@ -1007,7 +1018,7 @@ export function ModalOrcamento({
           </div>
         ) : null}
 
-        <ModalCliente
+      <ModalCliente
           aberto={modalClienteAberto}
           cliente={null}
           empresa={empresa}
@@ -1020,9 +1031,9 @@ export function ModalOrcamento({
           idVendedorBloqueado={idVendedorBloqueado}
           aoFechar={fecharModalNovoCliente}
           aoSalvar={salvarNovoCliente}
-        />
+      />
 
-        <ModalBuscaClientes
+      <ModalBuscaClientes
           aberto={modalBuscaClienteAberto}
           empresa={empresa}
           clientes={clientes}
@@ -1039,9 +1050,9 @@ export function ModalOrcamento({
             : null}
           aoSelecionar={selecionarCliente}
           aoFechar={fecharModalBuscaCliente}
-        />
+      />
 
-        <ModalBuscaContatos
+      <ModalBuscaContatos
           aberto={modalBuscaContatoAberto}
           idCliente={formulario.idCliente}
           contatos={contatosDoCliente}
@@ -1050,9 +1061,9 @@ export function ModalOrcamento({
           aoCriarContato={registrarContatoCriado}
           aoSelecionar={selecionarContato}
           aoFechar={fecharModalBuscaContato}
-        />
+      />
 
-        <ModalPrazosPagamento
+      <ModalPrazosPagamento
           aberto={modalPrazosPagamentoAberto}
           prazosPagamento={prazosPagamento}
           metodosPagamento={metodosPagamento}
@@ -1064,16 +1075,16 @@ export function ModalOrcamento({
           aoSelecionarPrazo={async (prazo) => {
             selecionarPrazoPagamento(prazo);
           }}
-        />
+      />
 
-        <PopupAvisos
+      <PopupAvisos
           avisos={avisosPopup}
           aoFechar={(idAviso) => {
             definirAvisosPopup((estadoAtual) => estadoAtual.filter((aviso) => aviso.id !== idAviso));
           }}
-        />
+      />
 
-        <ModalItemProduto
+      <ModalItemProduto
           aberto={modalItemAberto}
           titulo={somenteLeitura ? 'Consultar item do orcamento' : 'Editar item do orcamento'}
           somenteLeitura={somenteLeitura}
@@ -1089,9 +1100,9 @@ export function ModalOrcamento({
           onFecharBuscaProduto={fecharModalBuscaProduto}
           onSelecionarProduto={selecionarProdutoBusca}
           obterIniciais={obterIniciaisItemOrcamento}
-        />
+      />
 
-        {modalMotivoPerdaAberto ? (
+      {modalMotivoPerdaAberto ? (
           <div className="camadaModalContato" role="presentation" onMouseDown={() => definirModalMotivoPerdaAberto(false)}>
             <div
               className="modalContatoCliente"
@@ -1142,7 +1153,7 @@ export function ModalOrcamento({
           </div>
         ) : null}
 
-        {confirmandoFechamento ? (
+      {confirmandoFechamento ? (
           <div className="camadaConfirmacaoModal" role="presentation" onMouseDown={cancelarConfirmacaoFechamento}>
             <div
               className="modalConfirmacaoAgenda"
@@ -1170,7 +1181,6 @@ export function ModalOrcamento({
             </div>
           </div>
         ) : null}
-      </form>
     </div>
   );
 }
@@ -1190,6 +1200,28 @@ function CampoFormulario({ label, name, type = 'text', ...props }) {
       <input id={name} name={name} type={type} className="entradaFormulario" {...props} />
     </div>
   );
+}
+
+function montarApresentacaoProdutoOrcamento(item, empresa) {
+  const destaque = normalizarDestaqueItemOrcamentoPdf(empresa?.destaqueItemOrcamentoPdf);
+  const referencia = String(item?.referenciaProdutoSnapshot || '').trim();
+  const descricao = String(item?.descricaoProdutoSnapshot || '').trim() || 'Produto nao informado';
+
+  if (destaque === 'referencia' && referencia) {
+    return {
+      principal: referencia,
+      secundario: descricao
+    };
+  }
+
+  return {
+    principal: descricao,
+    secundario: referencia || ''
+  };
+}
+
+function normalizarDestaqueItemOrcamentoPdf(valor) {
+  return String(valor || '').trim() === 'referencia' ? 'referencia' : 'descricao';
 }
 
 function CampoSelect({ label, name, options, className = '', acaoExtra = null, referenciaCampo = null, ...props }) {

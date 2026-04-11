@@ -45,14 +45,14 @@ rotaPedidos.get('/', async (requisicao, resposta) => {
     ]);
     adicionarFiltroIgual(clausulas, parametros, 'pedido.idCliente', query.idCliente, Number);
     adicionarFiltroIgual(clausulas, parametros, 'pedido.idUsuario', query.idUsuario, Number);
-    adicionarFiltroIgual(clausulas, parametros, 'pedido.idVendedor', query.idVendedor, Number);
+    adicionarFiltroLista(clausulas, parametros, 'pedido.idVendedor', query.idVendedor, Number);
     adicionarFiltroLista(clausulas, parametros, 'pedido.idEtapaPedido', query.idEtapaPedido, Number);
     adicionarFiltroPeriodo(clausulas, parametros, 'pedido.dataInclusao', query.dataInclusaoInicio, query.dataInclusaoFim);
     adicionarFiltroPeriodo(clausulas, parametros, 'pedido.dataEntrega', query.dataEntregaInicio, query.dataEntregaFim);
 
-    if (query.escopoIdVendedor && query.escopoIdUsuario) {
-      clausulas.push('(cliente.idVendedor = ? OR pedido.idUsuario = ?)');
-      parametros.push(Number(query.escopoIdVendedor), Number(query.escopoIdUsuario));
+    if (query.escopoIdVendedor) {
+      clausulas.push('pedido.idVendedor = ?');
+      parametros.push(Number(query.escopoIdVendedor));
     }
 
     const registros = await consultarTodos(`

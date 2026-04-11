@@ -5,8 +5,7 @@ import { MensagemErroPopup } from '../../componentes/comuns/mensagemErroPopup';
 const formularioInicial = {
   corPrimariaOrcamento: '#111827',
   corSecundariaOrcamento: '#ef4444',
-  corDestaqueOrcamento: '#f59e0b',
-  destaqueItemOrcamentoPdf: 'descricao'
+  corDestaqueOrcamento: '#f59e0b'
 };
 
 export function ModalLayoutOrcamento({
@@ -112,17 +111,6 @@ export function ModalLayoutOrcamento({
 
         <div className="corpoModalCliente">
           <section className="gradeCamposModalCliente">
-            <CampoSelect
-              label="Primeiro plano dos itens"
-              name="destaqueItemOrcamentoPdf"
-              value={formulario.destaqueItemOrcamentoPdf}
-              onChange={alterarCampo}
-              disabled={somenteConsulta || salvando}
-              options={[
-                { valor: 'descricao', label: 'Descricao em primeiro plano' },
-                { valor: 'referencia', label: 'Referencia em primeiro plano' }
-              ]}
-            />
             <CampoFormulario
               label="Cor primaria do PDF"
               name="corPrimariaOrcamento"
@@ -165,29 +153,10 @@ function CampoFormulario({ label, name, type = 'text', ...props }) {
   );
 }
 
-function CampoSelect({ label, name, options, ...props }) {
-  return (
-    <div className="campoFormulario">
-      <label htmlFor={name}>{label}</label>
-      <select id={name} name={name} className="entradaFormulario" {...props}>
-        <option value="">Selecione</option>
-        {options.map((option) => (
-          <option key={option.valor} value={option.valor}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
 function criarFormularioLayoutOrcamento(empresa) {
   return {
     corPrimariaOrcamento: empresa?.corPrimariaOrcamento || '#111827',
     corSecundariaOrcamento: empresa?.corSecundariaOrcamento || '#ef4444',
-    corDestaqueOrcamento: empresa?.corDestaqueOrcamento || '#f59e0b',
-    destaqueItemOrcamentoPdf: String(empresa?.destaqueItemOrcamentoPdf || '').trim() === 'referencia'
-      ? 'referencia'
-      : 'descricao'
+    corDestaqueOrcamento: empresa?.corDestaqueOrcamento || '#f59e0b'
   };
 }

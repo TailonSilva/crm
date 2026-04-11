@@ -279,11 +279,8 @@ export function PaginaOrcamentos({ usuarioLogado }) {
       const motivosDevolucaoCarregados = motivosDevolucaoResultado.status === 'fulfilled' ? motivosDevolucaoResultado.value : [];
       const empresasCarregadas = empresasResultado.status === 'fulfilled' ? empresasResultado.value : [];
 
-      const clientesCarteira = usuarioSomenteVendedor
-        ? clientesCarregados.filter((cliente) => cliente.idVendedor === usuarioLogado.idVendedor)
-        : clientesCarregados;
       const etapasCarregadasOrdenadas = ordenarEtapasPorOrdem(etapasCarregadas, 'idEtapaOrcamento');
-      const clientesDisponiveis = usuarioSomenteVendedor ? clientesCarteira : clientesCarregados;
+      const clientesDisponiveis = clientesCarregados;
       const idsClientesDisponiveis = new Set(clientesDisponiveis.map((cliente) => cliente.idCliente));
 
       definirClientes(clientesDisponiveis);
@@ -885,6 +882,7 @@ export function PaginaOrcamentos({ usuarioLogado }) {
             name: 'idVendedor',
             label: 'Vendedor do orcamento',
             multiple: true,
+            disabled: Boolean(usuarioSomenteVendedor),
             placeholder: 'Todos os vendedores',
             options: vendedores.map((vendedor) => ({
               valor: String(vendedor.idVendedor),

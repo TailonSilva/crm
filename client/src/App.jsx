@@ -216,25 +216,25 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    function tratarAtalhoSalvarModal(evento) {
+    function tratarAtalhoAcaoPrimaria(evento) {
       if (evento.key !== 'PageDown') {
         return;
       }
 
-      const botaoSalvar = encontrarBotaoSalvarModalAtivo();
+      const botaoAcaoPrimaria = encontrarBotaoAcaoPrimariaPageDown();
 
-      if (!botaoSalvar) {
+      if (!botaoAcaoPrimaria) {
         return;
       }
 
       evento.preventDefault();
-      botaoSalvar.click();
+      botaoAcaoPrimaria.click();
     }
 
-    window.addEventListener('keydown', tratarAtalhoSalvarModal);
+    window.addEventListener('keydown', tratarAtalhoAcaoPrimaria);
 
     return () => {
-      window.removeEventListener('keydown', tratarAtalhoSalvarModal);
+      window.removeEventListener('keydown', tratarAtalhoAcaoPrimaria);
     };
   }, []);
 
@@ -484,6 +484,96 @@ function encontrarBotaoSalvarModalAtivo() {
       || titulo === 'salvando'
       || texto === 'salvando';
   }) || null;
+}
+
+function encontrarBotaoAdicionar(container) {
+  if (!(container instanceof HTMLElement)) {
+    return null;
+  }
+
+  const botoes = Array.from(container.querySelectorAll('button:not([disabled])')).filter(elementoEstaVisivel);
+
+  const candidatos = botoes
+    .map((botao, indice) => ({
+      botao,
+      indice,
+      pontuacao: calcularPontuacaoBotaoAdicionar(botao)
+    }))
+    .filter((item) => item.pontuacao > 0)
+    .sort((primeiro, segundo) => {
+      if (segundo.pontuacao !== primeiro.pontuacao) {
+        return segundo.pontuacao - primeiro.pontuacao;
+      }
+
+      return primeiro.indice - segundo.indice;
+    });
+
+  return candidatos[0]?.botao || null;
+}
+
+function calcularPontuacaoBotaoAdicionar(botao) {
+  const descritores = [
+    String(botao.getAttribute('aria-label') || '').trim().toLowerCase(),
+    String(botao.getAttribute('title') || '').trim().toLowerCase(),
+    String(botao.textContent || '').trim().toLowerCase()
+  ].filter(Boolean);
+
+  let melhorPontuacao = 0;
+
+  descritores.forEach((descricao) => {
+    melhorPontuacao = Math.max(melhorPontuacao, pontuarDescricaoAdicionar(descricao));
+  });
+
+  return melhorPontuacao;
+}
+
+function pontuarDescricaoAdicionar(descricao) {
+  if (!descricao) {
+    return 0;
+  }
+
+  if (
+    descricao === 'adicionar'
+    || descricao.startsWith('adicionar ')
+    || descricao === 'incluir'
+    || descricao.startsWith('incluir ')
+    || descricao === 'novo'
+    || descricao.startsWith('novo ')
+  ) {
+    return 100;
+  }
+
+  if (
+    descricao.includes(' adicionar ')
+    || descricao.includes(' incluir ')
+    || descricao.includes(' novo ')
+  ) {
+    return 60;
+  }
+
+  return 0;
+}
+
+function encontrarBotaoAcaoPrimariaPageDown() {
+  const botaoSalvarModal = encontrarBotaoSalvarModalAtivo();
+
+  if (botaoSalvarModal) {
+    return botaoSalvarModal;
+  }
+
+  const modalAtivo = encontrarModalAtivo({ incluirAlertDialog: false });
+
+  if (modalAtivo) {
+    const botaoAdicionarModal = encontrarBotaoAdicionar(modalAtivo);
+
+    if (botaoAdicionarModal) {
+      return botaoAdicionarModal;
+    }
+  }
+
+  const paginaAtiva = document.querySelector('main');
+
+  return encontrarBotaoAdicionar(paginaAtiva);
 }
 
 function encontrarModalAtivo({ incluirAlertDialog = true } = {}) {

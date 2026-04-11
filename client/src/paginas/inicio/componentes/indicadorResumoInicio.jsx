@@ -6,11 +6,13 @@ export function IndicadorResumoInicio({
   icone,
   titulo,
   valor,
+  valorComplemento,
   carregando,
   descricao,
   ajuda = null
 }) {
   const valorTexto = carregando ? '...' : String(valor || '');
+  const valorComplementoTexto = carregando ? '' : String(valorComplemento || '').trim();
   const valorMonetarioCompacto = !carregando && valorTexto.startsWith('R$') && valorTexto.length >= 10;
   const composicao = ajuda?.composicao || ajuda?.conceito || '';
   const periodo = ajuda?.periodo || ajuda?.calculo || '';
@@ -20,9 +22,14 @@ export function IndicadorResumoInicio({
       <div className="inicioIndicadorResumoCabecalho">
         <div className="inicioIndicadorResumoConteudo">
           <span className="inicioIndicadorResumoRotulo">{titulo}</span>
-          <strong className={`inicioIndicadorResumoValor ${valorMonetarioCompacto ? 'inicioIndicadorResumoValorCompacto' : ''}`.trim()}>
-            {valorTexto}
-          </strong>
+          <div className="inicioIndicadorResumoValorLinha">
+            <strong className={`inicioIndicadorResumoValor ${valorMonetarioCompacto ? 'inicioIndicadorResumoValorCompacto' : ''}`.trim()}>
+              {valorTexto}
+            </strong>
+            {valorComplementoTexto ? (
+              <span className="inicioIndicadorResumoValorComplemento">{valorComplementoTexto}</span>
+            ) : null}
+          </div>
         </div>
         <div className="inicioIndicadorResumoAcoes">
           <span className="inicioIndicadorResumoIcone" aria-hidden="true">

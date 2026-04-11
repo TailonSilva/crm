@@ -135,7 +135,7 @@ export function ModalManualAgenda({
     {
       titulo: 'Foco e atalho',
       descricao: 'Ao abrir um modal da agenda, o foco vai para o primeiro campo editavel; em confirmacoes, a acao principal fica pronta para teclado.',
-      detalhe: '`PageDown` salva o formulario do modal ativo.',
+      detalhe: '`PageDown` prioriza Salvar e, quando nao houver salvamento disponivel, aciona Adicionar, Incluir ou Novo no contexto atual.',
       icone: 'manual'
     }
   ];

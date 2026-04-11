@@ -41,7 +41,7 @@ export function ModalManualOrcamentos({
         {
           titulo: 'Carteira visivel',
           descricao: `${orcamentos.length} proposta(s) aparecem na grade conforme o filtro atual.`,
-          detalhe: 'Usuario padrao pode ficar restrito aos clientes da propria carteira e aos registros vinculados ao seu usuario.',
+          detalhe: 'Usuario padrao ve na grade apenas os orcamentos em que ele proprio e o vendedor do registro.',
           icone: 'orcamento'
         },
         {
@@ -95,6 +95,7 @@ export function ModalManualOrcamentos({
           titulo: 'Campos e vinculos do modal',
           itens: [
             'Cliente e contato entram no mesmo fluxo do orcamento e abastecem a proposta comercial.',
+            'Na busca de clientes do orcamento, Usuario padrao tambem pode selecionar clientes vinculados a outros vendedores para montar novas propostas.',
             'A busca de clientes tambem permite incluir um novo cliente sem sair do fluxo.',
             'Ao abrir a busca de contatos com um cliente ja definido, o proprio modal permite cadastrar um novo contato e devolver esse contato ja selecionado no orcamento.',
             'Ao confirmar a busca de cliente ou contato, o foco retorna para o campo preenchido no orcamento.',
@@ -103,7 +104,7 @@ export function ModalManualOrcamentos({
             'Prazos de pagamento podem ser mantidos dentro do modal, respeitando o perfil do usuario.',
             'O modo do modal controla corretamente inclusao, edicao e consulta, inclusive em saida sem salvar.',
             'Nas abas do modal do orcamento, `Alt + Seta para a esquerda` volta para a aba anterior e `Alt + Seta para a direita` avanca para a proxima, reposicionando o foco no primeiro campo da nova aba.',
-            'O modal abre no primeiro campo editavel, confirmacoes focam a acao principal e `PageDown` salva o formulario ativo.'
+            'O modal abre no primeiro campo editavel, confirmacoes focam a acao principal e `PageDown` prioriza Salvar; quando nao houver salvamento disponivel, ele aciona Adicionar, Incluir ou Novo no contexto atual.'
           ]
         },
         {
