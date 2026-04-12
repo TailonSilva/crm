@@ -158,6 +158,13 @@ const entidades = [
     camposPermitidos: ['descricao', 'status']
   },
   {
+    nome: 'tipoAtendimento',
+    rota: '/api/tiposAtendimento',
+    chavePrimaria: 'idTipoAtendimento',
+    camposObrigatorios: ['descricao'],
+    camposPermitidos: ['descricao', 'status']
+  },
+  {
     nome: 'metodoPagamento',
     rota: '/api/metodosPagamento',
     chavePrimaria: 'idMetodoPagamento',
@@ -370,6 +377,7 @@ const entidades = [
     camposObrigatorios: [
       'idCliente',
       'idUsuario',
+      'idTipoAtendimento',
       'assunto',
       'data',
       'horaInicio',
@@ -385,6 +393,7 @@ const entidades = [
       'data',
       'horaInicio',
       'horaFim',
+      'idTipoAtendimento',
       'idCanalAtendimento',
       'idOrigemAtendimento'
     ]

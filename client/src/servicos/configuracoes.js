@@ -591,6 +591,10 @@ export function listarOrigensAtendimentoConfiguracao(opcoes) {
   return listarCadastroConfiguracao('/origensAtendimento', opcoes);
 }
 
+export function listarTiposAtendimentoConfiguracao(opcoes) {
+  return listarCadastroConfiguracao('/tiposAtendimento', opcoes);
+}
+
 export function incluirOrigemAtendimento(payload) {
   return requisitarApi('/origensAtendimento', {
     method: 'POST',
@@ -603,6 +607,26 @@ export function incluirOrigemAtendimento(payload) {
 
 export function atualizarOrigemAtendimento(idOrigemAtendimento, payload) {
   return requisitarApi(`/origensAtendimento/${idOrigemAtendimento}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function incluirTipoAtendimento(payload) {
+  return requisitarApi('/tiposAtendimento', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function atualizarTipoAtendimento(idTipoAtendimento, payload) {
+  return requisitarApi(`/tiposAtendimento/${idTipoAtendimento}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json'

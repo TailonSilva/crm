@@ -13,9 +13,9 @@ export function ModalManualInicio({
       descricao="Resumo da estrutura atual da home comercial."
       eyebrow="Dashboard"
       heroTitulo="Leitura comercial por abas"
-      heroDescricao="A pagina inicial separa `Orcamentos` e `Vendas` em abas e usa secoes compactas com leitura visual padronizada."
+      heroDescricao="A pagina inicial separa `Orcamentos`, `Vendas` e `Atendimentos` em abas e usa secoes compactas com leitura visual padronizada."
       painelHeroi={[
-        { valor: '2 abas', rotulo: 'Orcamentos e Vendas' },
+        { valor: '3 abas', rotulo: 'Orcamentos, Vendas e Atendimentos' },
         { valor: 'Top 5', rotulo: 'Itens exibidos por grafico' },
         { valor: 'Modal completo', rotulo: 'Lista total por sessao' }
       ]}
@@ -23,7 +23,7 @@ export function ModalManualInicio({
         {
           titulo: 'Indicadores iniciais',
           descricao: 'A home abre com cards compactos de leitura rapida.',
-          detalhe: 'Hoje incluem Orcamentos em aberto, Pedidos no mes, Media de dias para conversao, Comissao no mes, Positivacao no mes, % Positivacao da carteira, Catalogo e Carteira.',
+          detalhe: 'Hoje incluem Orcamentos em aberto, Pedidos no mes, Media de dias para conversao, Atendimentos no mes, Prospeccao no mes, Comissao no mes, Comissao entregue no mes, Positivacao no mes, % Positivacao da carteira, Catalogo e Carteira.',
           icone: 'inicio'
         },
         {
@@ -37,6 +37,12 @@ export function ModalManualInicio({
           descricao: 'Reune devolucoes, vendas por grupo, marca, UF, cliente, produto e ranking.',
           detalhe: 'As leituras usam pedidos do mes corrente conforme a regra definida em cada sessao.',
           icone: 'pedido'
+        },
+        {
+          titulo: 'Aba Atendimentos',
+          descricao: 'Reune leituras por canal, origem, cliente, tipo e usuario.',
+          detalhe: 'As sessoes usam sempre os atendimentos do mes corrente pela data do atendimento.',
+          icone: 'atendimentos'
         },
         {
           titulo: 'Padrao visual',
@@ -86,7 +92,7 @@ export function ModalManualInicio({
           items: undefined,
           itens: [
             usuarioLogado?.tipo === 'Usuario padrao'
-              ? 'Usuario padrao ve cards e graficos da home apenas com `orcamentos` e `pedidos` do vendedor vinculado ao proprio usuario (`idVendedor`).'
+              ? 'Usuario padrao ve cards e graficos da home com `orcamentos` e `pedidos` do proprio vendedor e com `atendimentos` do proprio usuario do registro.'
               : 'Perfis administrativos veem a home com leitura geral da operacao.',
             'O mesmo padrao visual das secoes e mantido independentemente do perfil.',
             'As explicacoes das secoes ajudam a identificar o periodo e a logica de calculo usada em cada bloco.'

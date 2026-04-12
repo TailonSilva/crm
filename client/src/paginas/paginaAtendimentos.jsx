@@ -15,7 +15,8 @@ import {
   incluirAtendimento,
   listarAtendimentosGrid,
   listarCanaisAtendimento,
-  listarOrigensAtendimento
+  listarOrigensAtendimento,
+  listarTiposAtendimento
 } from '../servicos/atendimentos';
 import {
   incluirCliente,
@@ -71,6 +72,7 @@ function criarFiltrosIniciaisAtendimentos(usuarioLogado) {
     idCliente: '',
     idUsuario: idUsuarioPadrao,
     idVendedorCliente: [],
+    idTipoAtendimento: [],
     idCanalAtendimento: [],
     idOrigemAtendimento: [],
     dataInicio: '',
@@ -85,6 +87,7 @@ function criarFiltrosLimposAtendimentos() {
     idCliente: '',
     idUsuario: [],
     idVendedorCliente: [],
+    idTipoAtendimento: [],
     idCanalAtendimento: [],
     idOrigemAtendimento: [],
     dataInicio: '',
@@ -110,6 +113,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
   const [orcamentos, definirOrcamentos] = useState([]);
   const [metodosPagamento, definirMetodosPagamento] = useState([]);
   const [ramosAtividade, definirRamosAtividade] = useState([]);
+  const [tiposAtendimento, definirTiposAtendimento] = useState([]);
   const [canaisAtendimento, definirCanaisAtendimento] = useState([]);
   const [origensAtendimento, definirOrigensAtendimento] = useState([]);
   const [prazosPagamento, definirPrazosPagamento] = useState([]);
@@ -200,6 +204,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
         listarVendedores(),
         listarOrcamentos(),
         listarRamosAtividade(),
+        listarTiposAtendimento(),
         listarCanaisAtendimento(),
         listarOrigensAtendimento(),
         listarMetodosPagamentoConfiguracao(),
@@ -222,6 +227,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
         vendedoresResultado,
         orcamentosResultado,
         ramosResultado,
+        tiposAtendimentoResultado,
         canaisResultado,
         origensResultado,
         metodosResultado,
@@ -243,6 +249,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
       const vendedoresCarregados = vendedoresResultado.status === 'fulfilled' ? vendedoresResultado.value : [];
       const orcamentosCarregados = orcamentosResultado.status === 'fulfilled' ? orcamentosResultado.value : [];
       const ramosCarregados = ramosResultado.status === 'fulfilled' ? ramosResultado.value : [];
+      const tiposAtendimentoCarregados = tiposAtendimentoResultado.status === 'fulfilled' ? tiposAtendimentoResultado.value : [];
       const canaisCarregados = canaisResultado.status === 'fulfilled' ? canaisResultado.value : [];
       const origensCarregadas = origensResultado.status === 'fulfilled' ? origensResultado.value : [];
       const metodosCarregados = metodosResultado.status === 'fulfilled' ? metodosResultado.value : [];
@@ -280,6 +287,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
       );
       definirMetodosPagamento(metodosCarregados);
       definirRamosAtividade(ramosCarregados);
+      definirTiposAtendimento(tiposAtendimentoCarregados);
       definirCanaisAtendimento(canaisCarregados);
       definirOrigensAtendimento(origensCarregadas);
       definirPrazosPagamento(enriquecerPrazosPagamento(prazosCarregados, metodosCarregados));
@@ -537,6 +545,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
       ...filtros,
       idUsuario: Array.isArray(filtros.idUsuario) ? [...filtros.idUsuario] : [],
       idVendedorCliente: Array.isArray(filtros.idVendedorCliente) ? [...filtros.idVendedorCliente] : [],
+      idTipoAtendimento: Array.isArray(filtros.idTipoAtendimento) ? [...filtros.idTipoAtendimento] : [],
       idCanalAtendimento: Array.isArray(filtros.idCanalAtendimento) ? [...filtros.idCanalAtendimento] : [],
       idOrigemAtendimento: Array.isArray(filtros.idOrigemAtendimento) ? [...filtros.idOrigemAtendimento] : []
     });
@@ -672,6 +681,16 @@ export function PaginaAtendimentos({ usuarioLogado }) {
             }))
           },
           {
+            name: 'idTipoAtendimento',
+            label: 'Tipo de atendimento',
+            multiple: true,
+            placeholder: 'Todos os tipos',
+            options: tiposAtendimento.map((tipoAtendimento) => ({
+              valor: String(tipoAtendimento.idTipoAtendimento),
+              label: tipoAtendimento.descricao
+            }))
+          },
+          {
             name: 'idCanalAtendimento',
             label: 'Canal',
             multiple: true,
@@ -744,6 +763,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
         aberto={modalManualAberto}
         aoFechar={() => definirModalManualAberto(false)}
         atendimentos={atendimentos}
+        tiposAtendimento={tiposAtendimento}
         canaisAtendimento={canaisAtendimento}
         origensAtendimento={origensAtendimento}
         orcamentos={orcamentos}
@@ -765,6 +785,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
         usuarioLogado={usuarioLogado}
         vendedores={vendedores}
         ramosAtividade={ramosAtividade}
+        tiposAtendimento={tiposAtendimento}
         canaisAtendimento={canaisAtendimento}
         origensAtendimento={origensAtendimento}
         modo={modoModal}
@@ -957,6 +978,15 @@ function renderizarCelulaAtendimento({ coluna, atendimento, permitirExcluir, aoC
     );
   }
 
+  // Esta coluna usa o nome enriquecido vindo da listagem para manter a grade desacoplada da tabela auxiliar.
+  if (coluna.id === 'tipoAtendimento') {
+    return (
+      <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(atendimento.nomeTipoAtendimento)}</TextoGradeClamp>
+      </CelulaLayoutAtendimento>
+    );
+  }
+
   if (coluna.id === 'usuario') {
     return (
       <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
@@ -1008,6 +1038,7 @@ function normalizarFiltrosAtendimentos(filtros, filtrosPadrao) {
     ...filtrosNormalizados,
     idUsuario: normalizarListaFiltroPersistido(filtrosNormalizados.idUsuario),
     idVendedorCliente: normalizarListaFiltroPersistido(filtrosNormalizados.idVendedorCliente),
+    idTipoAtendimento: normalizarListaFiltroPersistido(filtrosNormalizados.idTipoAtendimento),
     idCanalAtendimento: normalizarListaFiltroPersistido(filtrosNormalizados.idCanalAtendimento),
     idOrigemAtendimento: normalizarListaFiltroPersistido(filtrosNormalizados.idOrigemAtendimento),
     ...normalizarIntervaloAtendimento(filtrosNormalizados, filtrosPadrao, 'dataInicio', 'dataFim', normalizarDataFiltroAtendimento),
@@ -1066,6 +1097,7 @@ function normalizarPayloadAtendimento(dadosAtendimento) {
     idCliente: Number(dadosAtendimento.idCliente),
     idContato: dadosAtendimento.idContato ? Number(dadosAtendimento.idContato) : null,
     idUsuario: Number(dadosAtendimento.idUsuario),
+    idTipoAtendimento: Number(dadosAtendimento.idTipoAtendimento),
     assunto: String(dadosAtendimento.assunto || '').trim(),
     descricao: limparTextoOpcional(dadosAtendimento.descricao),
     data: dadosAtendimento.data,

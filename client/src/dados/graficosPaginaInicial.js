@@ -135,6 +135,14 @@ export const graficosPaginaInicialAtendimentos = [
     ordemPadrao: 4,
     spanPadrao: 5,
     visivelPadrao: true
+  },
+  {
+    id: 'atendimentosTipo',
+    rotulo: 'Atendimentos do mes por tipo',
+    ajudaConfiguracao: 'Mostra a quantidade de atendimentos e de clientes atendidos por tipo de atendimento no mes corrente.',
+    ordemPadrao: 5,
+    spanPadrao: 5,
+    visivelPadrao: true
   }
 ];
 

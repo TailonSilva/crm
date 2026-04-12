@@ -17,6 +17,7 @@ const estadoInicialFormulario = {
   idEtapaOrcamento: '',
   idUsuario: '',
   nomeUsuario: '',
+  idTipoAtendimento: '',
   assunto: '',
   descricao: '',
   data: '',
@@ -38,6 +39,7 @@ export function ModalAtendimento({
   usuarioLogado,
   vendedores = [],
   ramosAtividade = [],
+  tiposAtendimento = [],
   canaisAtendimento = [],
   origensAtendimento = [],
   modo = 'novo',
@@ -93,6 +95,7 @@ export function ModalAtendimento({
   const modoEdicao = modo === 'edicao';
   const clientesAtivos = clientes.filter((cliente) => cliente.status !== 0);
   const contatosAtivos = contatos.filter((contato) => contato.status !== 0);
+  const tiposAtendimentoAtivos = tiposAtendimento.filter((tipoAtendimento) => tipoAtendimento.status !== 0);
   const canaisAtivos = canaisAtendimento.filter((canal) => canal.status !== 0);
   const origensAtivas = origensAtendimento.filter((origem) => origem.status !== 0);
   const etapasOrcamentoAtivas = useMemo(
@@ -294,6 +297,7 @@ export function ModalAtendimento({
 
     const camposObrigatorios = [
       ['idCliente', 'Selecione o cliente.'],
+      ['idTipoAtendimento', 'Selecione o tipo de atendimento.'],
       ['assunto', 'Informe o assunto do atendimento.'],
       ['data', 'Informe a data do atendimento.'],
       ['horaInicio', 'Informe o horario de inicio.']
@@ -922,6 +926,18 @@ export function ModalAtendimento({
                   disabled
                 />
                 <CampoSelect
+                  label="Tipo de atendimento"
+                  name="idTipoAtendimento"
+                  value={formulario.idTipoAtendimento}
+                  onChange={alterarCampo}
+                  options={tiposAtendimentoAtivos.map((tipoAtendimento) => ({
+                    valor: String(tipoAtendimento.idTipoAtendimento),
+                    label: tipoAtendimento.descricao
+                  }))}
+                  disabled={somenteLeitura}
+                  required
+                />
+                <CampoSelect
                   label="Canal"
                   name="idCanalAtendimento"
                   value={formulario.idCanalAtendimento}
@@ -1252,6 +1268,7 @@ function criarFormularioInicial(atendimento, usuarioLogado) {
     idEtapaOrcamento: '',
     idUsuario: normalizarValorFormulario(atendimento?.idUsuario || usuarioLogado?.idUsuario),
     nomeUsuario: atendimento?.nomeUsuario || usuarioLogado?.nome || '',
+    idTipoAtendimento: normalizarValorFormulario(atendimento?.idTipoAtendimento),
     idCanalAtendimento: normalizarValorFormulario(atendimento?.idCanalAtendimento),
     idOrigemAtendimento: normalizarValorFormulario(atendimento?.idOrigemAtendimento)
   };

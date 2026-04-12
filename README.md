@@ -101,7 +101,9 @@ Observacao importante:
 - CSS de pagina deve ficar restrito a layout/composicao da pagina e tambem salvo em `client/src/recursos/estilos/`
 - Classes CSS devem ser prefixadas pelo nome do componente para reduzir acoplamento visual e colisao de seletores
 - Mesmo componentes de pagina devem seguir a mesma regra: `paginaInicio.jsx` usa `client/src/recursos/estilos/paginaInicio.css`, `funilVendas.jsx` usa `client/src/recursos/estilos/funilVendas.css`, e assim por diante
-- Para `Usuario padrao`, cards e graficos da pagina inicial devem sempre filtrar por `idVendedor` do usuario logado; `Administrador` e `Gestor` veem leitura geral sem esse recorte
+- Para `Usuario padrao`, cards e graficos de `orcamentos` e `pedidos` da pagina inicial devem sempre filtrar por `idVendedor` do usuario logado
+- Para `Usuario padrao`, cards e graficos de `atendimentos` da pagina inicial devem sempre filtrar apenas pelos atendimentos cujo `idUsuario` seja o do usuario logado
+- `Administrador` e `Gestor` veem leitura geral sem esses recortes individuais
 
 ## Arquitetura atual das grades
 
@@ -181,14 +183,15 @@ Utilitarios importantes:
 
 ### Pagina inicial
 
-- A pagina inicial usa abas `Orcamentos` e `Vendas` para separar funil e analise comercial
-- A configuracao da empresa agora possui a aba `Pagina inicial`, com botoes `Graficos Orcamentos` e `Graficos Vendas`
+- A pagina inicial usa abas `Orcamentos`, `Vendas` e `Atendimentos` para separar funil, analise comercial e relacionamento
+- A configuracao da empresa agora possui a aba `Pagina inicial`, com botoes `Graficos Orcamentos`, `Graficos Vendas` e `Graficos Atendimentos`
 - A mesma aba agora tambem possui o bloco `Cards resumo`, usado para configurar os cards que aparecem no topo das duas abas da home
 - Cada aba da home pode ser configurada por lista, com `visivel`, `ordem`, `colunas` e `rotulo`, usando malha de `10 colunas`
 - Os `Cards resumo` usam `visivel`, `ordem`, `colunas` e `rotulo`, e a composicao precisa caber em no maximo duas linhas de `10 colunas` cada
 - A ordem das sessoes da home segue leitura visual: de cima para baixo e da esquerda para a direita
 - Regra obrigatoria: sempre que um novo card ou uma nova sessao de grafico for criado na pagina inicial, ele tambem deve ser incluido na configuracao da empresa (aba `Pagina inicial`) para permitir controle de exibicao, ordem, largura e rotulo
-- Os cards iniciais atuais mostram `Orcamentos em aberto`, `Pedidos no mes`, `Comissao no mes`, `Positivacao no mes`, `% Positivacao da carteira`, `Catalogo` e `Carteira`
+- Os cards iniciais atuais mostram `Orcamentos em aberto`, `Pedidos no mes`, `Media de dias para conversao`, `Atendimentos no mes`, `Prospeccao no mes`, `Comissao no mes`, `Comissao entregue no mes`, `Positivacao no mes`, `% Positivacao da carteira`, `Catalogo` e `Carteira`
+- O card `Comissao entregue no mes` considera apenas pedidos na etapa obrigatoria `Entregue` validada por ID e usa a data de entrega como periodo
 - Todo card da home deve ter tooltip no icone de `Informacao`
 - O texto do tooltip de card deve ser simples e direto, sempre com `composicao do valor` e `periodo considerado`, no mesmo padrao dos tooltips dos graficos
 - Padrao de conteudo dos tooltips de card: no maximo duas linhas curtas (`Composicao` e `Periodo`), sem textos longos
@@ -200,6 +203,8 @@ Utilitarios importantes:
 - A aba `Orcamentos` concentra `Funil de orcamentos`, `Orcamentos em aberto por grupo de produtos`, `Orcamentos em aberto por marca`, `Orcamentos em aberto por produto` e `Motivos de perda do mes`
 - A sessao `Orcamentos em aberto por grupo de produtos` e componente reutilizavel proprio e aparece na configuracao da empresa em `Pagina inicial > Graficos Orcamentos`
 - A aba `Vendas` concentra `Devolucoes do mes`, `Vendas do mes por grupo de produtos`, `Vendas do mes por marca`, `Vendas do mes por UF`, `Vendas do mes por cliente`, `Vendas do mes por produto` e `Vendedores/Clientes em destaque`
+- A aba `Atendimentos` concentra `Atendimentos do mes por canal`, `Atendimentos do mes por origem`, `Atendimentos do mes por cliente`, `Atendimentos do mes por tipo` e `Atendimentos do mes por usuario`
+- O card `Prospeccao no mes` soma apenas atendimentos classificados com o tipo `Prospeccao`, identificado pela descricao do tipo cadastrada na configuracao
 - `Devolucoes do mes` usa valores convertidos para positivo apenas para leitura do grafico
 - O texto do tooltip de card e grafico deve ser simples e direto, com no maximo duas linhas curtas (`Composicao` e `Periodo`)
 - Para `Usuario padrao`, toda a aba da home (`cards` e `graficos`) usa apenas registros de `orcamentos` e `pedidos` do vendedor vinculado ao usuario (`idVendedor`)
@@ -381,6 +386,7 @@ Filtros da agenda:
 - O atalho geral `Colunas do grid` abre um seletor por modulo; hoje `Atendimentos`, `Clientes`, `Produtos`, `Orcamentos` e `Pedidos` ja permitem configurar visibilidade, ordem, espaco e o `rotulo` do cabecalho por empresa
 - As paginas principais desses modulos tambem exibem um botao direto de `Configurar grid` no cabecalho; `Usuario padrao` continua sem permissao para abrir esse ajuste
 - Campos de cliente, contato e orcamento no mesmo fluxo comercial
+- O modal de atendimento agora exige `Tipo de atendimento`, mantido em `Configuracoes > Atendimentos > Tipos de atendimento`
 - Busca de cliente por modal reutilizavel
 - Busca de contato por modal reutilizavel com inclusao rapida de novo contato quando o cliente ja estiver definido; o contato criado volta selecionado automaticamente no atendimento
 - Inclusao de cliente dentro da busca de clientes
@@ -669,6 +675,7 @@ Cadastros da empresa e acesso:
 Cadastros comerciais e de processo:
 
 - `canalAtendimento`
+- `tipoAtendimento`
 - `origemAtendimento`
 - `atendimento`
 - `orcamento`
@@ -728,6 +735,7 @@ Rotas CRUD atualmente expostas:
 - `/api/tiposAgenda`
 - `/api/statusVisita`
 - `/api/canaisAtendimento`
+- `/api/tiposAtendimento`
 - `/api/origensAtendimento`
 - `/api/metodosPagamento`
 - `/api/prazosPagamento`

@@ -18,6 +18,7 @@ import {
   atualizarMotivoPerda,
   atualizarOrigemAtendimento,
   atualizarPrazoPagamento,
+  atualizarTipoAtendimento,
   atualizarTipoPedido,
   atualizarRecurso,
   atualizarRamoAtividade,
@@ -41,6 +42,7 @@ import {
   incluirMotivoPerda,
   incluirOrigemAtendimento,
   incluirPrazoPagamento,
+  incluirTipoAtendimento,
   incluirTipoPedido,
   incluirRecurso,
   incluirRamoAtividade,
@@ -65,6 +67,7 @@ import {
   obterConfiguracaoAtualizacaoSistema,
   listarOrigensAtendimentoConfiguracao,
   listarPrazosPagamentoConfiguracao,
+  listarTiposAtendimentoConfiguracao,
   listarTiposPedidoConfiguracao,
   listarRecursosConfiguracao,
   listarRamosAtividadeConfiguracao,
@@ -213,6 +216,11 @@ const atalhosConfiguracao = [
     icone: 'empresa'
   },
   {
+    id: 'tiposAtendimento',
+    titulo: 'Tipos de atendimento',
+    icone: 'cadastro'
+  },
+  {
     id: 'statusVisita',
     titulo: 'Status da agenda',
     icone: 'cadastro'
@@ -303,7 +311,7 @@ const secoesConfiguracao = [
   {
     id: 'atendimentos',
     titulo: 'Atendimentos',
-    atalhos: ['canaisAtendimento', 'origensAtendimento']
+    atalhos: ['tiposAtendimento', 'canaisAtendimento', 'origensAtendimento']
   },
   {
     id: 'cadastros',
@@ -397,6 +405,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
   const [tiposAgenda, definirTiposAgenda] = useState([]);
   const [canaisAtendimento, definirCanaisAtendimento] = useState([]);
   const [origensAtendimento, definirOrigensAtendimento] = useState([]);
+  const [tiposAtendimento, definirTiposAtendimento] = useState([]);
   const [statusVisita, definirStatusVisita] = useState([]);
   const [motivosPerda, definirMotivosPerda] = useState([]);
   const [motivosDevolucao, definirMotivosDevolucao] = useState([]);
@@ -707,6 +716,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
       listarTiposAgendaConfiguracao({ incluirInativos: true }),
       listarCanaisAtendimentoConfiguracao({ incluirInativos: true }),
       listarOrigensAtendimentoConfiguracao({ incluirInativos: true }),
+      listarTiposAtendimentoConfiguracao({ incluirInativos: true }),
         listarStatusVisitaConfiguracao({ incluirInativos: true }),
         listarMotivosDevolucaoConfiguracao({ incluirInativos: true }),
         listarMotivosPerdaConfiguracao({ incluirInativos: true }),
@@ -733,14 +743,15 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     definirTiposAgenda(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[13]), 'idTipoAgenda'));
     definirCanaisAtendimento(obterResultadoLista(resultados[14]));
     definirOrigensAtendimento(obterResultadoLista(resultados[15]));
-    definirStatusVisita(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[16]), 'idStatusVisita'));
-    definirMotivosDevolucao(obterResultadoLista(resultados[17]));
-    definirMotivosPerda(obterResultadoLista(resultados[18]));
-    definirEtapasPedido(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[19]), 'idEtapa'));
-    definirEtapasOrcamento(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[20]), 'idEtapaOrcamento'));
-    definirCamposOrcamento(obterResultadoLista(resultados[21]));
-    definirCamposPedido(obterResultadoLista(resultados[22]));
-    definirTamanhos(obterResultadoLista(resultados[23]));
+    definirTiposAtendimento(obterResultadoLista(resultados[16]));
+    definirStatusVisita(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[17]), 'idStatusVisita'));
+    definirMotivosDevolucao(obterResultadoLista(resultados[18]));
+    definirMotivosPerda(obterResultadoLista(resultados[19]));
+    definirEtapasPedido(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[20]), 'idEtapa'));
+    definirEtapasOrcamento(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[21]), 'idEtapaOrcamento'));
+    definirCamposOrcamento(obterResultadoLista(resultados[22]));
+    definirCamposPedido(obterResultadoLista(resultados[23]));
+    definirTamanhos(obterResultadoLista(resultados[24]));
   }
 
   async function salvarUsuario(dadosUsuario) {
@@ -1097,6 +1108,21 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     await carregarCadastrosConfiguracao();
   }
 
+  async function salvarTipoAtendimento(dadosTipoAtendimento) {
+    const payload = {
+      descricao: dadosTipoAtendimento.descricao.trim(),
+      status: dadosTipoAtendimento.status ? 1 : 0
+    };
+
+    if (dadosTipoAtendimento.idTipoAtendimento) {
+      await atualizarTipoAtendimento(dadosTipoAtendimento.idTipoAtendimento, payload);
+    } else {
+      await incluirTipoAtendimento(payload);
+    }
+
+    await carregarCadastrosConfiguracao();
+  }
+
   async function salvarEtapaPedido(dadosEtapa) {
     const payload = {
       descricao: dadosEtapa.descricao.trim(),
@@ -1268,6 +1294,11 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     await carregarCadastrosConfiguracao();
   }
 
+  async function inativarTipoAtendimento(registro) {
+    await atualizarTipoAtendimento(registro.idTipoAtendimento, { status: 0 });
+    await carregarCadastrosConfiguracao();
+  }
+
   async function inativarEtapaPedido(registro) {
     await atualizarEtapaPedido(registro.idEtapa, { status: 0 });
     await carregarCadastrosConfiguracao();
@@ -1292,7 +1323,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
   }
 
   function abrirConfiguracao(atalho) {
-    if (usuarioSomenteConsulta && ['empresa', 'usuarios', 'layoutOrcamento', 'colunasGridAtendimentos'].includes(atalho.id)) {
+    if (usuarioSomenteConsulta && ['empresa', 'usuarios', 'vendedores', 'layoutOrcamento', 'colunasGridAtendimentos'].includes(atalho.id)) {
       return;
     }
 
@@ -1365,6 +1396,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
       'ramosAtividade',
       'canaisAtendimento',
       'origensAtendimento',
+      'tiposAtendimento',
       'statusVisita',
       'tiposAgenda',
       'tiposRecurso',
@@ -1494,6 +1526,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
                           (usuarioSomenteConsulta && [
                             'empresa',
                             'usuarios',
+                            'vendedores',
                             'layoutOrcamento',
                             'colunasGridAtendimentos',
                             'atualizacaoSistema',
@@ -2008,6 +2041,24 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         aoFechar={fecharCadastroConfiguracao}
         aoSalvar={salvarOrigemAtendimento}
         aoInativar={inativarOrigemAtendimento}
+      />
+      <ModalCadastroConfiguracao
+        aberto={cadastroConfiguracaoAberto === 'tiposAtendimento'}
+        titulo="Tipos de atendimento"
+        rotuloIncluir="Incluir tipo"
+        registros={tiposAtendimento}
+        chavePrimaria="idTipoAtendimento"
+        somenteConsulta={usuarioSomenteConsulta}
+        colunas={[
+          { key: 'descricao', label: 'Descricao' }
+        ]}
+        camposFormulario={[
+          { name: 'descricao', label: 'Descricao', required: true },
+          { name: 'status', label: 'Registro ativo', type: 'checkbox', defaultValue: true }
+        ]}
+        aoFechar={fecharCadastroConfiguracao}
+        aoSalvar={salvarTipoAtendimento}
+        aoInativar={inativarTipoAtendimento}
       />
       <ModalCadastroConfiguracao
         aberto={cadastroConfiguracaoAberto === 'statusVisita'}

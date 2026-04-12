@@ -544,6 +544,14 @@ banco.serialize(() => {
   `);
 
   banco.run(`
+    CREATE TABLE IF NOT EXISTS tipoAtendimento (
+      idTipoAtendimento INTEGER PRIMARY KEY AUTOINCREMENT,
+      descricao VARCHAR(100) NOT NULL,
+      status BOOLEAN NOT NULL DEFAULT 1
+    )
+  `);
+
+  banco.run(`
     ALTER TABLE statusVisita ADD COLUMN icone VARCHAR(10)
   `, (erro) => {
     if (erro && !String(erro.message || '').includes('duplicate column name')) {
@@ -1135,6 +1143,7 @@ banco.serialize(() => {
       data DATETIME NOT NULL,
       horaInicio VARCHAR(5) NOT NULL,
       horaFim VARCHAR(5) NOT NULL,
+      idTipoAtendimento INTEGER,
       idCanalAtendimento INTEGER,
       idOrigemAtendimento INTEGER,
       status BOOLEAN NOT NULL DEFAULT 1,
@@ -1143,6 +1152,7 @@ banco.serialize(() => {
       FOREIGN KEY (idCliente) REFERENCES cliente (idCliente),
       FOREIGN KEY (idContato) REFERENCES contato (idContato),
       FOREIGN KEY (idUsuario) REFERENCES usuario (idUsuario),
+      FOREIGN KEY (idTipoAtendimento) REFERENCES tipoAtendimento (idTipoAtendimento),
       FOREIGN KEY (idCanalAtendimento) REFERENCES canalAtendimento (idCanalAtendimento),
       FOREIGN KEY (idOrigemAtendimento) REFERENCES origemAtendimento (idOrigemAtendimento)
     )
@@ -1672,6 +1682,7 @@ banco.serialize(() => {
             data DATETIME NOT NULL,
             horaInicio VARCHAR(5) NOT NULL,
             horaFim VARCHAR(5) NOT NULL,
+            idTipoAtendimento INTEGER,
             idCanalAtendimento INTEGER,
             idOrigemAtendimento INTEGER,
             status BOOLEAN NOT NULL DEFAULT 1,
@@ -1680,6 +1691,7 @@ banco.serialize(() => {
             FOREIGN KEY (idCliente) REFERENCES cliente (idCliente),
             FOREIGN KEY (idContato) REFERENCES contato (idContato),
             FOREIGN KEY (idUsuario) REFERENCES usuario (idUsuario),
+            FOREIGN KEY (idTipoAtendimento) REFERENCES tipoAtendimento (idTipoAtendimento),
             FOREIGN KEY (idCanalAtendimento) REFERENCES canalAtendimento (idCanalAtendimento),
             FOREIGN KEY (idOrigemAtendimento) REFERENCES origemAtendimento (idOrigemAtendimento)
           )
@@ -1696,6 +1708,7 @@ banco.serialize(() => {
             data,
             horaInicio,
             horaFim,
+            idTipoAtendimento,
             idCanalAtendimento,
             idOrigemAtendimento,
             status,
@@ -1712,6 +1725,7 @@ banco.serialize(() => {
             atendimento.data,
             atendimento.horaInicio,
             atendimento.horaFim,
+            atendimento.idTipoAtendimento,
             atendimento.idCanalAtendimento,
             atendimento.idOrigemAtendimento,
             atendimento.status,
@@ -1730,6 +1744,14 @@ banco.serialize(() => {
   `, (erro) => {
     if (erro && !String(erro.message || '').includes('duplicate column name')) {
       console.error('Nao foi possivel garantir a coluna idAgendamento do atendimento.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE atendimento ADD COLUMN idTipoAtendimento INTEGER
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna idTipoAtendimento do atendimento.', erro);
     }
   });
 

@@ -95,7 +95,7 @@ export function ModalManualConfiguracoes({
           titulo: 'Como as configuracoes se refletem no CRM',
           itens: [
             'Locais, recursos, tipos e status alimentam a Agenda.',
-            'Canais, origens e motivos de perda entram no fluxo comercial.',
+            'Tipos, canais, origens e motivos de perda entram no fluxo comercial, incluindo o novo tipo obrigatorio do formulario de atendimentos.',
             'Tipos de pedido abastecem o novo campo de classificacao do modal de Pedidos e deixam o fluxo preparado para personalizacoes futuras; Venda e Devolucao ja nascem como registros obrigatorios protegidos.',
             'Motivos da devolucao ficam disponiveis em tabela propria com abreviacao e descricao, para serem exigidos quando um pedido de Devolucao estiver em Entregue.',
             'Grupos de empresa e seus contatos abastecem o cadastro de clientes com heranca de contatos.',

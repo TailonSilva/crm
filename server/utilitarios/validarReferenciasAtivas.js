@@ -138,6 +138,13 @@ const validacoesPorEntidade = {
       mensagem: 'Selecione um canal de atendimento ativo.'
     },
     {
+      campo: 'idTipoAtendimento',
+      tabela: 'tipoAtendimento',
+      chavePrimaria: 'idTipoAtendimento',
+      colunaAtiva: 'status',
+      mensagem: 'Selecione um tipo de atendimento ativo.'
+    },
+    {
       campo: 'idOrigemAtendimento',
       tabela: 'origemAtendimento',
       chavePrimaria: 'idOrigemAtendimento',

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { listarAtendimentos, listarCanaisAtendimento, listarOrigensAtendimento } from '../../servicos/atendimentos';
+import { listarAtendimentos, listarCanaisAtendimento, listarOrigensAtendimento, listarTiposAtendimento } from '../../servicos/atendimentos';
 import { Botao } from '../comuns/botao';
 import { ModalFiltros } from '../comuns/modalFiltros';
 import { ModalBuscaClientes } from '../comuns/modalBuscaClientes';
@@ -78,6 +78,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
   const [mensagemErroAtendimentosRelatorio, definirMensagemErroAtendimentosRelatorio] = useState('');
   const [atendimentosRelatorio, definirAtendimentosRelatorio] = useState([]);
   const [usuariosRelatorio, definirUsuariosRelatorio] = useState([]);
+  const [tiposAtendimentoRelatorio, definirTiposAtendimentoRelatorio] = useState([]);
   const [canaisAtendimentoRelatorio, definirCanaisAtendimentoRelatorio] = useState([]);
   const [origensAtendimentoRelatorio, definirOrigensAtendimentoRelatorio] = useState([]);
   const [modalFiltrosAtendimentosAberto, definirModalFiltrosAtendimentosAberto] = useState(false);
@@ -334,6 +335,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
           listarClientes(),
           listarContatos(),
           listarUsuarios(),
+          listarTiposAtendimento(),
           listarCanaisAtendimento(),
           listarOrigensAtendimento(),
           listarGruposEmpresa()
@@ -348,6 +350,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
           clientesResultado,
           contatosResultado,
           usuariosResultado,
+          tiposAtendimentoResultado,
           canaisResultado,
           origensResultado,
           gruposEmpresaResultado
@@ -357,6 +360,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
         const clientesCarregados = clientesResultado.status === 'fulfilled' ? clientesResultado.value : [];
         const contatosCarregados = contatosResultado.status === 'fulfilled' ? contatosResultado.value : [];
         const usuariosCarregados = usuariosResultado.status === 'fulfilled' ? usuariosResultado.value : [];
+        const tiposAtendimentoCarregados = tiposAtendimentoResultado.status === 'fulfilled' ? tiposAtendimentoResultado.value : [];
         const canaisCarregados = canaisResultado.status === 'fulfilled' ? canaisResultado.value : [];
         const origensCarregadas = origensResultado.status === 'fulfilled' ? origensResultado.value : [];
         const gruposEmpresaCarregados = gruposEmpresaResultado.status === 'fulfilled' ? gruposEmpresaResultado.value : [];
@@ -364,6 +368,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
         const clientesAtivos = filtrarRegistrosAtivosLocais(clientesCarregados);
         const contatosAtivos = filtrarRegistrosAtivosLocais(contatosCarregados);
         const usuariosAtivos = filtrarRegistrosAtivosLocais(usuariosCarregados, 'status');
+        const tiposAtendimentoAtivos = filtrarRegistrosAtivosLocais(tiposAtendimentoCarregados, 'status');
         const canaisAtivos = filtrarRegistrosAtivosLocais(canaisCarregados, 'status');
         const origensAtivas = filtrarRegistrosAtivosLocais(origensCarregadas, 'status');
         const gruposEmpresaAtivos = filtrarRegistrosAtivosLocais(gruposEmpresaCarregados, 'status');
@@ -371,6 +376,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
         definirClientes(clientesAtivos);
         definirGruposEmpresaRelatorio(gruposEmpresaAtivos);
         definirUsuariosRelatorio(usuariosAtivos);
+        definirTiposAtendimentoRelatorio(tiposAtendimentoAtivos);
         definirCanaisAtendimentoRelatorio(canaisAtivos);
         definirOrigensAtendimentoRelatorio(origensAtivas);
         definirAtendimentosRelatorio(
@@ -379,6 +385,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
             clientesAtivos,
             contatosAtivos,
             usuariosAtivos,
+            tiposAtendimentoAtivos,
             canaisAtivos,
             origensAtivas,
             gruposEmpresaAtivos
@@ -543,11 +550,12 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
     () => montarChipsFiltrosAtendimentosRelatorio(filtrosAtendimentosRelatorio, {
       clientes,
       usuarios: usuariosRelatorio,
+      tiposAtendimento: tiposAtendimentoRelatorio,
       canaisAtendimento: canaisAtendimentoRelatorio,
       origensAtendimento: origensAtendimentoRelatorio,
       gruposEmpresa: gruposEmpresaRelatorio
     }),
-    [canaisAtendimentoRelatorio, clientes, filtrosAtendimentosRelatorio, gruposEmpresaRelatorio, origensAtendimentoRelatorio, usuariosRelatorio]
+    [canaisAtendimentoRelatorio, clientes, filtrosAtendimentosRelatorio, gruposEmpresaRelatorio, origensAtendimentoRelatorio, tiposAtendimentoRelatorio, usuariosRelatorio]
   );
 
   async function gerarPdfRelatorioPedidosFechados() {
@@ -980,6 +988,17 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
               options: gruposEmpresaRelatorio.map((grupo) => ({
                 valor: String(grupo.idGrupoEmpresa),
                 label: grupo.descricao || `Grupo #${grupo.idGrupoEmpresa}`
+              }))
+            },
+            {
+              name: 'idsTiposAtendimento',
+              label: 'Tipo de atendimento',
+              multiple: true,
+              tituloSelecao: 'Selecionar tipos de atendimento',
+              placeholder: 'Todos os tipos',
+              options: tiposAtendimentoRelatorio.map((tipoAtendimento) => ({
+                valor: String(tipoAtendimento.idTipoAtendimento),
+                label: tipoAtendimento.descricao || `Tipo #${tipoAtendimento.idTipoAtendimento}`
               }))
             },
             {
@@ -1783,6 +1802,7 @@ function enriquecerAtendimentosRelatorio(
   clientes,
   contatos,
   usuarios,
+  tiposAtendimento,
   canaisAtendimento,
   origensAtendimento,
   gruposEmpresa = []
@@ -1803,6 +1823,9 @@ function enriquecerAtendimentosRelatorio(
   const usuariosPorId = new Map(
     (usuarios || []).map((usuario) => [usuario.idUsuario, usuario.nome])
   );
+  const tiposAtendimentoPorId = new Map(
+    (tiposAtendimento || []).map((tipoAtendimento) => [tipoAtendimento.idTipoAtendimento, tipoAtendimento.descricao])
+  );
   const canaisPorId = new Map(
     (canaisAtendimento || []).map((canal) => [canal.idCanalAtendimento, canal.descricao])
   );
@@ -1818,6 +1841,7 @@ function enriquecerAtendimentosRelatorio(
       nomeGrupoEmpresa: clientesPorId.get(atendimento.idCliente)?.nomeGrupoEmpresa || 'Sem grupo',
       nomeContato: contatosPorId.get(atendimento.idContato) || atendimento.nomeContatoSnapshot || '',
       nomeUsuario: usuariosPorId.get(atendimento.idUsuario) || 'Nao informado',
+      nomeTipoAtendimento: tiposAtendimentoPorId.get(atendimento.idTipoAtendimento) || 'Nao informado',
       nomeCanalAtendimento: canaisPorId.get(atendimento.idCanalAtendimento) || 'Nao informado',
       nomeOrigemAtendimento: origensPorId.get(atendimento.idOrigemAtendimento) || 'Nao informado'
     }))
@@ -1835,6 +1859,7 @@ function normalizarFiltrosAtendimentosRelatorio(filtros = {}) {
   const idCliente = normalizarIdentificadorFiltro(filtros.idCliente);
   const idsUsuarios = normalizarListaIdentificadoresFiltro(filtros.idsUsuarios);
   const idsGruposEmpresa = normalizarListaIdentificadoresFiltro(filtros.idsGruposEmpresa);
+  const idsTiposAtendimento = normalizarListaIdentificadoresFiltro(filtros.idsTiposAtendimento);
   const idsCanaisAtendimento = normalizarListaIdentificadoresFiltro(filtros.idsCanaisAtendimento);
   const idsOrigensAtendimento = normalizarListaIdentificadoresFiltro(filtros.idsOrigensAtendimento);
   const dataInicio = normalizarDataFiltro(filtros.dataInicio);
@@ -1845,6 +1870,7 @@ function normalizarFiltrosAtendimentosRelatorio(filtros = {}) {
     idCliente,
     idsUsuarios,
     idsGruposEmpresa,
+    idsTiposAtendimento,
     idsCanaisAtendimento,
     idsOrigensAtendimento,
     dataInicio: periodo.dataInicio,
@@ -1857,6 +1883,7 @@ function possuiFiltrosAtendimentosAtivos(filtros = {}) {
     filtros.idCliente
     || (Array.isArray(filtros.idsUsuarios) && filtros.idsUsuarios.length > 0)
     || (Array.isArray(filtros.idsGruposEmpresa) && filtros.idsGruposEmpresa.length > 0)
+    || (Array.isArray(filtros.idsTiposAtendimento) && filtros.idsTiposAtendimento.length > 0)
     || (Array.isArray(filtros.idsCanaisAtendimento) && filtros.idsCanaisAtendimento.length > 0)
     || (Array.isArray(filtros.idsOrigensAtendimento) && filtros.idsOrigensAtendimento.length > 0)
     || filtros.dataInicio
@@ -1867,6 +1894,7 @@ function possuiFiltrosAtendimentosAtivos(filtros = {}) {
 function montarChipsFiltrosAtendimentosRelatorio(filtros, {
   clientes,
   usuarios,
+  tiposAtendimento,
   canaisAtendimento,
   origensAtendimento,
   gruposEmpresa
@@ -1911,6 +1939,16 @@ function montarChipsFiltrosAtendimentosRelatorio(filtros, {
     });
   }
 
+  if (Array.isArray(filtros.idsTiposAtendimento) && filtros.idsTiposAtendimento.length > 0) {
+    filtros.idsTiposAtendimento.forEach((idTipoAtendimento) => {
+      const tipoAtendimento = tiposAtendimento.find((item) => String(item.idTipoAtendimento) === String(idTipoAtendimento));
+      chips.push({
+        id: `tipo-atendimento-${idTipoAtendimento}`,
+        rotulo: `Tipo: ${tipoAtendimento?.descricao || `#${idTipoAtendimento}`}`
+      });
+    });
+  }
+
   if (Array.isArray(filtros.idsOrigensAtendimento) && filtros.idsOrigensAtendimento.length > 0) {
     filtros.idsOrigensAtendimento.forEach((idOrigemAtendimento) => {
       const origem = origensAtendimento.find((item) => String(item.idOrigemAtendimento) === String(idOrigemAtendimento));
@@ -1940,6 +1978,7 @@ function obterFiltrosPadraoAtendimentos() {
     idCliente: '',
     idsUsuarios: [],
     idsGruposEmpresa: [],
+    idsTiposAtendimento: [],
     idsCanaisAtendimento: [],
     idsOrigensAtendimento: [],
     dataInicio: formatarDataInput(inicioMes),
@@ -1960,6 +1999,11 @@ function filtrarAtendimentosRelatorio(atendimentos, filtros) {
       !Array.isArray(filtros.idsGruposEmpresa)
       || filtros.idsGruposEmpresa.length === 0
       || filtros.idsGruposEmpresa.map(String).includes(String(atendimento.idGrupoEmpresa || ''))
+    )
+    && (
+      !Array.isArray(filtros.idsTiposAtendimento)
+      || filtros.idsTiposAtendimento.length === 0
+      || filtros.idsTiposAtendimento.map(String).includes(String(atendimento.idTipoAtendimento || ''))
     )
     && (
       !Array.isArray(filtros.idsCanaisAtendimento)

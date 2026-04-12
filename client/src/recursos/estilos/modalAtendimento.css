@@ -1,5 +1,5 @@
 .modalAtendimento {
-  width: min(1220px, 100%);
+  width: min(1360px, 100%);
 }
 
 .layoutModalAtendimento {
@@ -29,8 +29,17 @@
 .linhaHorariosAtendimento,
 .linhaUsuarioCanalOrigemAtendimento {
   display: grid;
+  gap: 16px;
+}
+
+.linhaHorariosAtendimento {
+  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+}
+
+.linhaUsuarioCanalOrigemAtendimento {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.95fr) minmax(0, 0.95fr) minmax(0, 0.95fr);
 }
 
 .linhaClienteContatoAtendimento {
@@ -58,5 +67,11 @@
   .linhaUsuarioCanalOrigemAtendimento,
   .linhaHorariosAtendimento {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1120px) {
+  .linhaUsuarioCanalOrigemAtendimento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

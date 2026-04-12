@@ -10,7 +10,8 @@ import {
   listarEtapasPedidoConfiguracao,
   listarMotivosPerdaConfiguracao,
   listarMotivosDevolucaoConfiguracao,
-  listarOrigensAtendimentoConfiguracao
+  listarOrigensAtendimentoConfiguracao,
+  listarTiposAtendimentoConfiguracao
 } from '../servicos/configuracoes';
 import { listarEmpresas } from '../servicos/empresa';
 import { listarOrcamentos } from '../servicos/orcamentos';
@@ -40,6 +41,7 @@ import { SecaoAtendimentosCanalInicio } from '../componentes/modulos/inicio-seca
 import { SecaoAtendimentosOrigemInicio } from '../componentes/modulos/inicio-secaoAtendimentosOrigemInicio';
 import { SecaoAtendimentosClientesInicio } from '../componentes/modulos/inicio-secaoAtendimentosClientesInicio';
 import { SecaoAtendimentosUsuariosInicio } from '../componentes/modulos/inicio-secaoAtendimentosUsuariosInicio';
+import { SecaoAtendimentosTipoInicio } from '../componentes/modulos/inicio-secaoAtendimentosTipoInicio';
 import { SecaoConfiguravelInicio } from '../componentes/modulos/inicio-secaoConfiguravelInicio';
 import { ModalManualInicio } from '../componentes/modulos/inicio-modalManualInicio';
 import { criarResumoFunilVendas } from '../utilitarios/inicio/criarResumoFunilVendas';
@@ -148,6 +150,7 @@ export function PaginaInicio({ usuarioLogado }) {
         listarMotivosDevolucaoConfiguracao(),
         listarCanaisAtendimentoConfiguracao(),
         listarOrigensAtendimentoConfiguracao(),
+        listarTiposAtendimentoConfiguracao(),
         listarUsuarios({ incluirInativos: true }),
         listarEmpresas()
       ]);
@@ -168,6 +171,7 @@ export function PaginaInicio({ usuarioLogado }) {
         motivosDevolucaoResultado,
         canaisAtendimentoResultado,
         origensAtendimentoResultado,
+        tiposAtendimentoResultado,
         usuariosResultado,
         empresasResultado
       ] = resultados;
@@ -187,6 +191,7 @@ export function PaginaInicio({ usuarioLogado }) {
       const motivosDevolucao = motivosDevolucaoResultado.status === 'fulfilled' ? motivosDevolucaoResultado.value : [];
       const canaisAtendimento = canaisAtendimentoResultado.status === 'fulfilled' ? canaisAtendimentoResultado.value : [];
       const origensAtendimento = origensAtendimentoResultado.status === 'fulfilled' ? origensAtendimentoResultado.value : [];
+      const tiposAtendimento = tiposAtendimentoResultado.status === 'fulfilled' ? tiposAtendimentoResultado.value : [];
       const usuarios = usuariosResultado.status === 'fulfilled' ? usuariosResultado.value : [];
       const empresas = empresasResultado.status === 'fulfilled' ? empresasResultado.value : [];
 
@@ -206,6 +211,7 @@ export function PaginaInicio({ usuarioLogado }) {
         motivosDevolucao,
         canaisAtendimento,
         origensAtendimento,
+        tiposAtendimento,
         usuarios,
         empresa: empresas[0] || null
       });
@@ -341,19 +347,32 @@ function montarPainel(dados, usuarioLogado) {
     ? (positivacaoCarteiraMes / clientesAtivos.length) * 100
     : 0;
   const pedidosEntregaMes = pedidos.filter((item) => dataNoPeriodo(item.dataEntrega, inicioMes, fimMes));
+  // Este recorte usa a etapa por ID para garantir que a comissao entregue nao dependa do texto configurado da etapa.
+  const pedidosEntreguesMes = pedidos.filter((item) => (
+    Number(item.idEtapaPedido || item.idEtapa) === ID_ETAPA_PEDIDO_ENTREGUE
+    && dataNoPeriodo(item.dataEntrega, inicioMes, fimMes)
+  ));
   const devolucoesMes = pedidos.filter((item) => (
     Number(item.idTipoPedido) === ID_TIPO_PEDIDO_DEVOLUCAO
     && dataNoPeriodo(item.dataInclusao, inicioMes, fimMes)
   ));
   const atendimentosMes = atendimentos.filter((item) => dataNoPeriodo(item.data, inicioMes, fimMes));
-  const atendimentosMesIndicador = usuarioLogado?.tipo === 'Usuario padrao'
+  // A home de atendimentos precisa usar a mesma base para cards e graficos e evitar leituras diferentes por perfil.
+  const atendimentosMesHome = usuarioLogado?.tipo === 'Usuario padrao'
     ? atendimentosMes.filter((item) => String(item.idUsuario) === String(usuarioLogado?.idUsuario || ''))
     : atendimentosMes;
+  // O card de prospeccao depende do cadastro dinamico de tipos, entao buscamos o ID pelo texto normalizado.
+  const idTipoAtendimentoProspeccao = encontrarIdTipoAtendimentoProspeccao(dados.tiposAtendimento);
+  const atendimentosProspeccaoMes = atendimentosMesHome.filter((item) => (
+    idTipoAtendimentoProspeccao != null
+    && Number(item.idTipoAtendimento) === Number(idTipoAtendimentoProspeccao)
+  ));
   const valorAberto = somarTotais(orcamentosAbertos);
   const faturamentoMes = somarTotais(pedidosEntregaMes);
   const mediaDiasConversaoMes = calcularMediaDiasConversao(orcamentosFechadosMesConversao);
   const quantidadeVendidaMesBruta = somarQuantidadeItensBruta(pedidosMes);
   const comissaoMes = somarComissoes(pedidosMes);
+  const comissaoEntregueMes = somarComissoes(pedidosEntreguesMes);
   const ticketMedio = pedidosEntregaMes.length ? faturamentoMes / pedidosEntregaMes.length : 0;
   const convertidosMes = orcamentosMes.filter((item) => Boolean(item.idPedidoVinculado)).length;
   const taxaConversaoMes = orcamentosMes.length ? (convertidosMes / orcamentosMes.length) * 100 : 0;
@@ -453,7 +472,7 @@ function montarPainel(dados, usuarioLogado) {
   const vendasPorUf = montarResumoPorUf(pedidosMes, clientesVisiveis);
   const vendasPorCliente = montarResumoPorCliente(pedidosMes, clientesVisiveis, dados.empresa);
   const atendimentosPorCanal = montarResumoAtendimentosPorRelacionamento(
-    atendimentosMes,
+    atendimentosMesHome,
     dados.canaisAtendimento,
     'idCanalAtendimento',
     'idCanalAtendimento',
@@ -461,7 +480,7 @@ function montarPainel(dados, usuarioLogado) {
     'Sem canal'
   );
   const atendimentosPorOrigem = montarResumoAtendimentosPorRelacionamento(
-    atendimentosMes,
+    atendimentosMesHome,
     dados.origensAtendimento,
     'idOrigemAtendimento',
     'idOrigemAtendimento',
@@ -469,12 +488,20 @@ function montarPainel(dados, usuarioLogado) {
     'Sem origem'
   );
   const atendimentosPorCliente = montarResumoAtendimentosPorCliente(
-    atendimentosMes,
+    atendimentosMesHome,
     clientesVisiveis,
     dados.empresa
   );
+  const atendimentosPorTipo = montarResumoAtendimentosPorRelacionamento(
+    atendimentosMesHome,
+    dados.tiposAtendimento,
+    'idTipoAtendimento',
+    'idTipoAtendimento',
+    'descricao',
+    'Sem tipo'
+  );
   const atendimentosPorUsuario = montarResumoAtendimentosPorUsuario(
-    atendimentosMes,
+    atendimentosMesHome,
     dados.usuarios
   );
 
@@ -525,10 +552,23 @@ function montarPainel(dados, usuarioLogado) {
         id: 'atendimentosMes',
         icone: 'atendimentos',
         titulo: 'Atendimentos no mes',
-        valor: String(atendimentosMesIndicador.length),
+        valor: String(atendimentosMesHome.length),
         descricao: 'Quantidade total de atendimentos no mes atual.',
         ajuda: {
           composicao: 'Soma de todos os atendimentos registrados no mes corrente.',
+          periodo: 'Mes corrente pela data do atendimento.'
+        }
+      },
+      {
+        id: 'atendimentosProspeccaoMes',
+        icone: 'atendimentos',
+        titulo: 'Prospeccao no mes',
+        valor: String(atendimentosProspeccaoMes.length),
+        descricao: 'Atendimentos de prospeccao registrados no mes atual.',
+        ajuda: {
+          composicao: idTipoAtendimentoProspeccao == null
+            ? 'Conta atendimentos do tipo Prospeccao quando esse tipo estiver cadastrado.'
+            : 'Soma dos atendimentos do tipo Prospeccao registrados no mes corrente.',
           periodo: 'Mes corrente pela data do atendimento.'
         }
       },
@@ -552,6 +592,17 @@ function montarPainel(dados, usuarioLogado) {
         ajuda: {
           composicao: 'Soma da comissao de cada pedido (total liquido x % comissao).',
           periodo: 'Mes corrente pela data de inclusao do pedido.'
+        }
+      },
+      {
+        id: 'comissaoEntregueMes',
+        icone: 'pagamento',
+        titulo: 'Comissao entregue no mes',
+        valor: normalizarPreco(comissaoEntregueMes),
+        descricao: 'Comissao dos pedidos entregues no mes atual.',
+        ajuda: {
+          composicao: 'Soma da comissao de cada pedido na etapa Entregue (total liquido x % comissao).',
+          periodo: 'Mes corrente pela data de entrega do pedido.'
         }
       },
       {
@@ -685,6 +736,7 @@ function montarPainel(dados, usuarioLogado) {
     atendimentosPorCanal,
     atendimentosPorOrigem,
     atendimentosPorCliente,
+    atendimentosPorTipo,
     atendimentosPorUsuario,
     alertas: montarAlertas(orcamentosVencidos, orcamentosVencendo, pedidosEntregaProxima, clientesSemAtendimento),
     tituloRanking: usuarioLogado?.tipo === 'Usuario padrao' ? 'Clientes em destaque' : 'Vendedores em destaque',
@@ -816,6 +868,9 @@ function montarSecoesAtendimentos(painel) {
     ['atendimentosCliente', {
       renderizar: (configuracao) => <SecaoAtendimentosClientesInicio itens={painel.atendimentosPorCliente} titulo={configuracao.rotulo} />
     }],
+    ['atendimentosTipo', {
+      renderizar: (configuracao) => <SecaoAtendimentosTipoInicio itens={painel.atendimentosPorTipo} titulo={configuracao.rotulo} />
+    }],
     ['atendimentosUsuario', {
       renderizar: (configuracao) => <SecaoAtendimentosUsuariosInicio itens={painel.atendimentosPorUsuario} titulo={configuracao.rotulo} />
     }]
@@ -892,6 +947,17 @@ function criarPainelBase(usuarioLogado) {
         }
       },
       {
+        id: 'atendimentosProspeccaoMes',
+        icone: 'atendimentos',
+        titulo: 'Prospeccao no mes',
+        valor: '0',
+        descricao: '',
+        ajuda: {
+          composicao: 'Soma dos atendimentos classificados com o tipo Prospeccao.',
+          periodo: 'Mes corrente pela data do atendimento.'
+        }
+      },
+      {
         id: 'quantidadeVendidaMes',
         icone: 'caixa',
         titulo: 'Quantidade vendida no mes',
@@ -911,6 +977,17 @@ function criarPainelBase(usuarioLogado) {
         ajuda: {
           composicao: 'Soma da comissao de cada pedido (total liquido x % comissao).',
           periodo: 'Mes corrente pela data de inclusao do pedido.'
+        }
+      },
+      {
+        id: 'comissaoEntregueMes',
+        icone: 'pagamento',
+        titulo: 'Comissao entregue no mes',
+        valor: normalizarPreco(0),
+        descricao: '',
+        ajuda: {
+          composicao: 'Soma da comissao dos pedidos na etapa Entregue.',
+          periodo: 'Mes corrente pela data de entrega do pedido.'
         }
       },
       {
@@ -976,6 +1053,7 @@ function criarPainelBase(usuarioLogado) {
     atendimentosPorCanal: [],
     atendimentosPorOrigem: [],
     atendimentosPorCliente: [],
+    atendimentosPorTipo: [],
     atendimentosPorUsuario: [],
     alertas: [],
     tituloRanking: 'Ranking',
@@ -1014,14 +1092,28 @@ function filtrarPedidosVisiveis(pedidos, idsClientes, usuarioLogado) {
 }
 
 function filtrarAtendimentosVisiveis(atendimentos, idsClientes, usuarioLogado) {
-  if (usuarioLogado?.tipo !== 'Usuario padrao' || !usuarioLogado?.idVendedor) {
+  if (usuarioLogado?.tipo !== 'Usuario padrao' || !usuarioLogado?.idUsuario) {
     return Array.isArray(atendimentos) ? atendimentos : [];
   }
 
-  return (atendimentos || []).filter((item) => (
-    idsClientes.has(String(item.idCliente))
-    || String(item.idUsuario) === String(usuarioLogado.idUsuario)
-  ));
+  // Para usuario padrao, a home de atendimentos deve consolidar apenas os registros do proprio usuario.
+  return (atendimentos || []).filter((item) => String(item.idUsuario) === String(usuarioLogado.idUsuario));
+}
+
+// O tipo Prospeccao nasce dinamico no cadastro, entao a identificacao precisa ser resiliente a acentos e caixa.
+function encontrarIdTipoAtendimentoProspeccao(tiposAtendimento) {
+  return (tiposAtendimento || []).find((tipoAtendimento) => (
+    normalizarTextoComparacao(tipoAtendimento?.descricao) === 'prospeccao'
+  ))?.idTipoAtendimento ?? null;
+}
+
+// Esta normalizacao curta permite comparar textos operacionais sem depender de acentos digitados pelo usuario.
+function normalizarTextoComparacao(valor) {
+  return String(valor || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
 }
 
 function filtrarAgendamentosVisiveis(agendamentos, idsClientes, usuarioLogado) {

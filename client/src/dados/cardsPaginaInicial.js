@@ -35,10 +35,18 @@ export const cardsPaginaInicial = [
     visivelPadrao: true
   },
   {
+    id: 'atendimentosProspeccaoMes',
+    rotulo: 'Prospeccao no mes',
+    ajudaConfiguracao: 'Mostra a quantidade de atendimentos do tipo Prospeccao registrados no mes corrente.',
+    ordemPadrao: 5,
+    spanPadrao: 2,
+    visivelPadrao: true
+  },
+  {
     id: 'quantidadeVendidaMes',
     rotulo: 'Quantidade vendida no mes',
     ajudaConfiguracao: 'Mostra a quantidade bruta de itens vendidos no mes corrente, sem debitar devolucoes.',
-    ordemPadrao: 5,
+    ordemPadrao: 6,
     spanPadrao: 2,
     visivelPadrao: true
   },
@@ -46,7 +54,15 @@ export const cardsPaginaInicial = [
     id: 'comissaoMes',
     rotulo: 'Comissao no mes',
     ajudaConfiguracao: 'Mostra a comissao liquida do mes corrente com base na comissao dos pedidos.',
-    ordemPadrao: 6,
+    ordemPadrao: 7,
+    spanPadrao: 2,
+    visivelPadrao: true
+  },
+  {
+    id: 'comissaoEntregueMes',
+    rotulo: 'Comissao entregue no mes',
+    ajudaConfiguracao: 'Mostra a comissao liquida dos pedidos na etapa Entregue com data de entrega no mes corrente.',
+    ordemPadrao: 8,
     spanPadrao: 2,
     visivelPadrao: true
   },
@@ -54,7 +70,7 @@ export const cardsPaginaInicial = [
     id: 'positivacaoMes',
     rotulo: 'Positivacao no mes',
     ajudaConfiguracao: 'Mostra quantos clientes diferentes fizeram pedidos no mes corrente.',
-    ordemPadrao: 7,
+    ordemPadrao: 9,
     spanPadrao: 2,
     visivelPadrao: true
   },
@@ -62,7 +78,7 @@ export const cardsPaginaInicial = [
     id: 'percentualPositivacaoCarteiraMes',
     rotulo: '% Positivacao da carteira',
     ajudaConfiguracao: 'Mostra o percentual da carteira ativa que comprou no mes corrente.',
-    ordemPadrao: 8,
+    ordemPadrao: 10,
     spanPadrao: 2,
     visivelPadrao: true
   },
@@ -70,7 +86,7 @@ export const cardsPaginaInicial = [
     id: 'catalogo',
     rotulo: 'Catalogo',
     ajudaConfiguracao: 'Mostra a quantidade de produtos ativos no cadastro.',
-    ordemPadrao: 9,
+    ordemPadrao: 11,
     spanPadrao: 2,
     visivelPadrao: true
   },
@@ -78,7 +94,7 @@ export const cardsPaginaInicial = [
     id: 'carteira',
     rotulo: 'Carteira',
     ajudaConfiguracao: 'Mostra a quantidade de clientes ativos no cadastro.',
-    ordemPadrao: 10,
+    ordemPadrao: 12,
     spanPadrao: 2,
     visivelPadrao: true
   }

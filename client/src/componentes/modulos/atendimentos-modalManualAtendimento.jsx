@@ -5,6 +5,7 @@ export function ModalManualAtendimento({
   aberto,
   aoFechar,
   atendimentos = [],
+  tiposAtendimento = [],
   canaisAtendimento = [],
   origensAtendimento = [],
   orcamentos = [],
@@ -31,7 +32,7 @@ export function ModalManualAtendimento({
     },
     {
       titulo: 'Estrutura comercial',
-      descricao: `${canaisAtendimento.length} canal(is) e ${origensAtendimento.length} origem(ns) ativos para classificacao.`,
+      descricao: `${tiposAtendimento.length} tipo(s), ${canaisAtendimento.length} canal(is) e ${origensAtendimento.length} origem(ns) ativos para classificacao.`,
       detalhe: 'Essas listas sao gerenciadas em Configuracoes.',
       icone: 'mensagem'
     },
@@ -78,7 +79,7 @@ export function ModalManualAtendimento({
     {
       titulo: 'Campos obrigatorios',
       descricao: 'Cliente, assunto, data e horario de inicio sao obrigatorios para salvar o atendimento.',
-      detalhe: 'Horario de fim pode ficar vazio em inclusao, mas se informado precisa ser maior que o inicio.',
+      detalhe: 'Tipo de atendimento tambem e obrigatorio; horario de fim pode ficar vazio em inclusao, mas se informado precisa ser maior que o inicio.',
       icone: 'selo'
     },
     {
@@ -109,11 +110,11 @@ export function ModalManualAtendimento({
       descricao="Guia visual com fluxo comercial, validacoes, permissoes e atalhos reais da pagina."
       eyebrow="Fluxo comercial"
       heroTitulo="Como a pagina de Atendimentos opera no Connecta CRM"
-      heroDescricao="A tela de Atendimentos concentra o registro operacional do relacionamento com o cliente, permitindo vincular contato, classificar canal e origem, abrir orcamento e evoluir para pedido sem quebrar o contexto do atendimento."
+      heroDescricao="A tela de Atendimentos concentra o registro operacional do relacionamento com o cliente, permitindo vincular contato, classificar tipo, canal e origem, abrir orcamento e evoluir para pedido sem quebrar o contexto do atendimento."
       painelHeroi={[
         { valor: atendimentos.length, rotulo: 'Atendimentos visiveis na grade' },
         { valor: orcamentos.length, rotulo: 'Orcamentos abertos disponiveis' },
-        { valor: canaisAtendimento.length + origensAtendimento.length, rotulo: 'Classificacoes comerciais carregadas' }
+        { valor: tiposAtendimento.length + canaisAtendimento.length + origensAtendimento.length, rotulo: 'Classificacoes comerciais carregadas' }
       ]}
       cardsResumo={cardsResumo}
       cardsFluxo={cardsFluxo}
@@ -122,13 +123,13 @@ export function ModalManualAtendimento({
           tag: 'Formulario',
           titulo: 'O que e obrigatorio e o que depende do contexto',
           itens: [
-            'Cliente, assunto, data e horario de inicio sao obrigatorios para salvar o atendimento.',
+            'Cliente, tipo de atendimento, assunto, data e horario de inicio sao obrigatorios para salvar o atendimento.',
             'Contato depende do cliente escolhido e so lista contatos ativos daquele cliente.',
             'A busca de clientes tambem permite incluir um novo cliente sem sair do fluxo.',
             'Ao abrir a busca de contatos com um cliente ja definido, o proprio modal permite cadastrar um novo contato e devolver esse contato ja selecionado no atendimento.',
             'Ao confirmar a busca de cliente ou contato, o foco retorna para o campo preenchido no atendimento.',
             'Orcamento so pode ser vinculado ou criado quando ja existe cliente definido no formulario.',
-            'Canal e origem sao classificacoes auxiliares: ajudam na leitura comercial, mas nao bloqueiam o salvamento.',
+            'Tipo de atendimento, canal e origem classificam o relacionamento comercial dentro do CRM.',
             'O usuario do registro e preenchido automaticamente conforme a sessao atual.'
           ]
         },

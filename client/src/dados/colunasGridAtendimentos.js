@@ -103,11 +103,20 @@ export const colunasGridAtendimentos = [
     visivelPadrao: true
   },
   {
+    id: 'tipoAtendimento',
+    rotulo: 'Tipo',
+    classe: 'colunaGradeTextoCurto',
+    obrigatoria: false,
+    ordemPadrao: 12,
+    spanPadrao: 2,
+    visivelPadrao: false
+  },
+  {
     id: 'usuario',
     rotulo: 'Usuario',
     classe: 'colunaGradeTextoCurto',
     obrigatoria: false,
-    ordemPadrao: 12,
+    ordemPadrao: 13,
     spanPadrao: 2,
     visivelPadrao: true
   },
@@ -116,7 +125,7 @@ export const colunasGridAtendimentos = [
     rotulo: 'Acoes',
     classe: 'colunaGradeAcoes',
     obrigatoria: true,
-    ordemPadrao: 13,
+    ordemPadrao: 14,
     spanPadrao: 2,
     visivelPadrao: true
   }

@@ -46,3 +46,7 @@ export function listarCanaisAtendimento(opcoes) {
 export function listarOrigensAtendimento(opcoes) {
   return requisitarListaApi('/origensAtendimento', opcoes);
 }
+
+export function listarTiposAtendimento(opcoes) {
+  return requisitarListaApi('/tiposAtendimento', opcoes);
+}

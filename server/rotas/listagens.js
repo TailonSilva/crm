@@ -117,6 +117,7 @@ rotaListagens.get('/atendimentos', async (requisicao, resposta) => {
       'cliente.nomeFantasia',
       'cliente.razaoSocial',
       'contato.nome',
+      'tipoAtendimento.descricao',
       'canalAtendimento.descricao',
       'origemAtendimento.descricao',
       'usuario.nome',
@@ -125,6 +126,7 @@ rotaListagens.get('/atendimentos', async (requisicao, resposta) => {
     adicionarFiltroIgual(clausulas, parametros, 'atendimento.idCliente', query.idCliente, Number);
     adicionarFiltroLista(clausulas, parametros, 'atendimento.idUsuario', query.idUsuario, Number);
     adicionarFiltroLista(clausulas, parametros, 'cliente.idVendedor', query.idVendedorCliente, Number);
+    adicionarFiltroLista(clausulas, parametros, 'atendimento.idTipoAtendimento', query.idTipoAtendimento, Number);
     adicionarFiltroLista(clausulas, parametros, 'atendimento.idCanalAtendimento', query.idCanalAtendimento, Number);
     adicionarFiltroLista(clausulas, parametros, 'atendimento.idOrigemAtendimento', query.idOrigemAtendimento, Number);
     adicionarFiltroPeriodo(clausulas, parametros, 'atendimento.data', query.dataInicio, query.dataFim);
@@ -143,6 +145,7 @@ rotaListagens.get('/atendimentos', async (requisicao, resposta) => {
         COALESCE(usuario.nome, '') AS nomeUsuario,
         cliente.idVendedor AS idVendedorCliente,
         COALESCE(vendedor.nome, '') AS nomeVendedorCliente,
+        COALESCE(tipoAtendimento.descricao, '') AS nomeTipoAtendimento,
         COALESCE(canalAtendimento.descricao, '') AS nomeCanalAtendimento,
         COALESCE(origemAtendimento.descricao, '') AS nomeOrigemAtendimento
       FROM atendimento
@@ -150,6 +153,7 @@ rotaListagens.get('/atendimentos', async (requisicao, resposta) => {
       LEFT JOIN contato ON contato.idContato = atendimento.idContato
       LEFT JOIN usuario ON usuario.idUsuario = atendimento.idUsuario
       LEFT JOIN vendedor ON vendedor.idVendedor = cliente.idVendedor
+      LEFT JOIN tipoAtendimento ON tipoAtendimento.idTipoAtendimento = atendimento.idTipoAtendimento
       LEFT JOIN canalAtendimento ON canalAtendimento.idCanalAtendimento = atendimento.idCanalAtendimento
       LEFT JOIN origemAtendimento ON origemAtendimento.idOrigemAtendimento = atendimento.idOrigemAtendimento
       ${montarWhere(clausulas)}
